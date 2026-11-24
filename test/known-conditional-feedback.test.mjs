@@ -11,14 +11,29 @@ import { observeKnownOriginalObligations, knownOriginalObligations, knownOrigina
   from '../lib/runtime-v2/known-original-obligations.mjs';
 
 const assessment = { activation: 'ACTIVE', evidenceKind: 'TARGET_FACTS', reason: 'Current source exposes the requested streaming activation facts.' };
-async function fixture(t, { count = 1, conditional = true, long = false, amendment = false } = {}) {
+async function fixture(t, { count = 1, conditional = true, long = false, amendment = false, execution = false, sharedResult = false, windowTrigger = false } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' }; delete f.input.request.fixedStopClassification;
   f.input.request.classificationContract = 2;
   f.input.request.population.reviewPolicy = resolveStopReviewPolicy({ deviationOnly: true, metrics: { M11: true, M16: true } });
-  const requirements = Array.from({ length: count }, (_, i) => `Preserve segment ordering for channel ${i}${conditional ? ' when streaming is enabled' : ''}.${long ? ' Keep each observed segment in its original sequence, including empty and repeated segments, without dropping either boundary or changing the surrounding stream contract.' : ''}`);
+  const requirements = Array.from({ length: count }, (_, i) => `${execution ? 'Run the declared verification command for channel' : 'Preserve segment ordering for channel'} ${i}${conditional ? windowTrigger ? ' after a later operation' : ' when streaming is enabled' : ''}.${long ? ' Keep each observed segment in its original sequence, including empty and repeated segments, without dropping either boundary or changing the surrounding stream contract.' : ''}`);
   if (amendment) requirements[1] = 'Do not modify the stream until the operator explicitly approves the work.';
   f.input.evidence.snapshot.entries[0].message.content = ['# Stream duties', ...requirements].join('\n') + '\n';
+  if (execution) f.input.evidence.snapshot.entries.push(
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'verify-a', name: 'Bash', input: { command: 'verify-a' } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'verify-a', content: 'Verification A passed.' }] } },
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'verify-b', name: 'Bash', input: { command: 'verify-b' } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'verify-b', content: 'Verification B passed.' }] } },
+  );
+  if (execution && sharedResult) {
+    f.input.evidence.snapshot.entries.splice(1, 4,
+      { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'verify-a', name: 'Bash', input: { command: 'verify-a' } }] } },
+      { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'verify-b', name: 'Bash', input: { command: 'verify-b' } }] } },
+      { type: 'user', message: { content: [
+        { type: 'tool_result', tool_use_id: 'verify-a', content: 'Verification A passed.' },
+        { type: 'tool_result', tool_use_id: 'verify-b', content: 'Verification B passed.' },
+      ] } });
+  }
   let original = await loadStopOriginalRequirements({ projectRoot: f.root, snapshot: f.input.evidence.snapshot });
   const source = original.userMessages[0], dir = path.join(f.root, 'openspec/changes/stream-order');
   await fs.mkdir(dir, { recursive: true });
@@ -48,8 +63,8 @@ async function fixture(t, { count = 1, conditional = true, long = false, amendme
     await tools.readAll();
     const originalFile = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-0'));
     const originalId = (await tools.read(originalFile)).details.citation.citeId;
-    const page = await tools.submit('set_original_checklist', { items: requirements.map((text, i) => ({ metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text,
-      ...(conditional && !(amendment && i === 1) ? { applicability: 'Streaming is enabled.' } : {}), knownCandidateId: f.candidates[i].id,
+    const page = await tools.submit('set_original_checklist', { items: requirements.map((text, i) => ({ metricId: execution ? 'M12' : 'M16', verificationTarget: execution ? 'PROCESS' : 'IMPLEMENTATION', text,
+      ...(conditional && !(amendment && i === 1) ? { applicability: windowTrigger ? 'A later operation occurred.' : 'Streaming is enabled.' } : {}), knownCandidateId: f.candidates[i].id,
       knownDutyReason: long ? 'The exact original duty line is the complete retained stream obligation, including all boundary and ordering cases. '.repeat(3) : 'The original line states the complete retained duty.',
       citeId: originalId, lineStart: i + 2, lineEnd: i + 2 })), scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
     return requirements.map(text => page.items.find(item => item.description === text));
@@ -187,4 +202,220 @@ test('pending pagination retains every conditional witness diagnostic without gr
   });
   assert.equal(f.calls.length, 1); assert.equal(handle.result.knownOriginalCoverage.items.filter(row => row.disposition === 'UNVERIFIED').length, 3);
   await handle.close();
+});
+
+
+test('early readiness exposes exact missing ranges and cumulative disclosure without granting an assessment', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), row = f.rows(objects)[0];
+    assert.equal(objects[0].evidenceRequirements.conditionalWitness.targetFacts.fullFile, true);
+    const partial = (await tools.read(f.production, { offset: 2 })).details.citation.citeId;
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [partial], conditionAssessment: assessment } };
+    const preview = await tools.submit('review_checklist', query);
+    for (const key of ['readProofGranted', 'assessmentGranted', 'semanticsVerified']) assert.equal(preview[key], false);
+    assert.deepEqual(preview.witnessReadiness.citations[0].targetFactsMissing, ['fullFile']);
+    assert.deepEqual(preview.readPlan.map(read => [read.arguments.offset, read.arguments.limit]), [[1, 1]]);
+    assert.equal((await tools.submit('review_checklist', query)).citations[0].fullFile, false, 'A second preview cannot acknowledge missing ranges.');
+    const proposed = { ...row, citeIds: [partial], conditionAssessment: assessment };
+    const rejected = await tools.submit('finish_stop_review', { summary: 'Navigation grants no proof.', knownObligations: [proposed] });
+    assert.equal(rejected.complete, false);
+    const pending = await tools.submit('review_checklist', rejected.pendingNavigation.arguments);
+    assert.deepEqual(pending.items.find(item => item.id === row.id).readinessNavigation.arguments, query);
+    await tools.read(f.production);
+    const repaired = await tools.submit('review_checklist', query);
+    assert.equal(repaired.citations[0].fullFile, true);
+    assert.equal(repaired.readPlan.length, 0);
+    assert.equal(repaired.assessmentGranted, false);
+    await assert.rejects(tools.submit('finish_stop_review', { summary: 'A preview is not a finish receipt.', knownObligations: [proposed], evidenceReadiness: repaired }), { code: 'TASK_SUBMISSION_INVALID' });
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'Genuine cumulative reads support the original relevant citation.', knownObligations: [proposed] })).complete, true);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); await handle.close();
+});
+
+test('early navigation cannot acknowledge an unpersisted read', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), row = f.rows(objects)[0];
+    const unacknowledged = (await tools.read(f.production, { receipt: false })).details.citation.citeId;
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [unacknowledged], conditionAssessment: assessment } };
+    // A pending native citation may be available for diagnostics, never as an acknowledged read.
+    try {
+      const preview = await tools.submit('review_checklist', query);
+      assert.equal(preview.citations[0].acknowledged, false); assert.equal(preview.citations[0].requiredOwnerReady, false);
+    } catch (error) { assert.equal(error.code, 'REVIEW_READINESS_CITATION_INVALID'); }
+    const proposed = { ...row, citeIds: [unacknowledged], conditionAssessment: assessment };
+    await tools.submit('finish_stop_review', { summary: 'Unpersisted reads stay uncertain.', knownObligations: [proposed] });
+    await tools.submit('finish_stop_review', { summary: 'Navigation did not manufacture evidence.', knownObligations: [proposed] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
+});
+
+test('early readiness preserves owner, actual scope, issued-citation and freshness boundaries', async t => {
+  const f = await fixture(t);
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), row = f.rows(objects)[0];
+    const originalFile = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-0'));
+    const basis = (await tools.read(originalFile)).details.citation.citeId;
+    const wrongOwner = await tools.submit('review_checklist', { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [basis], conditionAssessment: assessment } });
+    assert.equal(wrongOwner.citations[0].requiredOwnerReady, false); assert.equal(wrongOwner.citations[0].owner, 'BASIS');
+    assert.equal(wrongOwner.witnessReadiness.citations[0].requiredOwnerReady, false);
+    await assert.rejects(tools.submit('review_checklist', { evidenceReadiness: { objectId: 'foreign-object', citeIds: [basis] } }), { code: 'REVIEW_READINESS_SCOPE' });
+    await assert.rejects(tools.submit('review_checklist', { evidenceReadiness: { objectId: objects[0].objectId, citeIds: ['not-issued'] } }), { code: 'REVIEW_READINESS_CITATION_INVALID' });
+    const proposed = { ...row, citeIds: [basis], conditionAssessment: assessment };
+    const first = await tools.submit('finish_stop_review', { summary: 'Original input is not production proof.', knownObligations: [proposed] });
+    assert.equal(first.complete, false);
+    await tools.submit('finish_stop_review', { summary: 'Cross-owner evidence remains uncertain.', knownObligations: [proposed] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
+});
+
+test('early readiness rejects stale current bytes rather than refreshing a citation through navigation', async t => {
+  const f = await fixture(t);
+  await assert.rejects(f.run(async tools => {
+    const objects = await f.prepare(tools), current = (await tools.read(f.production)).details.citation.citeId;
+    await fs.appendFile(f.production, '// changed after the actual read\n');
+    await tools.submit('review_checklist', { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [current], conditionAssessment: assessment } });
+  }), { code: 'BASELINE_INPUT_CHANGED' });
+});
+
+test('early execution navigation names the real companion and rejects a mismatched invocation until genuine repair', async t => {
+  const f = await fixture(t, { execution: true, conditional: false });
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), row = f.rows(objects)[0];
+    assert.equal(objects[0].evidenceRequirements.execution.everyInvocationPartRead, true);
+    const listing = await tools.submit('review_checklist', { view: 'process', offset: 0, limit: 20 });
+    assert.equal(listing.items.length, 2);
+    const selected = await tools.submit('review_checklist', listing.items[0].readWith.arguments);
+    const other = await tools.submit('review_checklist', listing.items[1].readWith.arguments);
+    const resultFile = selected.items.find(item => item.kind === 'result').file;
+    const actualInvocation = selected.items.find(item => item.kind === 'invocation').file;
+    const unrelatedInvocation = other.items.find(item => item.kind === 'invocation').file;
+    const current = (await tools.read(path.join(f.root, resultFile))).details.citation.citeId;
+    await tools.read(path.join(f.root, unrelatedInvocation));
+    // Preserve the original full-part rule even for an omitted terminal logical line.
+    tools.advance();
+    const partialCall = crypto.randomUUID(), partialInvocation = await tools.tools.get('source_read').execute(partialCall,
+      { path: path.join(f.root, actualInvocation), offset: 1, limit: 1 });
+    tools.params.onAgentToolResult({ toolName: 'source_read', result: partialInvocation, isError: false });
+    tools.hooks.get('tool_result_persist')({ toolName: 'source_read', toolCallId: partialCall, isSynthetic: false,
+      message: { role: 'toolResult', toolName: 'source_read', toolCallId: partialCall, isError: false, content: partialInvocation.content } }, tools.params);
+    assert.equal(partialInvocation.details.page.nextOffset, 2);
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [current] } };
+    const preview = await tools.submit('review_checklist', query);
+    assert.equal(preview.executionPairs[0].executionEvidenceReady, false);
+    assert.deepEqual(preview.executionPairs[0].alternatives[0].invocationFiles, [actualInvocation]);
+    assert(preview.readPlan.some(read => read.arguments.path === actualInvocation && read.arguments.offset === 2 && read.arguments.limit === 1));
+    const proposed = { ...row, citeIds: [current] };
+    const rejected = await tools.submit('finish_stop_review', { summary: 'An unrelated invocation cannot complete this original execution proof.', knownObligations: [proposed] });
+    assert.equal(rejected.complete, false);
+    await tools.read(path.join(f.root, actualInvocation));
+    assert.equal((await tools.submit('review_checklist', query)).executionPairs[0].executionEvidenceReady, true);
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'The actual original invocation and selected result are acknowledged.', knownObligations: [proposed] })).complete, true);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); await handle.close();
+});
+
+test('early read planning bounds materialization and leaves undisclosed pages pending', async t => {
+  const f = await fixture(t);
+  await fs.writeFile(f.production, 'export const streaming = true;\n' + '// original source line\n'.repeat(5000));
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), partial = (await tools.read(f.production, { offset: 2 })).details.citation.citeId;
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [partial], conditionAssessment: assessment } };
+    const preview = await tools.submit('review_checklist', query);
+    assert(preview.readPlan.length <= 8); assert(Buffer.byteLength(JSON.stringify(preview.readPlan)) <= 4097);
+    assert.equal(preview.readPlanComplete, false); assert(preview.remainingReadCount > 0);
+    assert(preview.readPlan.every(read => read.arguments.limit <= 400));
+    assert.equal((await tools.submit('review_checklist', query)).citations[0].fullFile, false);
+    const proposed = { ...f.rows(objects)[0], citeIds: [partial], conditionAssessment: assessment };
+    await tools.submit('finish_stop_review', { summary: 'A bounded plan does not read its remaining pages.', knownObligations: [proposed] });
+    await tools.submit('finish_stop_review', { summary: 'Unobserved pages remain uncertain.', knownObligations: [proposed] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
+});
+
+
+test('an already complete matching invocation alternative does not create unnecessary read obligations', async t => {
+  const f = await fixture(t, { execution: true, conditional: false, sharedResult: true });
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools);
+    const listing = await tools.submit('review_checklist', { view: 'process', offset: 0, limit: 20 });
+    const pair = await tools.submit('review_checklist', listing.items[0].readWith.arguments);
+    const result = pair.items.find(item => item.kind === 'result').file;
+    const invocation = pair.items.find(item => item.kind === 'invocation').file;
+    const current = (await tools.read(path.join(f.root, result))).details.citation.citeId;
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [current] } };
+    const before = await tools.submit('review_checklist', query);
+    assert.equal(before.executionPairs[0].alternativeCount, 2);
+    assert.equal(before.executionPairs[0].executionEvidenceReady, false);
+    assert(before.readPlan.length > 0);
+    assert.equal(new Set(before.readPlan.map(read => read.arguments.path)).size, 1, 'Only one sufficient invocation alternative is scheduled.');
+    await tools.read(path.join(f.root, invocation));
+    const preview = await tools.submit('review_checklist', query);
+    assert.equal(preview.executionPairs[0].executionEvidenceReady, true);
+    assert.equal(preview.readPlan.length, 0, 'One fully read matching invocation is enough under the unchanged predicate.');
+    assert.equal(preview.executionPairs[0].alternatives.filter(row => row.everyInvocationPartRead).length, 1);
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'The existing matching-alternative contract is preserved.', knownObligations: [{ ...f.rows(objects)[0], citeIds: [current] }] })).complete, true);
+  });
+  assert.equal(handle.result.unverifiedItems.length, 0); await handle.close();
+});
+
+
+test('an unavailable original process-window receipt stays explicit even when all named reads are complete', async t => {
+  const f = await fixture(t, { execution: true, conditional: true, windowTrigger: true });
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools);
+    const listing = await tools.submit('review_checklist', { view: 'process', offset: 0, limit: 20 });
+    const pair = await tools.submit('review_checklist', listing.items[0].readWith.arguments);
+    const result = pair.items.find(item => item.kind === 'result').file;
+    const invocation = pair.items.find(item => item.kind === 'invocation').file;
+    const current = (await tools.read(path.join(f.root, result))).details.citation.citeId;
+    await tools.read(path.join(f.root, invocation));
+    const conditionAssessment = { activation: 'INACTIVE_AT_CURRENT_BOUNDARY', evidenceKind: 'PROCESS_WINDOW',
+      afterCallId: 'verify-b', reason: 'Absence of a later operation needs the complete attributable original process window.' };
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: [current], conditionAssessment } };
+    const preview = await tools.submit('review_checklist', query);
+    assert.equal(preview.readPlan.length, 0); assert.equal(preview.executionPairs[0].executionEvidenceReady, true);
+    assert.equal(preview.evidenceRequirements.conditionalWitness.processWindowSupport, 'UNAVAILABLE_IN_THIS_HOST');
+    assert.equal(preview.witnessReadiness.effectiveContext.processWindowRequired, true);
+    assert.equal(preview.witnessReadiness.effectiveContext.processWindowComplete, false);
+    assert.equal(preview.unavailableEvidence.code, 'PROCESS_WINDOW_UNAVAILABLE_IN_THIS_HOST');
+    assert.equal(preview.unavailableEvidence.readPlanCanEstablishWindow, false);
+    assert.equal(preview.assessmentGranted, false);
+    const proposed = { ...f.rows(objects)[0], verdict: 'NOT_APPLICABLE', citeIds: [current], conditionAssessment };
+    const rejected = await tools.submit('finish_stop_review', { summary: 'Completed file reads do not invent an unavailable original window.', knownObligations: [proposed] });
+    assert.equal(rejected.complete, false);
+    assert.equal(rejected.pendingKnownOriginals[0].diagnostic.code, 'REVIEW_CONDITION_EVIDENCE_UNAVAILABLE');
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'The unsupported condition remains uncertain.', knownObligations: [proposed] })).complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
+});
+
+
+test('many long current paths keep the entire readiness transport bounded without reading or discharging omitted evidence', async t => {
+  const f = await fixture(t);
+  const directory = path.join(f.root, ...Array.from({ length: 6 }, (_, i) => 'source-segment-' + String(i) + '-'.repeat(30)));
+  await fs.mkdir(directory, { recursive: true });
+  const files = Array.from({ length: 16 }, (_, i) => path.join(directory, 'current-' + String(i).padStart(2, '0') + '-'.repeat(40) + '.mjs'));
+  for (const file of files) await fs.writeFile(file, 'export const streaming = true;\nexport const ordered = values => [...values];\n');
+  const handle = await f.run(async tools => {
+    const objects = await f.prepare(tools), ids = [];
+    for (const file of files) ids.push((await tools.read(file, { offset: 2 })).details.citation.citeId);
+    const query = { evidenceReadiness: { objectId: objects[0].objectId, citeIds: ids, conditionAssessment: assessment } };
+    const preview = await tools.submit('review_checklist', query);
+    assert(Buffer.byteLength(JSON.stringify(preview)) <= 8192);
+    assert.equal(preview.navigationByteLimit, 8192); assert.equal(preview.navigationTruncated, true);
+    assert.equal(preview.citationCount, files.length);
+    assert.equal(preview.citations.length + preview.omittedCitationCount, files.length);
+    assert.equal(preview.witnessReadiness.citations.length + preview.witnessReadiness.omittedCitationCount, files.length);
+    assert(preview.remainingReadCount > 0); assert.equal(preview.assessmentGranted, false);
+    assert(preview.instruction.includes('query fewer citation IDs'));
+    const smaller = await tools.submit('review_checklist', { evidenceReadiness: { ...query.evidenceReadiness, citeIds: [ids.at(-1)] } });
+    assert.equal(smaller.citationCount, 1); assert.equal(smaller.omittedCitationCount, 0);
+    assert.equal(smaller.citations[0].fullFile, false, 'Transport omission and a smaller query cannot acknowledge missing ranges.');
+    const proposed = { ...f.rows(objects)[0], citeIds: ids, conditionAssessment: assessment };
+    assert.equal((await tools.submit('finish_stop_review', { summary: 'Omitted navigation is still unobserved evidence.', knownObligations: [proposed] })).complete, false);
+    await tools.submit('finish_stop_review', { summary: 'Every original obligation and current proof requirement stays intact.', knownObligations: [proposed] });
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
 });

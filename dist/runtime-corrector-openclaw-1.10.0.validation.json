@@ -1246,10 +1246,10 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "path": ".runtime-correction/validation/report-latest-partial-c5bd2j7o/report-qa/capture-final/receipt.json",
-    "sha256": "a1f45a8b2c72440ce570a240aff1c06dcac534e528a2cdb2160e574614bf7c16",
-    "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
-    "actual": "1c8448/session46417 ->7cf21c/0 CLOSED",
+    "path": ".runtime-correction/validation/report-readiness-full-pass-2p1xyhkh/report-qa/capture-final/receipt.json",
+    "sha256": "b2374447f3acb3701f325c6a836eb0041a74a893c32e2db0e2431adab057175d",
+    "htmlSha256": "ec05082bc5e2cef5962234eb02fc882c06c62d0ad4eb2d08568e1a5f0d818ced",
+    "actual": "db7ad6/session75297 ->5ce487/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1259,7 +1259,7 @@
       1200,
       390
     ],
-    "rootInspected": "comparison-zh-CN-390.png",
+    "rootInspected": "current-method-zh-CN-390.png",
     "externalLinks": 0,
     "externalRequests": 0,
     "pageErrors": 0,
@@ -1269,9 +1269,14 @@
       "collapsedHistories": 3,
       "internalLinks": 7
     },
+    "initialQaHarnessFailure": {
+      "actual": "685577/session24544 ->9ca847/1 CLOSED",
+      "reason": "Historical diagnostic paragraph moved into collapsed history; harness incorrectly used innerText instead of textContent.",
+      "htmlChangedAfterFailure": false
+    },
     "receipt": {
-      "path": ".runtime-correction/validation/report-latest-partial-c5bd2j7o/report-qa/capture-final/receipt.json",
-      "sha256": "a1f45a8b2c72440ce570a240aff1c06dcac534e528a2cdb2160e574614bf7c16"
+      "path": ".runtime-correction/validation/report-readiness-full-pass-2p1xyhkh/report-qa/capture-final/receipt.json",
+      "sha256": "b2374447f3acb3701f325c6a836eb0041a74a893c32e2db0e2431adab057175d"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -3034,7 +3039,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "LATEST_CANDIDATE_FINITE_DELIVERY_PASS_STOP_UNVERIFIED_DEADLINE",
-    "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
+    "htmlSha256": "ec05082bc5e2cef5962234eb02fc882c06c62d0ad4eb2d08568e1a5f0d818ced",
     "modelOutcomeReference": "privateOriginalDutyPrototype.nextLivePilot",
     "earlierCompletedArchiveMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -3280,42 +3285,14 @@
     "outcomeReference": "currentPackageRealModelEvaluation"
   },
   "latestNaturalCiObservation": {
-    "sourceCommit": "2ae2f40748c96e78749df681bee0c08b28b2ccbd",
-    "runId": 45152150977,
+    "sourceCommit": "aa3c7fdefd2aad0fcea55dbaedb24f321f975352",
+    "runId": 45304726922,
     "attempt": 1,
     "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
-    "receipt": ".runtime-correction/validation/ci-fix/post-2ae2-natural-r8q1jqr7/terminal-receipt.json",
-    "receiptSha256": "92cbac15b232f95def8eecc35a9b6724a0cdacc488db424c001bccd09f8b0d86",
-    "macOS": {
-      "files": 403,
-      "pass": 5089,
-      "skip": 33,
-      "fail": 0
-    },
-    "ubuntu": {
-      "files": 403,
-      "pass": 5085,
-      "skip": 37,
-      "fail": 0
-    },
-    "windows": {
-      "shardCounts": [
-        101,
-        101,
-        101,
-        100
-      ],
-      "files": 403,
-      "pass": 5075,
-      "skip": 45,
-      "fail": 0
-    },
-    "allPreviousFailingFilesPassedWindows": true,
-    "noRerunCancelDispatch": true,
-    "uniqueHistoricalCauseProven": false,
-    "successfulJobs": 9,
-    "publication": "skipped",
-    "actionsMutated": false
+    "receipt": ".runtime-correction/validation/ci-fix/post-aa3c7-natural-q7350owj/terminal-receipt.json",
+    "receiptSha256": "fa60f1a92e6052bd833a23a124c8d6637bc4545e3aed90473b35ae106f29f5b1",
+    "readinessChangeIncluded": false,
+    "noRerunCancelDispatch": true
   },
   "previousReportWalkthrough": {
     "status": "COMPLETED_HEALTHY_SINGLE_ON_FINITE_SCOPE",
@@ -3527,39 +3504,14 @@
     },
     "runtimeQualificationSource": "f42b4381be002461138c16571272915c5051c82f",
     "latestNaturalCi": {
-      "sourceCommit": "2ae2f40748c96e78749df681bee0c08b28b2ccbd",
-      "runId": 45152150977,
+      "sourceCommit": "aa3c7fdefd2aad0fcea55dbaedb24f321f975352",
+      "runId": 45304726922,
       "attempt": 1,
       "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
-      "receipt": ".runtime-correction/validation/ci-fix/post-2ae2-natural-r8q1jqr7/terminal-receipt.json",
-      "receiptSha256": "92cbac15b232f95def8eecc35a9b6724a0cdacc488db424c001bccd09f8b0d86",
-      "macOS": {
-        "files": 403,
-        "pass": 5089,
-        "skip": 33,
-        "fail": 0
-      },
-      "ubuntu": {
-        "files": 403,
-        "pass": 5085,
-        "skip": 37,
-        "fail": 0
-      },
-      "windows": {
-        "shardCounts": [
-          101,
-          101,
-          101,
-          100
-        ],
-        "files": 403,
-        "pass": 5075,
-        "skip": 45,
-        "fail": 0
-      },
-      "allPreviousFailingFilesPassedWindows": true,
-      "noRerunCancelDispatch": true,
-      "uniqueHistoricalCauseProven": false
+      "receipt": ".runtime-correction/validation/ci-fix/post-aa3c7-natural-q7350owj/terminal-receipt.json",
+      "receiptSha256": "fa60f1a92e6052bd833a23a124c8d6637bc4545e3aed90473b35ae106f29f5b1",
+      "readinessChangeIncluded": false,
+      "noRerunCancelDispatch": true
     },
     "privateReplacementArchive": {
       "path": ".runtime-correction/validation/original-duty-v8b-release-composed-r5n8c2la/committed-release/runtime-corrector-openclaw-1.10.0.tgz",
@@ -3578,10 +3530,10 @@
       "inheritsCanonicalRealModelEvidence": false
     },
     "reportQa": {
-      "path": ".runtime-correction/validation/report-latest-partial-c5bd2j7o/report-qa/capture-final/receipt.json",
-      "sha256": "a1f45a8b2c72440ce570a240aff1c06dcac534e528a2cdb2160e574614bf7c16",
-      "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
-      "actual": "1c8448/session46417 ->7cf21c/0 CLOSED",
+      "path": ".runtime-correction/validation/report-readiness-full-pass-2p1xyhkh/report-qa/capture-final/receipt.json",
+      "sha256": "b2374447f3acb3701f325c6a836eb0041a74a893c32e2db0e2431adab057175d",
+      "htmlSha256": "ec05082bc5e2cef5962234eb02fc882c06c62d0ad4eb2d08568e1a5f0d818ced",
+      "actual": "db7ad6/session75297 ->5ce487/0 CLOSED",
       "views": 4,
       "languages": [
         "en",
@@ -3591,7 +3543,7 @@
         1200,
         390
       ],
-      "rootInspected": "comparison-zh-CN-390.png",
+      "rootInspected": "current-method-zh-CN-390.png",
       "externalLinks": 0,
       "externalRequests": 0,
       "pageErrors": 0,
@@ -3600,6 +3552,11 @@
         "sections": 6,
         "collapsedHistories": 3,
         "internalLinks": 7
+      },
+      "initialQaHarnessFailure": {
+        "actual": "685577/session24544 ->9ca847/1 CLOSED",
+        "reason": "Historical diagnostic paragraph moved into collapsed history; harness incorrectly used innerText instead of textContent.",
+        "htmlChangedAfterFailure": false
       }
     },
     "precedingNaturalCiRecords": [
@@ -3685,6 +3642,41 @@
         },
         "cause": "UNDER_INVESTIGATION; retain exact Stop-admission-deadline and undefined.proof assertions without unique-cause claim.",
         "noRerunCancelDispatch": true
+      },
+      {
+        "sourceCommit": "2ae2f40748c96e78749df681bee0c08b28b2ccbd",
+        "runId": 45152150977,
+        "attempt": 1,
+        "status": "COMPLETED_SUCCESS_NINE_TEST_JOBS_PUBLICATION_SKIPPED",
+        "receipt": ".runtime-correction/validation/ci-fix/post-2ae2-natural-r8q1jqr7/terminal-receipt.json",
+        "receiptSha256": "92cbac15b232f95def8eecc35a9b6724a0cdacc488db424c001bccd09f8b0d86",
+        "macOS": {
+          "files": 403,
+          "pass": 5089,
+          "skip": 33,
+          "fail": 0
+        },
+        "ubuntu": {
+          "files": 403,
+          "pass": 5085,
+          "skip": 37,
+          "fail": 0
+        },
+        "windows": {
+          "shardCounts": [
+            101,
+            101,
+            101,
+            100
+          ],
+          "files": 403,
+          "pass": 5075,
+          "skip": 45,
+          "fail": 0
+        },
+        "allPreviousFailingFilesPassedWindows": true,
+        "noRerunCancelDispatch": true,
+        "uniqueHistoricalCauseProven": false
       }
     ],
     "nextLivePilot": {
@@ -3818,15 +3810,79 @@
         "views": 4,
         "rootInspected": "ci-zh-CN-390.png",
         "externalLinks": 0
+      },
+      {
+        "path": ".runtime-correction/validation/report-latest-partial-c5bd2j7o/report-qa/capture-final/receipt.json",
+        "sha256": "a1f45a8b2c72440ce570a240aff1c06dcac534e528a2cdb2160e574614bf7c16",
+        "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
+        "actual": "1c8448/session46417 ->7cf21c/0 CLOSED",
+        "views": 4,
+        "languages": [
+          "en",
+          "zh-CN"
+        ],
+        "widths": [
+          1200,
+          390
+        ],
+        "rootInspected": "comparison-zh-CN-390.png",
+        "externalLinks": 0,
+        "externalRequests": 0,
+        "pageErrors": 0,
+        "overflow": false,
+        "structure": {
+          "sections": 6,
+          "collapsedHistories": 3,
+          "internalLinks": 7
+        }
       }
     ],
     "nextGenericFix": {
-      "status": "PRIVATE_PREPARATION_NOT_INTEGRATED",
-      "purpose": "Earlier bounded source-bound full-file witness and invocation-companion navigation before finish; no proof, classification or acknowledgement grants.",
-      "fixedBudgetPreserved": true,
-      "retainedDutiesPreserved": true,
-      "noCaseRulesInPlugin": true,
-      "newLiveRun": false
+      "status": "INTEGRATED_FULL_SOURCE_PASS_NEW_PACKAGE_AND_LIVE_PENDING",
+      "sourceFiles": [
+        "lib/runtime-v2/stop-workspace-review.mjs",
+        "test/known-conditional-feedback.test.mjs"
+      ],
+      "offlineChecksEachNode": 37,
+      "offlineNodeVersions": [
+        26,
+        18
+      ],
+      "offlineReceipt": ".runtime-correction/validation/stop-readiness-navigation-source-szi1d925/qualification-receipt.json",
+      "offlineReceiptSha256": "9d764f7aa6559d84570b99d60217dabd2b2a4cf0c0fcee33230d5046b5d48858",
+      "fullSourceReceipt": ".runtime-correction/validation/full-source-readiness-403-aa3-v2/run-1/receipt.json",
+      "fullSourceReceiptSha256": "12c7594e2e711f2b036f4ef106c9d482ad887e518fb8b560c639e69cd494d2c2",
+      "fullSourceFiles": 403,
+      "fullSourceTotals": {
+        "tests": 5131,
+        "pass": 5098,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 33
+      },
+      "newLiveRun": false,
+      "grantsReadProof": false,
+      "grantsAssessment": false,
+      "sourceFreshnessAndProvenanceGuardsUnchanged": true,
+      "supportedProcessWindowsAdded": false,
+      "canonicalArchiveChanged": false,
+      "allPublicDependencyContentsHashed": false,
+      "metadataOnlyPublicConfigCount": 1,
+      "priorHarnessFailure": {
+        "receipt": ".runtime-correction/validation/full-source-readiness-403-aa3-plan/run-1/receipt.json",
+        "failure": "PRIVATE_CONFIG_IN_PIN_SCOPE",
+        "testsLaunched": false,
+        "preserved": true
+      },
+      "fullSourceActual": "4f9117/session10157 ->13da9a/0 CLOSED",
+      "fullSourceIndependentReadback": {
+        "path": ".runtime-correction/validation/full-source-readiness-403-aa3-v2/independent-readback.json",
+        "sha256": "0c6a75136aa87cad2bdbeded0bc82f6109ed225a6d7880f78aab128ef306329d"
+      },
+      "sourcePeer": {
+        "path": ".runtime-correction/validation/stop-readiness-navigation-source-szi1d925/peer-ci-current-check.json",
+        "sha256": "d9468d221a12bd95dfb939580f4b7ea9d553faa49a8134d14b175d9cf0215e59"
+      }
     }
   }
 }
