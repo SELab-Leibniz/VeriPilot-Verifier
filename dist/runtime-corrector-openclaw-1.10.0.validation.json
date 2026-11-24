@@ -1429,7 +1429,7 @@
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "status": "FEATURE_BRANCH_ARTIFACT_PUBLISHED_REPORT_FOLLOWUP",
+    "status": "FEATURE_BRANCH_NEW_SOURCE_CI_PENDING_CANONICAL_UNCHANGED",
     "sourceCommit": "a2824e591478fb8aea4cf15e8160c6771f720b69",
     "archiveSha256": "c3315b3907ec20743ae50b2545353290d632c958f288b8c396ee353d90b61f86",
     "mainMerged": false,
@@ -1443,14 +1443,16 @@
     "verifiedArtifactAndCiHead": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
     "reportOnlyFollowup": true,
     "artifactPublicationCommit": "95cddc4f1dcb4e140f484b78d8d55205354fb23a",
-    "lastVerifiedPublishedHead": "b3008699791e9bb298972eea173cd8aff475f373"
+    "lastVerifiedPublishedHead": "049fe31fce835d741752b903f799a08a56bfdaba",
+    "newCodePublicationActual": "0893e0/session61982 ->c69cbe/0 CLOSED",
+    "newLedgerPublishedInSourceOnly": true
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "path": ".runtime-correction/validation/report-v4-ledger-phone-result-eqex808i/report-qa/capture/receipt.json",
-    "sha256": "15c1c76c3bd64e674c5aa0f3487dce8f5b00bd31fac4e74dd15ee215ddb1cd02",
-    "htmlSha256": "8aa722668be1b2d27cbc1ec3e7da9ead372710b4934eea23a534d0cb1520bb86",
-    "actual": "55985c/session40775 ->e4b8f6/0 CLOSED",
+    "path": ".runtime-correction/validation/report-v5-source-ci-c_pec4q0/report-qa/capture/receipt.json",
+    "sha256": "00d0c93abb2911e2800b47988271c4519504bc2cb6e816ea54d2e61671f843a9",
+    "htmlSha256": "8e7db00617e1891eb858f72378ca99b5c91ceb5e2529f9af5ebd73428ce13cd4",
+    "actual": "cf1823/session53710 ->85fe33/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1462,7 +1464,7 @@
     ],
     "rootInspected": [
       "current-method-en-1200.png",
-      "phone-zh-CN-390.png"
+      "current-method-zh-CN-390.png"
     ],
     "externalLinks": 0,
     "externalRequests": 0,
@@ -1474,12 +1476,12 @@
       "internalLinks": 7
     },
     "receipt": {
-      "path": ".runtime-correction/validation/report-v4-ledger-phone-result-eqex808i/report-qa/capture/receipt.json",
-      "sha256": "15c1c76c3bd64e674c5aa0f3487dce8f5b00bd31fac4e74dd15ee215ddb1cd02"
+      "path": ".runtime-correction/validation/report-v5-source-ci-c_pec4q0/report-qa/capture/receipt.json",
+      "sha256": "00d0c93abb2911e2800b47988271c4519504bc2cb6e816ea54d2e61671f843a9"
     },
-    "preservedLaunchFailure": {
-      "path": ".runtime-correction/validation/report-v4-ledger-phone-result-eqex808i/report-qa/launch-failure.json",
-      "sha256": "e0c43ccec3d7ae8e9bec8d3ced88d51b00dcb99957a882492857a2b14128adee"
+    "preservedCommandPathError": {
+      "path": ".runtime-correction/validation/report-v5-source-ci-c_pec4q0/qa-command-path-error.json",
+      "sha256": "2d9f1d066064c90321f00c7d7f4578f15d5d739293b9acbe614bd01942da0326"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -4026,7 +4028,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CURRENT_CANONICAL_DEVELOPMENT_C331_RETAINED_STOP_COMPLETE_WITH_PROPOSAL_HOST_ERROR",
-    "htmlSha256": "8aa722668be1b2d27cbc1ec3e7da9ead372710b4934eea23a534d0cb1520bb86",
+    "htmlSha256": "8e7db00617e1891eb858f72378ca99b5c91ceb5e2529f9af5ebd73428ce13cd4",
     "modelOutcomeReference": ".runtime-correction/validation/public-run-8344f3c012f74b",
     "earlierDeadlineFailureMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
@@ -5378,7 +5380,7 @@
       }
     ],
     "prospectiveLateDutyLedger": {
-      "status": "V4_INTEGRATED_LOCAL_FOCUSED_PASS_BROADER_QUALIFICATION_PENDING_NOT_SHIPPED",
+      "status": "SOURCE_COMMITTED_FOCUSED65_PASS_NATURAL_CI_AND_PRIVATE_PACKAGE_RUNNING_NOT_SHIPPED",
       "sourceReview": {
         "path": ".runtime-correction/validation/late-duty-ledger-source-audit-8344-vm5yyt3h/source-review.json",
         "sha256": "9aabfa91a59ef560d2fd185901ea757cddcbc28a2d3674aa3641d7b74c32901a"
@@ -5469,7 +5471,59 @@
       "currentV4PackageStockAndLive": "NOT_QUALIFIED",
       "noNewModelCalls": true,
       "qualityGainProven": false,
-      "formalBenchmarkCredit": 0
+      "formalBenchmarkCredit": 0,
+      "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
+      "qualifiedV5SourceHold": {
+        "path": ".runtime-correction/validation/late-ledger-canonical-private-c3652xc0/source-hold.qualified-v5.json",
+        "sha256": "34096914be5e18fa666167c3e5294d1298a5de58245717f9886ef353a2657676"
+      },
+      "v5SourcePeer": {
+        "path": ".runtime-correction/validation/late-ledger-canonical-private-c3652xc0/peer-quality-source.json",
+        "sha256": "8d09d93765c4e556cd90a755809544462f1ba790d027822886d0817578fffafb"
+      },
+      "v5ResultsPeer": {
+        "path": ".runtime-correction/validation/late-ledger-canonical-private-c3652xc0/peer-quality-results.json",
+        "sha256": "3857440088929e20f4bcb1afe3abafd2c2fcd152c0ac24549ee6c2b980204a8b"
+      },
+      "v5RootIntegration": {
+        "path": ".runtime-correction/validation/late-ledger-v5-root-gx1t4w7r/integration.json",
+        "sha256": "f0d0de354213e92a52d3ff08bc6f5d48c3634a427f5882643a691d4d10415875"
+      },
+      "v5RootFocusedReadback": {
+        "path": ".runtime-correction/validation/late-ledger-v5-root-gx1t4w7r/root-readback.json",
+        "sha256": "5892fd4906ae1a50183dda79fa064b3a7b0285a3aa4d775432ef7128c0c07932"
+      },
+      "v5RootTestTerminal": {
+        "path": ".runtime-correction/validation/late-ledger-v5-root-gx1t4w7r/root65-terminal.json",
+        "sha256": "bd0d082118556747163bcf1f2a7097da646c0bae61dc0181d986619711042b26"
+      },
+      "canonicalUnkeyedRowsRetainedWithoutSynthesizingStagingClaims": true,
+      "explicitWrongStageIdsRejected": true,
+      "v5Results": {
+        "negativeV4With65Tests": {
+          "pass": 64,
+          "fail": 1,
+          "failedCase": "authentic mixed staged and final-only canonical table",
+          "exitCode": 1,
+          "preserved": true
+        },
+        "fixedNode24": 65,
+        "fixedNode18": 65,
+        "fixedRootNode24": 65,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "currentSourceBroadQualification": {
+        "kind": "NATURAL_CI_PENDING",
+        "runId": 45336704237,
+        "attempt": 1,
+        "sourceCommit": "049fe31fce835d741752b903f799a08a56bfdaba",
+        "noLocalFullV5RunClaim": true
+      },
+      "currentSourcePackage": "PRIVATE_CHECKS_IN_PROGRESS_CANONICAL_UNCHANGED",
+      "currentSourceRealModel": "NOT_EXERCISED",
+      "inheritsCanonicalLiveEvidence": false
     }
   },
   "earlierReportWalkthroughs": [
@@ -5774,6 +5828,43 @@
       "receipt": {
         "path": ".runtime-correction/validation/report-current-native-ledger-uqjg80wg/report-qa/capture/receipt.json",
         "sha256": "7d205614a848da728937b68546afc03e99fe590283cbdc0dd12d73b0b86052c5"
+      }
+    },
+    {
+      "status": "PASS",
+      "path": ".runtime-correction/validation/report-v4-ledger-phone-result-eqex808i/report-qa/capture/receipt.json",
+      "sha256": "15c1c76c3bd64e674c5aa0f3487dce8f5b00bd31fac4e74dd15ee215ddb1cd02",
+      "htmlSha256": "8aa722668be1b2d27cbc1ec3e7da9ead372710b4934eea23a534d0cb1520bb86",
+      "actual": "55985c/session40775 ->e4b8f6/0 CLOSED",
+      "views": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "widths": [
+        1200,
+        390
+      ],
+      "rootInspected": [
+        "current-method-en-1200.png",
+        "phone-zh-CN-390.png"
+      ],
+      "externalLinks": 0,
+      "externalRequests": 0,
+      "pageErrors": 0,
+      "overflow": false,
+      "structure": {
+        "sections": 6,
+        "collapsedHistories": 3,
+        "internalLinks": 7
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/report-v4-ledger-phone-result-eqex808i/report-qa/capture/receipt.json",
+        "sha256": "15c1c76c3bd64e674c5aa0f3487dce8f5b00bd31fac4e74dd15ee215ddb1cd02"
+      },
+      "preservedLaunchFailure": {
+        "path": ".runtime-correction/validation/report-v4-ledger-phone-result-eqex808i/report-qa/launch-failure.json",
+        "sha256": "e0c43ccec3d7ae8e9bec8d3ced88d51b00dcb99957a882492857a2b14128adee"
       }
     }
   ]
