@@ -1246,10 +1246,10 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "path": ".runtime-correction/validation/report-readiness-stock-ci-dq7rm86s/report-qa/capture-final/receipt.json",
-    "sha256": "f069037ebebb56723275987ca6376a0576f9428475bf647d207587407247d88b",
-    "htmlSha256": "474dceb6bff7e778894464ae535df2adde821a2cc7b6ea6da01d3b4c3d6a1dd4",
-    "actual": "0a8eba/session19194 ->302870/0 CLOSED",
+    "path": ".runtime-correction/validation/report-readiness-archive-scope-ghdrk9l5/report-qa/capture/receipt.json",
+    "sha256": "1cff839eb9e2f55f3f6297ef25562723f28478a928186884bab06d6eb2517c0d",
+    "htmlSha256": "38a2c5271f369121650d602be9e2909c870c06e29e8108306925d92e4622d38e",
+    "actual": "c86b32/session84986 ->76229e/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1259,7 +1259,7 @@
       1200,
       390
     ],
-    "rootInspected": "candidate-package-zh-CN-390.png",
+    "rootInspected": "method-zh-CN-390.png",
     "externalLinks": 0,
     "externalRequests": 0,
     "pageErrors": 0,
@@ -1269,14 +1269,9 @@
       "collapsedHistories": 3,
       "internalLinks": 7
     },
-    "initialQaHarnessFailure": {
-      "actual": "8929e2/session58408 ->d5d726/1 CLOSED",
-      "reason": "Exact Chinese prose changed from 全部通过 to 已全部通过; factual regex required refresh.",
-      "htmlChangedAfterFailure": false
-    },
     "receipt": {
-      "path": ".runtime-correction/validation/report-readiness-stock-ci-dq7rm86s/report-qa/capture-final/receipt.json",
-      "sha256": "f069037ebebb56723275987ca6376a0576f9428475bf647d207587407247d88b"
+      "path": ".runtime-correction/validation/report-readiness-archive-scope-ghdrk9l5/report-qa/capture/receipt.json",
+      "sha256": "1cff839eb9e2f55f3f6297ef25562723f28478a928186884bab06d6eb2517c0d"
     }
   },
   "precedingMethodPlanningAttempt": {
@@ -3039,14 +3034,16 @@
   },
   "reportCurrentWalkthrough": {
     "status": "LATEST_CANDIDATE_FINITE_DELIVERY_PASS_STOP_UNVERIFIED_DEADLINE",
-    "htmlSha256": "474dceb6bff7e778894464ae535df2adde821a2cc7b6ea6da01d3b4c3d6a1dd4",
+    "htmlSha256": "38a2c5271f369121650d602be9e2909c870c06e29e8108306925d92e4622d38e",
     "modelOutcomeReference": "privateOriginalDutyPrototype.nextLivePilot",
     "earlierCompletedArchiveMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
     "externalLinks": 0,
     "formalPairs": 0,
     "plannedPairs": 39,
-    "qualityGainProven": false
+    "qualityGainProven": false,
+    "workflowScope": "Proposal / Apply / final Stop only; Archive not exercised",
+    "wholeOpenSpecLifecycleValidated": false
   },
   "latestCompletedGeneralComparison": {
     "status": "ALL_FOUR_CLOSED_FROZEN_GRADED_NO_MEASURED_QUALITY_GAIN",
@@ -3587,10 +3584,10 @@
       "qualityGainProven": false
     },
     "reportQa": {
-      "path": ".runtime-correction/validation/report-readiness-stock-ci-dq7rm86s/report-qa/capture-final/receipt.json",
-      "sha256": "f069037ebebb56723275987ca6376a0576f9428475bf647d207587407247d88b",
-      "htmlSha256": "474dceb6bff7e778894464ae535df2adde821a2cc7b6ea6da01d3b4c3d6a1dd4",
-      "actual": "0a8eba/session19194 ->302870/0 CLOSED",
+      "path": ".runtime-correction/validation/report-readiness-archive-scope-ghdrk9l5/report-qa/capture/receipt.json",
+      "sha256": "1cff839eb9e2f55f3f6297ef25562723f28478a928186884bab06d6eb2517c0d",
+      "htmlSha256": "38a2c5271f369121650d602be9e2909c870c06e29e8108306925d92e4622d38e",
+      "actual": "c86b32/session84986 ->76229e/0 CLOSED",
       "views": 4,
       "languages": [
         "en",
@@ -3600,7 +3597,7 @@
         1200,
         390
       ],
-      "rootInspected": "candidate-package-zh-CN-390.png",
+      "rootInspected": "method-zh-CN-390.png",
       "externalLinks": 0,
       "externalRequests": 0,
       "pageErrors": 0,
@@ -3609,11 +3606,6 @@
         "sections": 6,
         "collapsedHistories": 3,
         "internalLinks": 7
-      },
-      "initialQaHarnessFailure": {
-        "actual": "8929e2/session58408 ->d5d726/1 CLOSED",
-        "reason": "Exact Chinese prose changed from 全部通过 to 已全部通过; factual regex required refresh.",
-        "htmlChangedAfterFailure": false
       }
     },
     "precedingNaturalCiRecords": [
@@ -3823,7 +3815,8 @@
         "reviewer": "retention_audit",
         "htmlSha256": "dbc38693b82b6599e52d44e99461c8ae9e13f2aa4e1bb031068a9775676e4bf8",
         "runtimeUnchanged": true
-      }
+      },
+      "archiveExercised": false
     },
     "precedingReportQa": {
       "path": ".runtime-correction/validation/original-duty-windows-harness-84-n4p2r7mx/report-qa/capture/receipt.json",
@@ -3930,6 +3923,36 @@
         "initialQaHarnessFailure": {
           "actual": "685577/session24544 ->9ca847/1 CLOSED",
           "reason": "Historical diagnostic paragraph moved into collapsed history; harness incorrectly used innerText instead of textContent.",
+          "htmlChangedAfterFailure": false
+        }
+      },
+      {
+        "path": ".runtime-correction/validation/report-readiness-stock-ci-dq7rm86s/report-qa/capture-final/receipt.json",
+        "sha256": "f069037ebebb56723275987ca6376a0576f9428475bf647d207587407247d88b",
+        "htmlSha256": "474dceb6bff7e778894464ae535df2adde821a2cc7b6ea6da01d3b4c3d6a1dd4",
+        "actual": "0a8eba/session19194 ->302870/0 CLOSED",
+        "views": 4,
+        "languages": [
+          "en",
+          "zh-CN"
+        ],
+        "widths": [
+          1200,
+          390
+        ],
+        "rootInspected": "candidate-package-zh-CN-390.png",
+        "externalLinks": 0,
+        "externalRequests": 0,
+        "pageErrors": 0,
+        "overflow": false,
+        "structure": {
+          "sections": 6,
+          "collapsedHistories": 3,
+          "internalLinks": 7
+        },
+        "initialQaHarnessFailure": {
+          "actual": "8929e2/session58408 ->d5d726/1 CLOSED",
+          "reason": "Exact Chinese prose changed from 全部通过 to 已全部通过; factual regex required refresh.",
           "htmlChangedAfterFailure": false
         }
       }
