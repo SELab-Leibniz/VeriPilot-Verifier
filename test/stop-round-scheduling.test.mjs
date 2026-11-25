@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { stopProtocolFixture, materializeStopChecklist } from './helpers/stop-protocol.mjs';
+import { createChecklistTransport } from '../lib/runtime-v2/stop-workspace-review.mjs';
 import { scanSkillDirectory } from '../lib/runtime-v2/skill-source.mjs';
 import { persistSkillGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
@@ -88,8 +89,14 @@ async function tenItemFixture(t, { extraRecords = 0 } = {}) {
 
 async function ready(f, api) {
   await api.readAll();
-  const checklist = await api.submit('review_checklist', { ...scope, limit: 20 });
-  assert.equal(checklist.total, 10); assert.equal(checklist.items.length, 10);
+  const firstPage = await api.submit('review_checklist', { ...scope, limit: 20 });
+  assert.equal(firstPage.total, 10);
+  assert(firstPage.items.length > 0 && firstPage.items.length < firstPage.total, 'Byte packing depends on the current canonical path lengths.');
+  assert.equal(firstPage.next.tool, 'review_checklist');
+  assert(Buffer.byteLength(JSON.stringify(firstPage)) <= 8192);
+  const checklist = await materializeStopChecklist(firstPage, api.submit);
+  assert.equal(checklist.items.length, 10);
+  assert.deepEqual(checklist.items.map(item => item.objectId).sort(), f.objects.map(item => item.objectId).sort());
   let processPaths = checklist.processFiles;
   if (processPaths.length < checklist.processFileCount) {
     api.advance();
@@ -130,6 +137,72 @@ async function savedState(f) {
   return { directory, checkpoint: JSON.parse(await fs.readFile(path.join(directory, 'review-checkpoint.json'), 'utf8')),
     itemFiles: await fs.readdir(path.join(directory, 'items')).catch(error => { if (error.code === 'ENOENT') return []; throw error; }) };
 }
+
+for (const [originalCount, knownCount] of [[2, 7], [7, 2]]) test(`checklist fixture follows unequal legacy streams (${originalCount} original, ${knownCount} retained)`, async () => {
+  const originals = Array.from({ length: originalCount }, (_, i) => ({ objectId: `original-${i}` }));
+  const retained = Array.from({ length: knownCount }, (_, i) => ({ id: `retained-${i}` })), calls = [];
+  const page = (offset, limit) => ({ total: originalCount, items: originals.slice(offset, offset + limit),
+    nextOffset: offset + limit < originalCount ? offset + limit : null,
+    knownObligations: { total: knownCount, items: retained.slice(offset, offset + limit), nextOffset: offset + limit < knownCount ? offset + limit : null } });
+  const first = page(0, 2), complete = await materializeStopChecklist(first, async (name, args) => {
+    assert.equal(name, 'review_checklist'); assert.deepEqual(Object.keys(args).sort(), ['limit', 'offset']);
+    calls.push(structuredClone(args)); return page(args.offset, args.limit);
+  });
+  assert.deepEqual(complete.items, originals); assert.deepEqual(complete.knownObligations.items, retained);
+  assert.deepEqual(calls, [{ offset: 2, limit: 20 }]);
+  assert.equal(first.items.length, 2, 'Materialization does not mutate the actual first reply.');
+});
+
+test('checklist fixture reconstructs real bounded transport rows, auxiliary fields and UTF-8 detail chunks losslessly', async () => {
+  const unicode = '完整条件🙂 including "quotes" and\nline boundaries. '.repeat(300);
+  const originals = Array.from({ length: 3 }, (_, i) => ({ objectId: `original-${i}`, description: `${i}:${unicode}` }));
+  const retained = Array.from({ length: 5 }, (_, i) => ({ id: `retained-${i}`, requirement: `${i}:${unicode}` }));
+  const auxiliary = { processReadPlan: { batches: [{ fullText: unicode }] }, implementationChallenges: { selected: ['original-1'] } };
+  const transport = createChecklistTransport({ identity: () => 'same-current-scope', current: async () => {} }), calls = [];
+  const call = async (name, args) => {
+    assert.equal(name, 'review_checklist'); calls.push(structuredClone(args));
+    if (args.view === 'checklist_details') return transport.detail(args);
+    const offset = Math.min(args.offset ?? 0, originals.length), knownOffset = Math.min(args.knownOffset ?? args.offset ?? 0, retained.length), limit = args.limit ?? 2;
+    return transport.page({ ...auxiliary, total: originals.length, items: originals.slice(offset, offset + limit),
+      nextOffset: offset + limit < originals.length ? offset + limit : null,
+      knownObligations: { total: retained.length, items: retained.slice(knownOffset, knownOffset + limit), nextOffset: knownOffset + limit < retained.length ? knownOffset + limit : null } },
+    { offset, knownOffset, limit, explicitCursors: args.knownOffset !== undefined });
+  };
+  const first = await call('review_checklist', { offset: 0, limit: 2 });
+  assert(first.items.some(row => row.fullContentDeferred)); assert(first.checklistDetails);
+  const complete = await materializeStopChecklist(first, call);
+  assert.deepEqual(complete.items, originals); assert.deepEqual(complete.knownObligations.items, retained);
+  assert.deepEqual(complete.processReadPlan, auxiliary.processReadPlan); assert.deepEqual(complete.implementationChallenges, auxiliary.implementationChallenges);
+  assert(calls.some(args => args.view === 'checklist_details' && args.offset > 0));
+  assert(calls.some(args => args.knownOffset > args.offset), 'The host-issued cursors advance independently.');
+});
+
+test('checklist fixture restores a real numeric scope summary without treating its next string as a tool call', async () => {
+  const transport = createChecklistTransport({ identity: () => 'scope-summary', current: async () => {} });
+  const fields = { processReadPlan: { description: '完整🙂'.repeat(4000) } };
+  const first = await transport.summary({ items: 12, next: 'review_checklist', ...fields }), calls = [];
+  const complete = await materializeStopChecklist(first, async (name, args) => {
+    assert.equal(name, 'review_checklist'); assert.equal(args.view, 'checklist_details'); calls.push(args); return transport.detail(args);
+  });
+  assert.equal(complete.items, 12); assert.equal(complete.next, 'review_checklist');
+  assert.deepEqual(complete.processReadPlan, fields.processReadPlan); assert(calls.length > 1);
+});
+
+test('checklist fixture propagates real stale detail rejection without refreshing or issuing source evidence', async () => {
+  let revision = 0; const transport = createChecklistTransport({ identity: () => revision, current: async () => {} });
+  const first = await transport.summary({ items: 1, next: 'review_checklist', processReadPlan: { description: 'large'.repeat(3000) } });
+  revision++; const calls = [];
+  await assert.rejects(materializeStopChecklist(first, async (name, args) => {
+    calls.push({ name, args }); return transport.detail(args);
+  }), { code: 'REVIEW_NAVIGATION_STALE' });
+  assert.equal(calls.length, 1); assert.equal(calls[0].name, 'review_checklist'); assert.equal(calls[0].args.view, 'checklist_details');
+});
+
+test('checklist fixture rejects duplicate IDs and omitted continuations rather than concealing duties', async () => {
+  const unexpected = async () => assert.fail('A malformed supplied page cannot cause fabricated recovery calls.');
+  await assert.rejects(materializeStopChecklist({ total: 2, items: [{ objectId: 'same' }, { objectId: 'same' }], nextOffset: null }, unexpected), /Duplicate original checklist ID/);
+  await assert.rejects(materializeStopChecklist({ total: 2, items: [{ objectId: 'only' }], nextOffset: null }, unexpected));
+});
 
 test('registered native worker groups nine independent items and acknowledges them before final M16+finish, retaining all ten owners', async t => {
   const f = await tenItemFixture(t), frames = [];
@@ -241,7 +314,7 @@ test('combined initialization never guesses completionClaim; later pages omit cl
 test('large process navigation stays bounded and existing directory continuation reaches every original record without granting citations', async t => {
   const f = await tenItemFixture(t, { extraRecords: 16 });
   const handle = await checkedRun(f, async api => {
-    await api.readAll(); const checklist = await api.submit('review_checklist', { ...scope, limit: 20 });
+    await api.readAll(); const checklist = await materializeStopChecklist(await api.submit('review_checklist', { ...scope, limit: 20 }), api.submit);
     assert.equal(checklist.processFileCount, 30); assert.equal(checklist.processFilesComplete, false);
     assert(checklist.processFiles.length <= 20); assert(Buffer.byteLength(JSON.stringify(checklist.processFiles)) <= 8192);
     const continuation = checklist.processFilesContinuation; assert.equal(continuation.tool, 'source_ls'); assert.equal(continuation.arguments.offset, 0);
@@ -264,10 +337,10 @@ test('SOURCE-only initialization omits large process navigation until explicitly
   const handle = await checkedRun(f, async api => {
     assert.equal(api.brief.task.processNavigationOmitted, true);
     assert.deepEqual(api.brief.task.processFiles, []); assert.equal(api.brief.task.processFilesContinuation, undefined);
-    await api.readAll(); const original = await api.submit('review_checklist', scope);
+    await api.readAll(); const original = await materializeStopChecklist(await api.submit('review_checklist', scope), api.submit);
     assert.equal(original.total, 2); assert.equal(original.processNavigationOmitted, true);
     assert.deepEqual(original.processFiles, []); assert.equal(original.processFilesContinuation, undefined);
-    const restored = await api.submit('review_checklist', { includeProcessEvidence: true });
+    const restored = await materializeStopChecklist(await api.submit('review_checklist', { includeProcessEvidence: true }), api.submit);
     assert.equal(restored.total, original.total); assert.equal(restored.processFileCount, 30);
     assert.equal(restored.processFilesComplete, false); assert.equal(restored.processFilesContinuation.tool, 'source_ls');
     for (const [i, object] of sourceItems.entries()) await api.submit('submit_review', submission(object, [],

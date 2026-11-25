@@ -13,7 +13,7 @@ import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { STANDING_REGRESSION, STANDING_REGRESSION_TEXT, collectRegressionEvidence, regressionDeviationProblem,
   regressionFailureInventory, regressionNavigation, renderRegressionRun, runStopRegressionCheck, renderRegressionEvidence } from '../lib/runtime-v2/regression-evidence.mjs';
 import { captureTaskStart, taskChanges } from '../lib/runtime-v2/task-changes.mjs';
-import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { stopProtocolFixture, materializeStopChecklist } from './helpers/stop-protocol.mjs';
 import { runProtocolTask } from '../lib/review-task/protocol-task.mjs';
 
 test('regression navigation distinguishes the configured test source without authorizing failures', () => {
@@ -34,6 +34,25 @@ test('regression navigation distinguishes the configured test source without aut
     outputTail: 'suite=task-start\n' };
   assert.deepEqual(regressionNavigation({ evidence, run: unrelated }).programRun.testSource,
     { mode: 'CONFIGURED_COMMAND', currentTestEditsExecuted: null });
+});
+
+test('regression evidence orders complete original case captions without mutating frozen input or tied-line order', () => {
+  const cases = Object.freeze([
+    Object.freeze({ line: 18, title: 'later original assertion' }),
+    Object.freeze({ line: 2, title: 'first assertion on the earlier line' }),
+    Object.freeze({ line: 2, title: 'second assertion on the same earlier line' }),
+  ]);
+  const before = JSON.stringify(cases);
+  const evidence = { base: 'TASK_START', baseCommit: 'generic-base', changes: [], changeCount: 0, diffs: [], testFileCount: 1,
+    testPointers: [{ path: 'test/generic.test.mjs', identifiers: ['resolveInput'], lines: [18, 2], cases }] };
+  const rendered = renderRegressionEvidence(evidence);
+  assert.deepEqual(rendered.split('\n').filter(line => /^    L\d+:/u.test(line)), [
+    '    L2: first assertion on the earlier line',
+    '    L2: second assertion on the same earlier line',
+    '    L18: later original assertion',
+  ]);
+  assert.equal(JSON.stringify(cases), before);
+  assert.deepEqual(evidence.testPointers[0].lines, [18, 2]);
 });
 
 const git = (cwd, ...args) => execFileSync('git', ['-c', 'core.autocrlf=false', '-c', 'user.name=rc-test', '-c', 'user.email=rc-test@example.invalid',
@@ -149,8 +168,9 @@ async function regressionStop(t, { broken = true, regressionCheck, script, resum
           'Offer a 24-character password length option.',
         ]).map(item => ({ metricId: 'M16', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION',
           citeId: original, lineStart: 1, lineEnd: 1, ...(typeof item === 'string' ? { text: item } : item) })) });
-        const checklist = await api.submit('review_checklist', api.brief.attempt === 1 ? scope : { limit: 20 });
-        if (checklist.deferred) return;
+        const firstPage = await api.submit('review_checklist', api.brief.attempt === 1 ? scope : { limit: 20 });
+        if (firstPage.deferred) return;
+        const checklist = await materializeStopChecklist(firstPage, api.submit);
         const finish = await script({ ...api, original, checklist, standing: checklist.items.find(item => item.programStanding === STANDING_REGRESSION), cite });
         await finishReview(finish);
       } catch (error) { failure = error; throw error; }
@@ -193,7 +213,7 @@ const resumedChecklistPage = brief => {
   const matches = [...brief.instruction.matchAll(/^Current checklist page \(JSON data\):\n([^\r\n]+)$/gmu)];
   assert.equal(matches.length, 1, 'deferred review resumes with one current checklist page');
   const [, encoded] = matches[0];
-  assert(Buffer.byteLength(encoded) <= 32 * 1024);
+  assert(Buffer.byteLength(encoded) <= 8192);
   return JSON.parse(encoded);
 };
 
@@ -480,10 +500,10 @@ test('a failed or incomplete public requirement prevents a clean Stop without ca
   for (const status of ['FAIL', 'INCOMPLETE']) {
     const receipt = { ...failedRequirement, status };
     const { result } = await regressionStop(t, { broken: false, regressionCheck: { enabled: true, command: probeCommand([receipt]) },
-      script: async ({ checklist, standing, brief }) => {
+      script: async ({ checklist, standing, brief, submit }) => {
         assert.equal(standing, undefined);
         assert.equal(checklist.requirementCheck.status, status);
-        const page = resumedChecklistPage(brief);
+        const page = await materializeStopChecklist(resumedChecklistPage(brief), submit);
         assert.deepEqual(page, checklist);
         assert(page.items.every(item => item.savedResult === null), 'the preview has not assessed any requirement');
         const { requirementCheck, regressionCheck } = resumeNavigation(brief);
@@ -511,7 +531,7 @@ test('an omitted uniquely bound public failure gets one chance for a current sou
       regressionCheck: { enabled: true, command: probeCommand([failedRequirement]),
         requirementBindings: [{ testId: requirementTest, quote: REQUEST }] },
       async resume({ submit }) {
-        const page = await submit('review_checklist', { limit: 20 });
+        const page = await materializeStopChecklist(await submit('review_checklist', { limit: 20 }), submit);
         [failedCase] = page.requirementCheck.failedCaseEvidence;
         assert(failedCase.binding?.objectId);
         return {};
@@ -530,17 +550,20 @@ test('an omitted uniquely bound public failure gets one chance for a current sou
   });
 });
 
-test('an oversized deferred checklist remains available through the checklist tool', async t => {
+test('an oversized deferred checklist resumes with a bounded page and lossless checklist continuation', async t => {
   const originalItems = Array.from({ length: 14 }, (_, index) => `${index} ${REQUEST} ${'a'.repeat(2500)}`);
   const { result } = await regressionStop(t, { broken: false, originalItems,
     regressionCheck: { enabled: true, command: probeCommand([failedRequirement]) },
     resume: async ({ brief, submit }) => {
-      assert(!brief.instruction.includes('Current checklist page (JSON data):'));
+      const firstPage = resumedChecklistPage(brief);
+      assert(Buffer.byteLength(JSON.stringify(firstPage)) <= 8192);
+      assert(firstPage.items.length < originalItems.length);
       assert.equal(resumeNavigation(brief).requirementCheck.status, 'FAIL');
-      const page = await submit('review_checklist', { limit: 20 });
+      const page = await materializeStopChecklist(firstPage, submit);
       assert.equal(page.items.length, originalItems.length);
+      assert.deepEqual(page.items.map(item => item.description), originalItems);
+      assert(page.items.every(item => item.savedResult === null), 'Continuation does not assess any obligation.');
       assert(Buffer.byteLength(JSON.stringify(page)) > 32 * 1024);
-      assert.equal(page.nextOffset, null);
       return {};
     },
   });
@@ -555,8 +578,9 @@ test('deferred navigation binds the exact failed public case and current code wi
     mutateProject: root => fs.writeFile(path.join(root, 'src/settings.mjs'), SOURCE + '\n// unfinished\n'),
     resume: async ({ brief, submit, cite }) => {
       assert(!brief.instruction.includes(noise));
-      const page = resumedChecklistPage(brief);
-      assert.deepEqual(page, await submit('review_checklist', { limit: 20 }));
+      const firstPage = resumedChecklistPage(brief);
+      assert.deepEqual(firstPage, await submit('review_checklist', { limit: 20 }));
+      const page = await materializeStopChecklist(firstPage, submit);
       const { navigationOnly, requirementCheck } = resumeNavigation(brief);
       assert.equal(navigationOnly, true);
       assert.deepEqual(requirementCheck.checks, mixedRequirement.checks);
@@ -670,7 +694,7 @@ test('a scoped failed case can admit repair only for its exact original producti
       mutateProject: root => fs.writeFile(path.join(root, 'src/settings.mjs'), SOURCE.replace('index >= 0 ? index : DEFAULT_INDEX', 'index')),
       resume: async ({ brief, submit, cite }) => {
         const { requirementCheck } = resumeNavigation(brief);
-        const checklist = await submit('review_checklist', { limit: 20 });
+        const checklist = await materializeStopChecklist(await submit('review_checklist', { limit: 20 }), submit);
         assert.deepEqual(requirementCheck.checks, [{ id: requirementTest, status: 'FAIL' }, { id: fallbackCase, status: 'PASS' }]);
         const target = requirementCheck.productionItems.find(item => item.description === scenario.target);
         const [failedCase] = requirementCheck.failedCaseEvidence;
@@ -715,7 +739,7 @@ test('two failed entry-point checks can bind one multiline original obligation',
     regressionCheck: { enabled: true, command, requirementBindings: testIds.map(testId => ({ testId, quote })) },
     mutateProject: root => fs.writeFile(path.join(root, 'src/settings.mjs'), SOURCE + '\n// unfinished\n'),
     resume: async ({ submit, cite }) => {
-      const checklist = await submit('review_checklist', { limit: 20 });
+      const checklist = await materializeStopChecklist(await submit('review_checklist', { limit: 20 }), submit);
       const target = checklist.items.find(item => item.description === quote);
       assert(target);
       const { failedCaseEvidence } = checklist.requirementCheck;

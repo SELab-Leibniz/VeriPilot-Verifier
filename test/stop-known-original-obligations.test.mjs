@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { stopProtocolFixture, materializeStopChecklist } from './helpers/stop-protocol.mjs';
 import { loadStopOriginalRequirements } from '../lib/runtime-v2/production-stop.mjs';
 import { resolveStopReviewPolicy } from '../lib/runtime-v2/metric-policy.mjs';
 import { readOpenSpecPlan } from '../lib/openspec-plan.mjs';
@@ -68,11 +68,12 @@ async function fixture(t, { conditional = false, external = false, internal = fa
     await readAll();
     const originalFile = brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-0'));
     const originalId = (await read(originalFile)).details.citation.citeId;
-    const page = await submit('set_original_checklist', { items: include ? [{ metricId, verificationTarget: target, text: currentText,
+    const firstPage = await submit('set_original_checklist', { items: include ? [{ metricId, verificationTarget: target, text: currentText,
       ...(conditional ? { applicability: external ? 'A later user requests publishing.' : 'Streaming is enabled.' } : {}),
       ...(formed ? { knownCandidateId: f.candidate.id, knownDutyReason: 'This original duty line states the complete retained obligation.' } : {}),
       citeId: originalId, lineStart: line, lineEnd: line }] : [],
       scope: { stopClassification: stage ? 'STAGE_COMPLETE' : 'TASK_COMPLETE', ...(stage ? { stage: stage === true ? 'proposal' : stage } : {}), completionClaim: true, limit: 20 } });
+    const page = await materializeStopChecklist(firstPage, submit);
     const object = page.items?.find(item => item.description === (formed ? f.requirement : currentText));
     return { originalId, object, originalFile, page };
   };
@@ -445,11 +446,11 @@ for (const collision of [false, true]) test(`distinct same-message duties ${coll
     await tools.readAll();
     const file = tools.brief.task.basisFiles.find(value => path.basename(value).startsWith('user-original-0'));
     const originalId = (await tools.read(file)).details.citation.citeId;
-    const page = await tools.submit('set_original_checklist', { items: f.candidates.map((candidate, index) => ({
+    const page = await materializeStopChecklist(await tools.submit('set_original_checklist', { items: f.candidates.map((candidate, index) => ({
       metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'A model paraphrase.', knownCandidateId: candidate.id,
       knownDutyReason: 'This distinct current original line supports the whole named candidate.',
       citeId: originalId, lineStart: index + 2, lineEnd: index + 2 })),
-      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } }), tools.submit);
     const objects = f.candidates.map(candidate => page.items.find(value => value.description === candidate.requirement));
     assert.notEqual(objects[0].objectId, objects[1].objectId);
     const source = (await tools.read(f.production)).details.citation.citeId;
@@ -524,10 +525,10 @@ test('known source corroboration preserves actual chunk byte offsets instead of 
       const text = await fs.readFile(file, 'utf8'), index = text.split('\n').indexOf(f.requirement);
       if (index >= 0) { original = (await tools.read(file)).details.citation.citeId; localLine = index + 1; break; }
     }
-    const page = await tools.submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+    const page = await materializeStopChecklist(await tools.submit('set_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
       text: 'A shorter wording.', knownCandidateId: f.candidate.id, knownDutyReason: 'The complete duty is on this current part-local line.',
       citeId: original, lineStart: localLine, lineEnd: localLine }],
-      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } }), tools.submit);
     const object = page.items.find(item => item.description === f.requirement);
     assert(object.originalSourceAnchor.byteStart > 16384);
     assert.equal(object.originalSourceAnchor.sha256, f.candidate.source.sha256);
@@ -597,10 +598,10 @@ test('finish repair cannot replace a formed whole-duty PROCESS subject with a na
     const originalId = (await tools.read(file)).details.citation.citeId;
     const sourceItem = { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'Preserve stream ordering.',
       citeId: originalId, lineStart: 2, lineEnd: 2 };
-    const page = await tools.submit('set_original_checklist', { items: [
+    const page = await materializeStopChecklist(await tools.submit('set_original_checklist', { items: [
       { ...sourceItem, metricId: 'M12', verificationTarget: 'PROCESS', knownCandidateId: f.candidate.id,
         knownDutyReason: 'The complete retained duty includes the declared validation execution.' }, sourceItem],
-      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
+      scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } }), tools.submit);
     const narrowed = page.items.find(item => item.metricId === 'M16');
     const source = (await tools.read(f.production)).details.citation.citeId;
     await finish(tools, { summary: 'A shorter source-only subject cannot replace the formed duty.', knownObligations: [knownCurrent(f, narrowed, [source], {
@@ -897,9 +898,11 @@ for (const distinctObjects of [false, true]) test(`three known duties ${distinct
       { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', text: 'Preserve diagnostic labels and retained segment counts.',
         citeId: originalId, lineStart: 3, lineEnd: 4 },
     ], scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } };
-    const page = await tools.submit(tool.name, sdk.validateToolArguments(tool, { name: tool.name, arguments: args }));
+    const firstPage = await tools.submit(tool.name, sdk.validateToolArguments(tool, { name: tool.name, arguments: args }));
+    const page = await materializeStopChecklist(firstPage, tools.submit);
     const objects = page.items.filter(item => item.originalSourceAnchor);
     assert.equal(objects.length, distinctObjects ? 3 : 2);
+    assert.deepEqual(page.knownObligations.items.map(candidate => candidate.id), f.candidates.map(candidate => candidate.id));
     const directory = path.dirname(path.dirname(tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('known-original-observations'))));
     const frozen = await fs.readFile(path.join(directory, 'original-checklist.json'));
     const source = (await tools.read(f.production)).details.citation.citeId;

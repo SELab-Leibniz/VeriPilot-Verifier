@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { stopProtocolFixture, materializeStopChecklist } from './helpers/stop-protocol.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { taskDirectory, findTask } from '../lib/runtime-v2/task-store.mjs';
@@ -57,9 +57,10 @@ async function reviewed(t, { sampled = true, regressionCheck, forged = false } =
           metricId: 'M16', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION', text,
           citeId: original.details.citation.citeId, lineStart: i + 1, lineEnd: i + 1,
         })) });
-        const page = await tools.submit('review_checklist', tools.brief.attempt === 1
+        const firstPage = await tools.submit('review_checklist', tools.brief.attempt === 1
           ? { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } : { limit: 20 });
-        if (page.deferred) return;
+        if (firstPage.deferred) return;
+        const page = await materializeStopChecklist(firstPage, tools.submit);
         const source = await tools.read(producer), span = (start, end = start) => ({ citeId: source.details.citation.citeId, start, end });
         const refs = [];
         for (const selected of sampled ? page.implementationChallenges.selection.selected : []) {

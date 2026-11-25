@@ -1860,8 +1860,8 @@
     "pushActual": "d52afc/session20564 ->dc6dcb/0 CLOSED"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-proof-owner-native-diagnosis-qa/receipt.json",
-    "sha256": "bab7a09536a47d3c34e04c529c29bdc00ab91369ee7f3c8aeb1a6690f22ca7d8"
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-ci-fixtures-v11-qa/receipt.json",
+    "sha256": "9b64476c7e79873fc6fb3e97eeea0c1265f14099dcea81bcb1649eb3a6df9f4d"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -5042,7 +5042,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
-    "htmlSha256": "be16fdeaa2c83b1d82042f4f31136b549d120e35a0297977c1b6818e76d9a6dd",
+    "htmlSha256": "3e4afe7dd091b3f550ac89b1f754ee9c1e931e2941fe0e22cbd9b31506ae7b7a",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
     "precedingDeadlineRunReference": "evaluationRecords.ordinaryOn56efD5",
     "earlierDeadlineFailureMovedToExistingHistory": true,
@@ -8783,7 +8783,7 @@
     "currentArchiveModelOutcomeInherited": false
   },
   "generalToolUsabilityFollowup": {
-    "status": "FOCUSED_AND_SOURCE_PEER_QUALIFIED_NEW_SOURCE_CI_PENDING",
+    "status": "CI_FIXTURES_AND_NODE18_COMPATIBILITY_FOCUSED_QUALIFIED_FRESH_CI_PENDING",
     "scope": [
       "Actionable strict original-source range diagnostics",
       "Lossless byte-bounded Stop checklist transport",
@@ -8855,17 +8855,114 @@
     "workingRuntimePostimages": {
       "lib/document-tools.mjs": "c63f6ac12fe23efaedd4880a784660dc1fddb7cd2913971ddb332cc928ad8b46",
       "lib/runtime-v2/review-result-validation.mjs": "8d0bf66e3fa2e4d5e74e2f6da6d1b1ddaebe31dd0044179a9bf2db76b4928dde",
-      "lib/runtime-v2/stop-workspace-review.mjs": "bc0e175c1edc3e41e09c6e6b729d864fbc96498bd4c927fb74f9038057d0fdb0"
+      "lib/runtime-v2/stop-workspace-review.mjs": "bc0e175c1edc3e41e09c6e6b729d864fbc96498bd4c927fb74f9038057d0fdb0",
+      "lib/runtime-v2/regression-evidence.mjs": "ee0fc55cedc49740ba78660963a69ad52ce2da3b0abbf12e4071fcf2e45b044a"
     },
-    "sourceCommit": "ROOT_PENDING_COMMIT_BINDING",
-    "oldFailedAndUnflaggedControlsPreserved": true
+    "sourceCommit": "8252042d7574bb5201cec5230b9c350b63c85197",
+    "oldFailedAndUnflaggedControlsPreserved": true,
+    "ownSourceCi": {
+      "runId": 45522205651,
+      "attempt": 1,
+      "headSha": "8252042d7574bb5201cec5230b9c350b63c85197",
+      "status": "completed",
+      "conclusion": "failure",
+      "testJobs": {
+        "success": 3,
+        "failure": 6
+      },
+      "publisher": "skipped",
+      "failureScope": "Six existing fixtures consumed a single page or direct now-deferred fields. Test migrations in progress; no acceptance-rule relaxation.",
+      "ubuntu": {
+        "files": 407,
+        "tests": 5217,
+        "pass": 5154,
+        "fail": 26,
+        "skip": 37,
+        "fileTimeouts": 0
+      },
+      "macos": {
+        "files": 407,
+        "tests": 5217,
+        "pass": 5158,
+        "fail": 26,
+        "skip": 33,
+        "fileTimeouts": 0
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-8252042-natural-f45mv8pc/terminal-receipt.json",
+        "sha256": "28debced8c996c18473af6f27f4d986ced888e1bc2a72aaa36887b6d87443181"
+      },
+      "windows": {
+        "files": 407,
+        "tests": 5215,
+        "pass": 5144,
+        "fail": 26,
+        "skip": 45,
+        "fileTimeouts": 0,
+        "shards": [
+          102,
+          102,
+          102,
+          101
+        ]
+      }
+    },
+    "ciFixtureMigration": {
+      "status": "FOCUSED_AND_INDEPENDENT_SOURCE_PEERS_CLEAR",
+      "qualifications": {
+        "fixtureHelper": {
+          "path": ".runtime-correction/validation/ci-checklist-fixture-migration-tracked-v3-cv7wp4nm/qualification-receipt.v2.json",
+          "sha256": "bd186a4b0cc29fb4a2be0bec0e65c8a1fca8e5df21aa02e27e2fcb8dbefccd24"
+        },
+        "regressionAndKnown": {
+          "path": ".runtime-correction/validation/ci-825-node18-sort-fix-yygv0t0s/qualification-receipt.json",
+          "sha256": "b2f32f64ad45c77a64c2d9ff2a2a1e5f5bbf083104999266319fbd8318c05200"
+        },
+        "failedOriginalCi": {
+          "path": ".runtime-correction/validation/ci-fix/post-8252042-natural-f45mv8pc/terminal-receipt.json",
+          "sha256": "28debced8c996c18473af6f27f4d986ced888e1bc2a72aaa36887b6d87443181"
+        }
+      },
+      "affectedFiles": 6,
+      "eachLocalNode18And24": {
+        "tests": 335,
+        "pass": 334,
+        "skip": 1,
+        "fail": 0
+      },
+      "node18Args": [
+        "--experimental-global-webcrypto"
+      ],
+      "productionAcceptanceRulesUnchanged": true,
+      "runtimeCoreThreeUnchanged": true,
+      "earlierFailuresPreserved": true
+    },
+    "compatibilityFix": {
+      "module": "lib/runtime-v2/regression-evidence.mjs",
+      "postimageSha256": "ee0fc55cedc49740ba78660963a69ad52ce2da3b0abbf12e4071fcf2e45b044a",
+      "reason": "DeclaredNode>=18 could not render nonempty regression case pointers using Array.toSorted. Copy plus stable sort preserves input and order.",
+      "eachLocalNode18And24": {
+        "tests": 132,
+        "pass": 132,
+        "fail": 0
+      },
+      "priorNode18FailuresPreserved": 18,
+      "newGenericFrozenInputAndStableTieControl": true,
+      "sourcePeer": "CLEAR",
+      "qualification": {
+        "path": ".runtime-correction/validation/ci-825-node18-sort-fix-yygv0t0s/qualification-receipt.json",
+        "sha256": "b2f32f64ad45c77a64c2d9ff2a2a1e5f5bbf083104999266319fbd8318c05200"
+      }
+    },
+    "expectedChangedRuntimeModulesAgainstCanonical": 4,
+    "successorSourceCommit": "ROOT_PENDING_COMMIT_BINDING"
   },
   "reportCurrentQaBeforeProofOwnerDiagnosis": {
     "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-method-complete-unverified-qa/receipt.json",
     "sha256": "ee7a93a88f48e97e084c8f9bee59c7ac1a808d720d610b7b63954db7e6fd8e02"
   },
   "nativeBootFollowup": {
-    "status": "OWN_VENDOR_LOG_SELF_KILL_REPORTED_SOCKET_PATH_FEASIBILITY_CONFIRMED_V11_PREPARING",
+    "status": "SHORT_PATH_SOCKET_OBSERVED_BOOT_ABORTED_ON_UID0_OWNER_GUARD",
     "freshLogReceipt": {
       "path": ".runtime-correction/validation/phone-v10-fresh-log-forensics-q_vtvwfd/receipt.json",
       "sha256": "863ee9113fcbf4c0da6fb759281121b79c692e554b1f2175be0c615fc98ed48b"
@@ -8895,6 +8992,34 @@
       "shortResult": "BOUND",
       "ownPathsCleaned": true,
       "SDKOrVmLaunched": false
+    },
+    "latestAttempt": {
+      "sourceHoldSha256": "2472bbdea1dca7280b78a25fe8153a1b010fa28bbff21fcd0251baf1f39f4631",
+      "actual": "beff69/session99753 ->50684a/1 CLOSED",
+      "elapsedMs": 16023.075249999238,
+      "status": "UNAVAILABLE",
+      "code": "FOREIGN_OR_AMBIGUOUS_PROCESS_OWNER",
+      "uid0CandidateFunctionKnown": false,
+      "candidateAdoptedOrSignalled": false,
+      "knownBirthsCleared": 19,
+      "knownGroupsCleared": 14,
+      "newPortsCleared": 2,
+      "shortSocketPathBytes": 69,
+      "freshLogIpcNameErrors": 0,
+      "bootReadinessProven": false,
+      "watchdogCauseOrFixProven": false,
+      "readback": {
+        "path": ".runtime-correction/validation/phone-v11-actual-readback-srmt5ahw/readback.json",
+        "sha256": "c3ec8fcb1c6ffc60eb4db0f971fb001b0aaa6086f866a5f77e6612a8576f436d"
+      },
+      "rootIndependentCleanup": {
+        "path": ".runtime-correction/validation/phone-v11-short-temp-held-sgcf76_c/root-independent-cleanup.json",
+        "sha256": "2382825ea43e510c6138d2fd5943123a28f86791b79e08138773c2396c69e4fc"
+      }
     }
+  },
+  "reportCurrentQaBeforeCiFixtureFailure": {
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-proof-owner-native-diagnosis-qa/receipt.json",
+    "sha256": "bab7a09536a47d3c34e04c529c29bdc00ab91369ee7f3c8aeb1a6690f22ca7d8"
   }
 }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { stopProtocolFixture, materializeStopChecklist } from './helpers/stop-protocol.mjs';
 import { normalizeMessages } from '../lib/openclaw/transcript.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
@@ -50,7 +50,7 @@ async function readWhole(read,file,options={}){
  let offset=1,last;do{last=await read(file,{offset,...options});offset=last.details.page.nextOffset;}while(offset!==null);return last;
 }
 async function navigation(tools){
- await tools.readAll();const list=await tools.submit('review_checklist',{stopClassification:'TASK_COMPLETE'});
+ await tools.readAll();const list=await materializeStopChecklist(await tools.submit('review_checklist',{stopClassification:'TASK_COMPLETE'}),tools.submit);
  assert.equal(list.processEvidence.navigationOnly,true);assert.equal(list.processEvidence.executionResultFileCount>=1,true);
  return list.processEvidence;
 }
@@ -162,7 +162,7 @@ test('SOURCE-owned metric claims retain process snapshot guard; file assessments
  const f=await fixture(t,terminal(0),'IMPLEMENTATION');let claimed;
  assert.equal(f.input.schema.properties.fileAssessments.items.properties.processClaims,undefined);
  const handle=await f.run(async tools=>{await tools.readAll();
-  const list=await tools.submit('review_checklist',{stopClassification:'TASK_COMPLETE',includeProcessEvidence:true});
+  const list=await materializeStopChecklist(await tools.submit('review_checklist',{stopClassification:'TASK_COMPLETE',includeProcessEvidence:true}),tools.submit);
   const n=resultFile(list.processEvidence,'result-1');await readFact(tools,n.fact);claimed=claimFrom(n.fact);
   const page=await readWhole(tools.read,n.file);
   await assert.rejects(tools.submit('submit_review',{...submission(claimed,page.details.citation.citeId),taskId:'file:spec.md'}),/processClaims apply to original metric items; omit for file assessments/);

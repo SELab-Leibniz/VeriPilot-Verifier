@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { stopProtocolFixture } from './helpers/stop-protocol.mjs';
+import { stopProtocolFixture, materializeStopChecklist } from './helpers/stop-protocol.mjs';
 import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 import { loadReviewCheckpoint } from '../lib/review-task/history-memory.mjs';
 import { atomicWriteJson, sha256 } from '../lib/runtime-v2/utils.mjs';
@@ -66,7 +66,7 @@ test('workspace review binds a historical process inversion to original calls an
     { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'status', is_error: false, content: 'Status returned successfully.' }] } });
   const handle = await f.run(async ({ readAll, read, submit }) => {
     await readAll();
-    const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true });
+    const checklist = await materializeStopChecklist(await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true }), submit);
     const ids = [];
     for (const sample of checklist.processEvidence.executionSamples) {
       for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push((await read(file)).details.citation.citeId);
@@ -95,7 +95,7 @@ test('ordinary and partial process-deviation channels cannot bypass historical c
       const finding = mode.startsWith('finding-'), repair = mode.endsWith('current-repair');
       const handle = await f.run(async ({ readAll, read, submit }) => {
         await readAll();
-        const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true });
+        const checklist = await materializeStopChecklist(await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', includeProcessEvidence: true }), submit);
         const sample = checklist.processEvidence.executionSamples[0], ids = [];
         for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push((await read(file)).details.citation.citeId);
         const receipt = finding ? await submit('submit_finding', { deviationKey: 'process-finding', rootCauseId: 'REQUIREMENT_OMITTED',
@@ -138,7 +138,7 @@ test('program scope verification runs between native calls and resumes the same 
       nativeSettled = true;
       return;
     }
-    const checklist = await submit('review_checklist', { limit: 20 });
+    const checklist = await materializeStopChecklist(await submit('review_checklist', { limit: 20 }), submit);
     assert.equal(checklist.items.length, 1);
     assert.equal(checklist.programEvidenceFiles.length, 1);
     assert.equal((await submit('review_scope', { stopClassification: 'TASK_COMPLETE', summary: 'Same scope.' })).reused, true);
@@ -656,7 +656,7 @@ test('receipt navigation excludes saved U/D and automatic rows, includes file qu
   f.input.request.fileQualityReviewEnabled = true;
   f.input.request.artifactCandidates = [{ artifactId: 'spec', files: [{ path: 'spec.md', sha256: sha256(await fs.readFile(f.file)) }] }];
   const handle = await checkedVersionRun(f, async ({ brief, readAll, read, submit }) => {
-    await readAll(); const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', limit: 20 });
+    await readAll(); const checklist = await materializeStopChecklist(await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', limit: 20 }), submit);
     assert.equal(checklist.items.find(item => item.taskId === 'M12:R3').savedResult.judgement, 'DEVIATION');
     const first = await f.result(submit, [], 'UNVERIFIED'), nav = first.pendingNavigation;
     assert.equal(first.pending, 2); assert.deepEqual(nav.pendingIds, ['M01:R2', 'file:spec.md']);
@@ -965,7 +965,7 @@ test('missing execution records remain visible for a reviewer to record unresolv
   f.input.request.population.metrics = { M12: [{ ...original, objectId: 'M12:R1', metricId: 'M12', verificationTarget: 'PROCESS' }] };
   const handle = await f.run(async ({ readAll, read, submit }) => {
     await readAll(); const scope = await f.scope(submit), process = await read(scope.processFiles[0]);
-    const checklist = await submit('review_checklist', {});
+    const checklist = await materializeStopChecklist(await submit('review_checklist', {}), submit);
     assert.deepEqual(checklist.items[0].executionProof, { forVerdicts: ['PASS', 'DEVIATION'], availableResultFileCount: 0 });
     assert.equal(checklist.processEvidence.navigationOnly, true);
     assert.equal(checklist.processEvidence.executionResultFileCount, 0);
@@ -1095,7 +1095,7 @@ test('M08 exposes original Skill conditions and dependencies within the same rev
   const handle = await f.run(async ({ readAll, read, submit }) => {
     await readAll(); const scope = await f.scope(submit), process = await read(scope.processFiles[0]);
     const save = item => submit('submit_review', { taskId: item.objectId, verdict: 'PASS', reason: 'Original conditions and attributed process evidence were checked.', citeIds: [process.details.citation.citeId] });
-    const checklist = await submit('review_checklist', {});
+    const checklist = await materializeStopChecklist(await submit('review_checklist', {}), submit);
 
     const readFiles = new Set();
     for (const item of checklist.items) for (const file of item.originalSkillBasis.requiredFiles) if (!readFiles.has(file)) { await read(file); readFiles.add(file); }
@@ -1125,7 +1125,7 @@ test('M08 workspace Stop reads the exact adopted duplicate source instead of a h
   f.input.skillRoots = [extra]; f.input.hostAdapter = openclawHost;
   const handle = await f.run(async ({ readAll, read, submit }) => {
     await readAll(); const scope = await f.scope(submit), process = await read(scope.processFiles[0]);
-    const checklist = await submit('review_checklist', {}), disclosed = new Set();
+    const checklist = await materializeStopChecklist(await submit('review_checklist', {}), submit), disclosed = new Set();
     for (const item of checklist.items) {
       assert.equal(item.originalSkillBasis.error, undefined);
       assert(item.originalSkillBasis.requiredFiles.includes(file));
@@ -1162,7 +1162,7 @@ test('mixed Skill applicability, missing execution and real implementation keep 
     reason: 'The complete original user input establishes a numeric-only task outside the array branch.' };
   assert.deepEqual(Object.values(f.input.request.population.metrics).flat().map(item => item.objectId).sort(), Object.keys(MIXED_SKILL_EXPECTED).sort());
   const handle = await f.run(async ({ readAll, read, submit }) => {
-    await readAll(); const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' });
+    await readAll(); const checklist = await materializeStopChecklist(await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' }), submit);
     assert.equal(checklist.total, 4); assert.equal(checklist.pending, 4);
     const skillItem = checklist.items.find(item => item.metricId === 'M08');
     assert.deepEqual(skillItem.proofOwners, ['PROCESS']);
@@ -2441,7 +2441,7 @@ test('production Stop never admits an unclassified process claim, but keeps a re
       for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
       await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS',
         text: 'Set active mode to release before completion.', citeId: original, lineStart: 1, lineEnd: 1 }] });
-      const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true });
+      const checklist = await materializeStopChecklist(await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true }), submit);
       const ids = [];
       for (const sample of checklist.processEvidence.executionSamples) for (const file of [...sample.invocationFiles, sample.resultFile]) ids.push(await tools.read(file));
       const objectId = checklist.items[0].taskId;
@@ -2475,7 +2475,7 @@ test('production Stop closes with historical deviation, keeps the deviation and 
     for (const file of tools.task.basisFiles) { const id = await tools.read(file); if (path.basename(file).startsWith('user-original-')) original = id; }
     await submit('set_original_checklist', { items: [{ metricId: 'M11', verificationTarget: 'PROCESS',
       text: 'Query status before creating the change.', citeId: original, lineStart: 1, lineEnd: 1 }] });
-    const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true });
+    const checklist = await materializeStopChecklist(await submit('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, includeProcessEvidence: true }), submit);
     const citations = [];
     for (const sample of checklist.processEvidence.executionSamples) for (const file of [...sample.invocationFiles, sample.resultFile]) citations.push(await tools.read(file));
     const id = checklist.items[0].taskId;
