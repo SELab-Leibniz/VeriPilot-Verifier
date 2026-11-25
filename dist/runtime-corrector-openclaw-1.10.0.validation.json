@@ -1576,12 +1576,12 @@
   "reportCurrentQa": {
     "status": "PASS",
     "report": ".runtime-correction/runtime-corrector-progress.html",
-    "htmlSha256": "a274d1174cd0eb414ca31a8e5e5ea9e86d0337e377097c8e4a7bc22f3b18175f",
+    "htmlSha256": "59a136f08c30fcfb9cd51384fa2e04865c088fb614efe5df915e12b3b2fcdefd",
     "receipt": {
-      "path": ".runtime-correction/validation/root-navigation-ci-report-s1m2qfkp/report-qa/receipt.json",
-      "sha256": "8ba7fa5e225d9bbc0cd2ad5f84a07f646aba29dbdece59d3eb0a1cfda1f8ac39"
+      "path": ".runtime-correction/validation/root-guard-local-report-pending/receipt.json",
+      "sha256": "2dfd526f7353ef144c9194013fa1b360cec02067141303ddbe3c4bf0af065532"
     },
-    "actual": "78b91c/session38740 ->7ddb8c/0 CLOSED",
+    "actual": "3ab7aa/session60474 ->41647c/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1598,7 +1598,8 @@
     "browserErrors": 0,
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
-    "visualReadback": "phone-en-1200 inspected; navigation-only source CI is clearly separate from unreleased loop guard; no overflow"
+    "visualReadback": "walkthrough-en-1200 inspected; current failed model trial and local guard controls clearly separated from ownCI/package/model pending gates; no overflow",
+    "outputNamingNote": "Fresh render output used separate root-guard-local-report-pending directory; receipt is PASS and binds current HTML."
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4657,7 +4658,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CURRENT_PACKAGE_TRIAL_CLOSED_INCOMPLETE_GRADED37PASS_SEPARATE2FAIL",
-    "htmlSha256": "a274d1174cd0eb414ca31a8e5e5ea9e86d0337e377097c8e4a7bc22f3b18175f",
+    "htmlSha256": "59a136f08c30fcfb9cd51384fa2e04865c088fb614efe5df915e12b3b2fcdefd",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn4f8b71f13dc",
     "precedingCompletedRunReference": "evaluationRecords.ordinaryOn7c0286F020",
     "precedingWalkthroughMovedToExistingHistory": true,
@@ -10199,7 +10200,7 @@
     "visualReadback": "walkthrough-en-1200 inspected; closed current failure separated from preceding fully evaluated result; no overflow"
   },
   "prospectiveReviewerReliabilityFollowup": {
-    "status": "TRANSCRIPT_BOUNDS_OWN_NINE_CI_PASS_GUARD_PRIVATE_SUCCESSOR_INTEGRATION",
+    "status": "GENERAL_READ_LOOP_GUARD_REVIEWED_INTEGRATED_SUPPORTED_HOST_FOCUSED_PASS_OWN_CI_PENDING",
     "navigationIntegration": {
       "path": ".runtime-correction/validation/root-transcript-bounds-integration-64uxrmcp/integration.json",
       "sha256": "38e91ce3bae716919bd2e4cb3ed60dbba795b6d7710dddb6e76d4e43cbf84037"
@@ -10238,7 +10239,40 @@
       },
       "includesNewGuard": false
     },
-    "guardNotYetReleasedOrModelTested": true
+    "guardNotYetReleasedOrModelTested": true,
+    "guardSourceHold": {
+      "path": ".runtime-correction/validation/reviewer-read-loop-v2-private-g43p8o8p/source-hold.scope-corrected.json",
+      "sha256": "aa76550a0d275967fc0c92801cb08a42e8e4fe1eccdf5312ae26da7810c8e830"
+    },
+    "guardSourcePeer": {
+      "path": ".runtime-correction/validation/reviewer-read-loop-v2-private-g43p8o8p/peer-retention-source.json",
+      "sha256": "09bfe40c6d92fa1749195a18a5b28fd6c81392763916b1cf9aeced5c774ce48b"
+    },
+    "guardRootIntegration": {
+      "path": ".runtime-correction/validation/root-reviewer-read-loop-integration-p6c77ld5/integration.json",
+      "sha256": "1abc8d4c9e124f918fb5d9e1c3eb60b205cc5eeec651c8614931bf92493a38d6"
+    },
+    "guardRootQualification": {
+      "path": ".runtime-correction/validation/root-reviewer-read-loop-integration-p6c77ld5/qualification.json",
+      "sha256": "365f372b270b543bcf56ed183557102cde37ece876f3560bf6b7a1b02b5e1c66"
+    },
+    "newGuardControlsEachNode": 21,
+    "supportedNode24RelatedChecks": {
+      "pass": 77,
+      "total": 77,
+      "new21Included": true
+    },
+    "coachingDelivery": "ISSUED_UNCONFIRMED",
+    "sourceObservationScope": "Only exact absolute aliases in a host-declared catalog, within owning ALS native reviewer. Relative or unknown source paths retain normal behavior without guard intervention.",
+    "reviewerScope": "Read-only normal factory except independent ground-truth baseline coverage audit. Dedicated task-engine loops remain separate.",
+    "termination": "One navigation-only notice then bounded continued repetition in later host-observed assistant boundaries; REVIEWER_NO_PROGRESS_UNVERIFIED, same original worker/controller/deadline/native settlement. No source proof, semantic verdict, repair authority, quota renewal or retry.",
+    "node18FullInstalledHostAttempt": {
+      "pass": 76,
+      "total": 77,
+      "fail": 1,
+      "qualified": false,
+      "reason": "Existing full SDK policy test imports Array.toSorted. Node18 is outside installed OpenClaw engines. All21 new controls passed; original raw failure retained."
+    }
   },
   "reportCurrentQaBeforeNavigationCi": {
     "status": "PASS",
@@ -10266,5 +10300,32 @@
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
     "visualReadback": "walkthrough-en-1200 inspected; current37pass/separate2fail and unchangedcode clearly separated from preceding graded result; no overflow"
+  },
+  "reportCurrentQaBeforeLocalGuardChecks": {
+    "status": "PASS",
+    "report": ".runtime-correction/runtime-corrector-progress.html",
+    "htmlSha256": "a274d1174cd0eb414ca31a8e5e5ea9e86d0337e377097c8e4a7bc22f3b18175f",
+    "receipt": {
+      "path": ".runtime-correction/validation/root-navigation-ci-report-s1m2qfkp/report-qa/receipt.json",
+      "sha256": "8ba7fa5e225d9bbc0cd2ad5f84a07f646aba29dbdece59d3eb0a1cfda1f8ac39"
+    },
+    "actual": "78b91c/session38740 ->7ddb8c/0 CLOSED",
+    "views": 4,
+    "languages": [
+      "en",
+      "zh-CN"
+    ],
+    "widths": [
+      1200,
+      390
+    ],
+    "sections": 6,
+    "collapsedHistories": 3,
+    "internalLinks": 7,
+    "externalRequests": 0,
+    "browserErrors": 0,
+    "rawHtmlNoExternalUrlDateOrHash": true,
+    "humanizerApplied": true,
+    "visualReadback": "phone-en-1200 inspected; navigation-only source CI is clearly separate from unreleased loop guard; no overflow"
   }
 }
