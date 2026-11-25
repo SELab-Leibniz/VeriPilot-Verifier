@@ -27,7 +27,7 @@ const manifest = (root, text, extra = {}) => loadStopOriginalRequirements({ proj
 test('whole SDD adopts normative relative Markdown references, separates examples and closes a cycle', async t => {
   const root = await project(t, {
     'docs/main.md': ['# SDD', '## 规范性附录', '- [附件甲](sub/a%20b.md#rule)', '### 资料性示例', '- [old](example.md)',
-      '#### An old release', '- sample.md', '## Requirements', '附录为强制约束：`second.md»，`other.md» 仅供参考。',
+      '#### An old release', '- sample.md', '## Requirements', '附录为强制约束：`second.md`，`other.md` 仅供参考。',
       '```markdown', 'Required annex: pretend.md', '```'].join('\n'),
     'docs/sub/a b.md': 'The governing original is [main](../main.md).\nRequired annex: ../second.md.',
     'docs/second.md': 'No retries.', 'docs/example.md': 'Old.', 'docs/other.md': 'Old.',
@@ -90,6 +90,21 @@ test('the task-start original supplies transitive annexes after the live root is
     [{ root, path: 'sdd.md', status: 'MODIFIED', original, bytes: original.length, sha256: sha256(original) }] });
   assert.deepEqual(basis.acceptanceSources.map(row => row.path), ['sdd.md', 'original.md']);
   assert.equal(basis.acceptanceSources[0].sha256, sha256(original));
+});
+
+test('an implicit project SDD and its annex stay in scope even above the legacy manifest limit', async t => {
+  const root = await project(t, { 'AGENTS.md': '# SDD\nMandatory annex: rules.md.', 'rules.md': 'Sealed mode uses zero.' });
+  const expected = ['AGENTS.md', 'rules.md'];
+  const first = await manifest(root, 'Implement the release.');
+  assert.deepEqual(first.acceptanceSources.map(row => row.path), expected);
+  assert.equal(first.acceptanceSources[0].declaredBy.ref, 'project:instructions');
+  const original = ('A'.repeat(120) + '\n').repeat(35000) + 'Mandatory annex: rules.md.';
+  await fs.writeFile(path.join(root, 'AGENTS.md'), original);
+  const large = await manifest(root, 'Implement the release.');
+  assert(!large.projectFiles.some(row => row.path === 'AGENTS.md'));
+  assert.deepEqual(large.acceptanceSources.map(row => row.path), expected);
+  assert.equal(large.acceptanceSources[0].sha256, sha256(original));
+  assert.equal(large.acceptanceSources[0].lines, 35001);
 });
 
 test('a gap in either half of a split original line survives overlapping receipts and out-of-order reads', () => {
