@@ -229,6 +229,25 @@
       "admittedRequests": 30,
       "snapshotOnly": true,
       "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
+    },
+    "phase": "APPLY_RUNNING",
+    "proposalOriginalTurn": "CLEAN_OK",
+    "proposalReady": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/proposal-ready.json",
+      "sha256": "deaf2cc6a52a2473f3e83e87be100093d270eb217c0225095fc034d4e5facabd"
+    },
+    "proposalPlanFilesFullyRead": 5,
+    "ordinaryApprovedSteps": 7,
+    "rootOrdinaryApprovalActual": "ca06b4/0",
+    "rootOrdinaryApproval": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/apply-admission.json",
+      "sha256": "cff60828e33487867378b64b8cd7d1babb72bcd8791c525f7bf0c1440b63ebe3"
+    },
+    "officialStrictOpenSpecValidation": "1of1PASS",
+    "applyOriginalRunId": "cd9b0f0c-49dd-407d-9773-0a8a60d9a046",
+    "applyAccepted": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/live/apply-accepted.json",
+      "sha256": "fbf3c422b7a1e1806c50b7bb31d1890bec124f4be722f4fb6031531a1d3c66cb"
     }
   },
   "latestCompletedDevelopmentRun": {
@@ -1576,7 +1595,7 @@
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "status": "PUSHED_FEATURE_BRANCH_ONLY_OWN_PLACEMENT_CI_PENDING",
+    "status": "PUSHED_FEATURE_BRANCH_ONLY_OWN_NATURAL_CI_PASS",
     "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
     "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
     "sourceCiRun": 45526199148,
@@ -1592,8 +1611,8 @@
     "publicationReceiptPath": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/branch-publication.json"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-live-boot-pass-qa/receipt.json",
-    "sha256": "d52fdb8252553d5b423f0c494f8ea98f3b8f062489ea14b53969de6559d738c9"
+    "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-apply-active-qa/receipt.json",
+    "sha256": "5cb5d586f1d7572659901a50eab300599c10b5d93f679ff69a3fb2fb5f48e160"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4712,7 +4731,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
-    "htmlSha256": "48edb2be143dcdd171180ef40c1125c5ec179e4d23b085787d2dadfcb6e1fb33",
+    "htmlSha256": "ff57bb146bf073bc89afa6296a0cf4440531c8bfecd876718d683d2a5cf30e94",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
     "precedingDeadlineRunReference": "evaluationRecords.ordinaryOn56efD5",
     "earlierDeadlineFailureMovedToExistingHistory": true,
@@ -4971,21 +4990,24 @@
   },
   "latestNaturalCiObservation": {
     "status": "SUCCESS_NINE_TEST_JOBS_PUBLISHER_SKIPPED",
+    "headSha": "4103ffabecae1ff0b3277f1f9a3a6a8698f58956",
     "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
-    "runId": 45526199148,
+    "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
+    "runId": 45533719681,
     "attempt": 1,
     "receipt": {
-      "path": ".runtime-correction/validation/ci-fix/post-6efc4dd-natural-y4pw97pk/terminal-receipt.json",
-      "sha256": "da10bb41a7db99f1de29ee889f361ebcd626f506cade7f63c2e28e3e9ac0743a"
+      "path": ".runtime-correction/validation/ci-fix/post-4103ffa-natural-uu0za8hc/terminal-receipt.json",
+      "sha256": "deb70f391c3d299fd3f358b5e0fee4ac81fc3b735e3dfc84925eed6807557946"
     },
     "independentReadback": {
-      "path": ".runtime-correction/validation/ci-fix/post-6efc4dd-natural-y4pw97pk/final-readback.json",
-      "sha256": "604b79e7eaded294b6fee28a5bb36dc0a4690f00829fca4eaf4596d72d5392ad"
+      "path": ".runtime-correction/validation/ci-fix/post-4103ffa-natural-uu0za8hc/final-readback.json",
+      "sha256": "ab1fee640cbbe3c05d20e6c366099caa0d2be7478d8684ad6418b4dc0d5fb485"
     },
-    "fullFileInventory": 407,
-    "allOwnCheckoutHeadsExact": true,
+    "ownCheckoutAndOriginalUtf8LogsVerified": true,
+    "fullInventory": 407,
     "windowsDisjointUnion": 407,
-    "noFailedCancelledOrTimedOutFiles": true
+    "noFailuresOrTimeouts": true,
+    "inheritsPreviousPublicationCi": false
   },
   "previousReportWalkthrough": {
     "status": "COMPLETED_HEALTHY_SINGLE_ON_FINITE_SCOPE",
@@ -6939,6 +6961,10 @@
     {
       "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-qa/receipt.json",
       "sha256": "307c7734ba02fed28421689bba767339008a80bda51253ba09598deb394b5580"
+    },
+    {
+      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-live-boot-pass-qa/receipt.json",
+      "sha256": "d52fdb8252553d5b423f0c494f8ea98f3b8f062489ea14b53969de6559d738c9"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -7419,13 +7445,25 @@
     }
   },
   "distributionPlacementCi": {
-    "status": "IN_PROGRESS_OWN_PUBLICATION_RUN",
+    "status": "SUCCESS_NINE_TEST_JOBS_PUBLISHER_SKIPPED",
+    "headSha": "4103ffabecae1ff0b3277f1f9a3a6a8698f58956",
     "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
     "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
-    "headSha": "4103ffabecae1ff0b3277f1f9a3a6a8698f58956",
     "runId": 45533719681,
-    "inheritsPreviousPublicationCi": false,
-    "attempt": 1
+    "attempt": 1,
+    "receipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-4103ffa-natural-uu0za8hc/terminal-receipt.json",
+      "sha256": "deb70f391c3d299fd3f358b5e0fee4ac81fc3b735e3dfc84925eed6807557946"
+    },
+    "independentReadback": {
+      "path": ".runtime-correction/validation/ci-fix/post-4103ffa-natural-uu0za8hc/final-readback.json",
+      "sha256": "ab1fee640cbbe3c05d20e6c366099caa0d2be7478d8684ad6418b4dc0d5fb485"
+    },
+    "ownCheckoutAndOriginalUtf8LogsVerified": true,
+    "fullInventory": 407,
+    "windowsDisjointUnion": 407,
+    "noFailuresOrTimeouts": true,
+    "inheritsPreviousPublicationCi": false
   },
   "nextLiveLedgerPilot": {
     "status": "EXERCISED_PARTIAL_OR_LATE_STOP_DEADLINE_E_NOT_MET_CODE_GRADE_PASS",
