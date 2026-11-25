@@ -1860,8 +1860,8 @@
     "pushActual": "d52afc/session20564 ->dc6dcb/0 CLOSED"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-ci-fixtures-v11-qa/receipt.json",
-    "sha256": "9b64476c7e79873fc6fb3e97eeea0c1265f14099dcea81bcb1649eb3a6df9f4d"
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-green-ci-boot-observed-qa-v2/receipt.json",
+    "sha256": "3e75826ba92d465d57c28aa8b545faae9fd144e4fab6c9017aac324494ce9d65"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -5042,7 +5042,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
-    "htmlSha256": "3e4afe7dd091b3f550ac89b1f754ee9c1e931e2941fe0e22cbd9b31506ae7b7a",
+    "htmlSha256": "679c5f5030fd7def54796c321ae34d8e8de37780848de08a599835c0e6ff6d93",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
     "precedingDeadlineRunReference": "evaluationRecords.ordinaryOn56efD5",
     "earlierDeadlineFailureMovedToExistingHistory": true,
@@ -7249,6 +7249,10 @@
     {
       "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-live-apply-qa-v2/receipt.json",
       "sha256": "6115c0324de4331f8720b393b0fc51182a8b2ba8050230f26cb0c6552014d9a4"
+    },
+    {
+      "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-ci-fixtures-v11-qa/receipt.json",
+      "sha256": "9b64476c7e79873fc6fb3e97eeea0c1265f14099dcea81bcb1649eb3a6df9f4d"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -8783,14 +8787,14 @@
     "currentArchiveModelOutcomeInherited": false
   },
   "generalToolUsabilityFollowup": {
-    "status": "CI_FIXTURES_AND_NODE18_COMPATIBILITY_FOCUSED_QUALIFIED_FRESH_CI_PENDING",
+    "status": "SOURCE_CI_GREEN_BUILD_AND_ARTIFACT_PASS_FRESH_STOCK_SETUP_REPAIR_PENDING",
     "scope": [
       "Actionable strict original-source range diagnostics",
       "Lossless byte-bounded Stop checklist transport",
       "Explicit original proof-subject guidance and bounded required-versus-actual evidence diagnostics"
     ],
     "currentArchiveLiveResultInherited": false,
-    "wipCiQualified": false,
+    "wipCiQualified": true,
     "formalBenchmarkCredit": 0,
     "localization": {
       "path": ".runtime-correction/validation/unverified-proof-owner-localization-25084-y7sjd4ph/fault-localization.json",
@@ -8858,53 +8862,43 @@
       "lib/runtime-v2/stop-workspace-review.mjs": "bc0e175c1edc3e41e09c6e6b729d864fbc96498bd4c927fb74f9038057d0fdb0",
       "lib/runtime-v2/regression-evidence.mjs": "ee0fc55cedc49740ba78660963a69ad52ce2da3b0abbf12e4071fcf2e45b044a"
     },
-    "sourceCommit": "8252042d7574bb5201cec5230b9c350b63c85197",
+    "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
     "oldFailedAndUnflaggedControlsPreserved": true,
     "ownSourceCi": {
-      "runId": 45522205651,
+      "status": "SUCCESS_NINE_TEST_JOBS_PUBLISHER_SKIPPED",
+      "runId": 45526199148,
       "attempt": 1,
-      "headSha": "8252042d7574bb5201cec5230b9c350b63c85197",
-      "status": "completed",
-      "conclusion": "failure",
-      "testJobs": {
-        "success": 3,
-        "failure": 6
-      },
-      "publisher": "skipped",
-      "failureScope": "Six existing fixtures consumed a single page or direct now-deferred fields. Test migrations in progress; no acceptance-rule relaxation.",
-      "ubuntu": {
-        "files": 407,
-        "tests": 5217,
-        "pass": 5154,
-        "fail": 26,
-        "skip": 37,
-        "fileTimeouts": 0
-      },
-      "macos": {
-        "files": 407,
-        "tests": 5217,
-        "pass": 5158,
-        "fail": 26,
-        "skip": 33,
-        "fileTimeouts": 0
-      },
+      "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
       "receipt": {
-        "path": ".runtime-correction/validation/ci-fix/post-8252042-natural-f45mv8pc/terminal-receipt.json",
-        "sha256": "28debced8c996c18473af6f27f4d986ced888e1bc2a72aaa36887b6d87443181"
+        "path": ".runtime-correction/validation/ci-fix/post-6efc4dd-natural-y4pw97pk/terminal-receipt.json",
+        "sha256": "da10bb41a7db99f1de29ee889f361ebcd626f506cade7f63c2e28e3e9ac0743a"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/ci-fix/post-6efc4dd-natural-y4pw97pk/final-readback.json",
+        "sha256": "604b79e7eaded294b6fee28a5bb36dc0a4690f00829fca4eaf4596d72d5392ad"
+      },
+      "fileInventory": 407,
+      "allAssignedFilesCompleted": true,
+      "windowsShards": [
+        102,
+        102,
+        102,
+        101
+      ],
+      "macOS": {
+        "pass": 5191,
+        "skip": 33,
+        "fail": 0
+      },
+      "ubuntu": {
+        "pass": 5187,
+        "skip": 37,
+        "fail": 0
       },
       "windows": {
-        "files": 407,
-        "tests": 5215,
-        "pass": 5144,
-        "fail": 26,
+        "pass": 5177,
         "skip": 45,
-        "fileTimeouts": 0,
-        "shards": [
-          102,
-          102,
-          102,
-          101
-        ]
+        "fail": 0
       }
     },
     "ciFixtureMigration": {
@@ -8955,14 +8949,79 @@
       }
     },
     "expectedChangedRuntimeModulesAgainstCanonical": 4,
-    "successorSourceCommit": "ROOT_PENDING_COMMIT_BINDING"
+    "successorSourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
+    "precedingOwnSourceCi": {
+      "runId": 45522205651,
+      "attempt": 1,
+      "headSha": "8252042d7574bb5201cec5230b9c350b63c85197",
+      "status": "completed",
+      "conclusion": "failure",
+      "testJobs": {
+        "success": 3,
+        "failure": 6
+      },
+      "publisher": "skipped",
+      "failureScope": "Six existing fixtures consumed a single page or direct now-deferred fields. Test migrations in progress; no acceptance-rule relaxation.",
+      "ubuntu": {
+        "files": 407,
+        "tests": 5217,
+        "pass": 5154,
+        "fail": 26,
+        "skip": 37,
+        "fileTimeouts": 0
+      },
+      "macos": {
+        "files": 407,
+        "tests": 5217,
+        "pass": 5158,
+        "fail": 26,
+        "skip": 33,
+        "fileTimeouts": 0
+      },
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-8252042-natural-f45mv8pc/terminal-receipt.json",
+        "sha256": "28debced8c996c18473af6f27f4d986ced888e1bc2a72aaa36887b6d87443181"
+      },
+      "windows": {
+        "files": 407,
+        "tests": 5215,
+        "pass": 5144,
+        "fail": 26,
+        "skip": 45,
+        "fileTimeouts": 0,
+        "shards": [
+          102,
+          102,
+          102,
+          101
+        ]
+      }
+    },
+    "packageAttempt": {
+      "status": "SEVEN_BUILD_STAGES_PASS_STOCK_SEED_WORKSPACE_ASSERT_BEFORE_ANY_CLI",
+      "actual": "55722e/session67492 ->65becf/1 CLOSED",
+      "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
+      "verification": {
+        "path": ".runtime-correction/validation/candidate-tool-usability-node18-standard-held-rk3p6wca/candidate-release-verification.json",
+        "sha256": "a89facdd881ca6b061820239d500cc1d85affe0859717eba5073bbf6d539ddd3"
+      },
+      "failedAggregate": {
+        "path": ".runtime-correction/validation/candidate-tool-usability-node18-standard-held-rk3p6wca/candidate-completed.json",
+        "sha256": "3daa99e6e33fb37d8883e84ab749804fe9b155f707a597877b6cf6602ccd5ec3"
+      },
+      "closedSuccessfulStages": 7,
+      "stockCliCommands": 0,
+      "canonicalArchiveUpdated": false,
+      "sameArchiveStockSuccessor": "PREPARING",
+      "stalePendingCiFieldsInHistoricalAttemptAreNotCurrentCiAuthority": true
+    }
   },
   "reportCurrentQaBeforeProofOwnerDiagnosis": {
     "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-method-complete-unverified-qa/receipt.json",
     "sha256": "ee7a93a88f48e97e084c8f9bee59c7ac1a808d720d610b7b63954db7e6fd8e02"
   },
   "nativeBootFollowup": {
-    "status": "SHORT_PATH_SOCKET_OBSERVED_BOOT_ABORTED_ON_UID0_OWNER_GUARD",
+    "status": "BOOT_COMPLETED_OBSERVED_OVERALL_UNAVAILABLE_EMULATOR_CONSOLE_EOF_NOT_OBSERVED",
     "freshLogReceipt": {
       "path": ".runtime-correction/validation/phone-v10-fresh-log-forensics-q_vtvwfd/receipt.json",
       "sha256": "863ee9113fcbf4c0da6fb759281121b79c692e554b1f2175be0c615fc98ed48b"
@@ -8979,7 +9038,7 @@
     },
     "independentKernelSenderKnown": false,
     "oldResourcesQueriedOrChanged": false,
-    "guestReadinessProven": false,
+    "guestReadinessProven": true,
     "formalBenchmarkCredit": 0,
     "kernelSocketComparison": {
       "path": ".runtime-correction/validation/phone-v11-socket-path-kernel-ncaxhpz_/receipt.json",
@@ -8994,6 +9053,30 @@
       "SDKOrVmLaunched": false
     },
     "latestAttempt": {
+      "actual": "4f5b96/session92884 ->0b58a4/1 CLOSED",
+      "readback": {
+        "path": ".runtime-correction/validation/phone-v12-actual-readback-99lzkdri/readback.json",
+        "sha256": "c34a1e68ec26a59f93a46355e906eeb7ed79eb783365892784cb5bb211061ccc"
+      },
+      "status": "UNAVAILABLE",
+      "bootControlObserved": true,
+      "coherentRound": 6,
+      "api": 24,
+      "deviceType": "phone",
+      "softwareVersion": "6.1.0.126",
+      "knownBirthsCleared": 45,
+      "knownGroupsCleared": 40,
+      "newPortsCleared": 2,
+      "commandCaptures": 39,
+      "finalCommandCaptures": 38,
+      "allCommandStreamsFinal": false,
+      "quarantineWindows": 0,
+      "quarantinePathExercised": false,
+      "immutableInputsStable": true,
+      "fullBenchmarkRouteQualified": false,
+      "formalBenchmarkCredit": 0
+    },
+    "precedingAttempt": {
       "sourceHoldSha256": "2472bbdea1dca7280b78a25fe8153a1b010fa28bbff21fcd0251baf1f39f4631",
       "actual": "beff69/session99753 ->50684a/1 CLOSED",
       "elapsedMs": 16023.075249999238,
@@ -9016,7 +9099,8 @@
         "path": ".runtime-correction/validation/phone-v11-short-temp-held-sgcf76_c/root-independent-cleanup.json",
         "sha256": "2382825ea43e510c6138d2fd5943123a28f86791b79e08138773c2396c69e4fc"
       }
-    }
+    },
+    "guestReadinessScope": "Boot completed with coherent owned identity only; full evaluator route, network isolation and emulator stream EOF not qualified."
   },
   "reportCurrentQaBeforeCiFixtureFailure": {
     "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-proof-owner-native-diagnosis-qa/receipt.json",
