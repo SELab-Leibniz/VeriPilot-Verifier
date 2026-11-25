@@ -13,7 +13,7 @@
 
 默认组的首个完整请求为 14,471 tokens，随后每次只取文件的 125 行。宿主成功 compact 一次，后续预检估到 189,096，超过其 180,000 的输入预算，两次继续压缩都记录没有可处理的会话消息。宿主最终给出 `context_overflow`，RC 返回 `REVIEWER_RUN_FAILED`，仍有一个必读文件未完成。33 页、4,125 行已取得原文回执。在已经派发的普通请求中仅能逐字匹配其中 32 页。最后 125 行的工具结果已落盘，宿主拦住了下一次请求。第 4,126 行起的 432 行尚未取得回执。该组没有触发提供方拒绝。
 
-对照组仅把宿主看到的窗口提高到 400,000，实际模拟提供方仍为 204,800，页大小、原件及每次请求的最大输出 8,192 均相同。原文读到第 4,250 行时，199,491 tokens 输入加预留输出超限。宿主在这一处 compact 后读到了第 4,557 行，在决策请求中同时回读末尾原文和候选实现，保存“应重试 0 次、实际为 3 次”的 `DEVIATION`。这项对照用于区分宿主提前拦截和提供方的容量边界。[默认组记录](../.runtime-correction/one-validated/one-zh-paged/evidence.json) · [同原文放行对照](../.runtime-correction/one-validated/one-zh-wide-host/evidence.json)
+对照组仅把宿主看到的窗口提高到 400,000，实际模拟提供方仍为 204,800，页大小、原件及每次请求的最大输出 8,192 均相同。原文读到第 4,250 行时，199,491 tokens 输入加预留输出超限。宿主在这一处 compact 后读到了第 4,557 行，在决策请求中同时回读末尾原文和候选实现，保存“应重试 0 次、实际为 3 次”的 `DEVIATION`。这项对照用于区分宿主提前拦截和提供方的容量边界。[默认组记录](../../lc-single-required-20261125/.runtime-correction/one-validated/one-zh-paged/evidence.json) · [同原文放行对照](../../lc-single-required-20261125/.runtime-correction/one-validated/one-zh-wide-host/evidence.json)
 
 ## 单次读、分页读与压缩
 
@@ -43,4 +43,4 @@ $null = New-Item -ItemType Directory -Force '.runtime-correction'
 node scripts/validate-large-context.mjs --host-root $hostRoot --python (Join-Path $assets 'large-context-venv/Scripts/python.exe') --tokenizers (Join-Path $assets 'large-context-tokenizers') --cases single-required-file --output-root '.runtime-correction/one-repeat'
 ~~~
 
-7 个单文件用例共记录 158 次本地请求，各组预期结果均已核实，包括两组故意停止的负控。同一轮重跑了既有小型 Stop 和工具裁剪后重读的两个场景，另有 30 项相关回归测试通过。[单文件测量及证据索引](../.runtime-correction/one-validated/single-required-study.json) · [整轮验证结果](../.runtime-correction/one-validated/result.json) · [回归日志](../.runtime-correction/one-file-regressions.log)
+7 个单文件用例共记录 158 次本地请求，各组预期结果均已核实，包括两组故意停止的负控。同一轮重跑了既有小型 Stop 和工具裁剪后重读的两个场景，另有 30 项相关回归测试通过。[单文件测量及证据索引](../../lc-single-required-20261125/.runtime-correction/one-validated/single-required-study.json) · [整轮验证结果](../../lc-single-required-20261125/.runtime-correction/one-validated/result.json) · [回归日志](../../lc-single-required-20261125/.runtime-correction/one-file-regressions.log)

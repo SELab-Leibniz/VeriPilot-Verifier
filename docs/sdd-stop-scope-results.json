@@ -1,0 +1,545 @@
+{
+  "baseline": "8a2bfa3369ef9bbe6eace11c537f1dded25a8450",
+  "implementation": "5d4b9d4ce322ce22b0e8d5af2a551a2a673ff1b6",
+  "host": "2026.7.1-2",
+  "realProviderRequests": 0,
+  "localTokenizer": "deepseek-v4.1-flash",
+  "tokenizerSha256": "c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b",
+  "original": {
+    "sha256": "cf01ab06a64b204b09ba2d9f4dedbf3e5bb5c89475c2d23a235b8f0a05c69043",
+    "bytes": 734837,
+    "lines": 4557,
+    "rawTokens": 164012
+  },
+  "hooks": [
+    {
+      "case": "registered",
+      "promptSha256": "4a8fee085f2063c355c1b000d971d2b917ab9f27addf1137b63a71e92cee4d9b",
+      "materialSha256": "74fad86f6945ae84a1ef70a98913d57d017e2f1e3b55936bd3c97b572737b014",
+      "annexSha256": "ba11fed7ce797dcb6bc668e3c1f73adcd27f5528ce7f2c9b9ec836a2fb3285f7",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "NO_DEVIATION_FOUND",
+        "reasonCode": "NO_DEVIATION_FOUND",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": null
+      },
+      "after": {
+        "status": "DEVIATION",
+        "reasonCode": null,
+        "decision": "block",
+        "confirmed": 1,
+        "gaps": []
+      },
+      "sources": [
+        {
+          "ref": "workflow.md",
+          "declaredBy": {
+            "ref": "transcript:request",
+            "line": 1
+          },
+          "disposition": "REPRESENTED",
+          "totalLines": 3,
+          "readLines": 3,
+          "unreadRanges": [],
+          "checklistItems": 1
+        },
+        {
+          "ref": "annex.md",
+          "declaredBy": {
+            "ref": "workflow.md",
+            "line": 2
+          },
+          "disposition": "REPRESENTED",
+          "totalLines": 3,
+          "readLines": 3,
+          "unreadRanges": [],
+          "checklistItems": 1
+        }
+      ]
+    },
+    {
+      "case": "omit",
+      "promptSha256": "4a8fee085f2063c355c1b000d971d2b917ab9f27addf1137b63a71e92cee4d9b",
+      "materialSha256": "74fad86f6945ae84a1ef70a98913d57d017e2f1e3b55936bd3c97b572737b014",
+      "annexSha256": "ba11fed7ce797dcb6bc668e3c1f73adcd27f5528ce7f2c9b9ec836a2fb3285f7",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "NO_DEVIATION_FOUND",
+        "reasonCode": "NO_DEVIATION_FOUND",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": null
+      },
+      "after": {
+        "status": "UNVERIFIED",
+        "reasonCode": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": [
+          {
+            "type": "ORIGINAL_SOURCE",
+            "reason": "annex.md：清单未处置这份来源"
+          }
+        ]
+      }
+    },
+    {
+      "case": "follow",
+      "promptSha256": "4a8fee085f2063c355c1b000d971d2b917ab9f27addf1137b63a71e92cee4d9b",
+      "materialSha256": "74fad86f6945ae84a1ef70a98913d57d017e2f1e3b55936bd3c97b572737b014",
+      "annexSha256": "ba11fed7ce797dcb6bc668e3c1f73adcd27f5528ce7f2c9b9ec836a2fb3285f7",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "UNVERIFIED",
+        "reasonCode": "STOP_ORIGINAL_CHECKLIST_INVALID",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": null
+      },
+      "after": {
+        "status": "DEVIATION",
+        "reasonCode": null,
+        "decision": "block",
+        "confirmed": 1,
+        "gaps": []
+      }
+    },
+    {
+      "case": "named",
+      "promptSha256": "7199e0969c33dc265d51cc0d7c2189b5f4a2fe9fceed02f5d52b398817eb3ac4",
+      "materialSha256": "74fad86f6945ae84a1ef70a98913d57d017e2f1e3b55936bd3c97b572737b014",
+      "annexSha256": "ba11fed7ce797dcb6bc668e3c1f73adcd27f5528ce7f2c9b9ec836a2fb3285f7",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "DEVIATION",
+        "reasonCode": null,
+        "decision": "block",
+        "confirmed": 1,
+        "gaps": null
+      },
+      "after": {
+        "status": "DEVIATION",
+        "reasonCode": null,
+        "decision": "block",
+        "confirmed": 1,
+        "gaps": []
+      }
+    },
+    {
+      "case": "mixed",
+      "promptSha256": "4a8fee085f2063c355c1b000d971d2b917ab9f27addf1137b63a71e92cee4d9b",
+      "materialSha256": "01cc3839c4329294e00f57aa36d901e596527f83b3e9e8e544d4d15aaf2a2a3c",
+      "annexSha256": "ba11fed7ce797dcb6bc668e3c1f73adcd27f5528ce7f2c9b9ec836a2fb3285f7",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "NO_DEVIATION_FOUND",
+        "reasonCode": "NO_DEVIATION_FOUND",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": null
+      },
+      "after": {
+        "status": "UNVERIFIED",
+        "reasonCode": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+        "decision": "block",
+        "confirmed": 1,
+        "gaps": [
+          {
+            "type": "ORIGINAL_SOURCE",
+            "reason": "unavailable.md：声明的原件不可用"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "ref": "workflow.md",
+          "declaredBy": {
+            "ref": "transcript:request",
+            "line": 1
+          },
+          "disposition": "REPRESENTED",
+          "totalLines": 4,
+          "readLines": 4,
+          "unreadRanges": [],
+          "checklistItems": 1
+        },
+        {
+          "ref": "annex.md",
+          "declaredBy": {
+            "ref": "workflow.md",
+            "line": 2
+          },
+          "disposition": "REPRESENTED",
+          "totalLines": 3,
+          "readLines": 3,
+          "unreadRanges": [],
+          "checklistItems": 1
+        },
+        {
+          "ref": "unavailable.md",
+          "declaredBy": {
+            "ref": "workflow.md",
+            "line": 3
+          },
+          "disposition": "SOURCE_UNAVAILABLE",
+          "totalLines": null,
+          "readLines": null,
+          "unreadRanges": [],
+          "checklistItems": 0
+        }
+      ]
+    },
+    {
+      "case": "interrupted",
+      "promptSha256": "461b83c730d0e8d6008b5d2343cc98204696094dfd681f05903588a39fe81c5f",
+      "materialSha256": "cf01ab06a64b204b09ba2d9f4dedbf3e5bb5c89475c2d23a235b8f0a05c69043",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "UNVERIFIED",
+        "reasonCode": "REVIEWER_RUN_FAILED",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": null
+      },
+      "after": {
+        "status": "UNVERIFIED",
+        "reasonCode": "REVIEWER_RUN_FAILED",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": [
+          {
+            "type": "ORIGINAL_SOURCE",
+            "reason": "AGENTS.md：条款清单尚未提交，已读原文的要求也待核实，未读第 4126–4557 行"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "ref": "AGENTS.md",
+          "declaredBy": {
+            "ref": "transcript:request",
+            "line": 1
+          },
+          "disposition": "CHECKLIST_NOT_SUBMITTED",
+          "totalLines": 4557,
+          "readLines": 4125,
+          "unreadRanges": [
+            [
+              4126,
+              4557
+            ]
+          ],
+          "checklistItems": 0
+        }
+      ]
+    },
+    {
+      "case": "partial",
+      "promptSha256": "7199e0969c33dc265d51cc0d7c2189b5f4a2fe9fceed02f5d52b398817eb3ac4",
+      "materialSha256": "74fad86f6945ae84a1ef70a98913d57d017e2f1e3b55936bd3c97b572737b014",
+      "annexSha256": "ba11fed7ce797dcb6bc668e3c1f73adcd27f5528ce7f2c9b9ec836a2fb3285f7",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "UNVERIFIED",
+        "reasonCode": "REVIEWER_RUN_FAILED",
+        "decision": "block",
+        "confirmed": 1,
+        "gaps": null
+      },
+      "after": {
+        "status": "UNVERIFIED",
+        "reasonCode": "REVIEWER_RUN_FAILED",
+        "decision": "block",
+        "confirmed": 1,
+        "gaps": [
+          {
+            "type": "REQUIREMENT",
+            "reason": "workflow.md 第 1 行，审查中断，尚待核实：Ordinary mode must return three retries."
+          }
+        ]
+      }
+    },
+    {
+      "case": "implicit-interrupted",
+      "promptSha256": "11af9fdd0836012bcee8c2d41ce4fa8b53ee426a49b2dd11144a55e2f64dd226",
+      "materialSha256": "cf01ab06a64b204b09ba2d9f4dedbf3e5bb5c89475c2d23a235b8f0a05c69043",
+      "candidateSha256": "8a951667f5a2a216dda9276effaaf7afcc45a281665a7ce1ea609f889803d86b",
+      "before": {
+        "status": "UNVERIFIED",
+        "reasonCode": "REVIEWER_RUN_FAILED",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": null
+      },
+      "after": {
+        "status": "UNVERIFIED",
+        "reasonCode": "REVIEWER_RUN_FAILED",
+        "decision": "allow",
+        "confirmed": 0,
+        "gaps": [
+          {
+            "type": "ORIGINAL_SOURCE",
+            "reason": "AGENTS.md：条款清单尚未提交，已读原文的要求也待核实，未读第 4126–4557 行"
+          }
+        ]
+      },
+      "sources": [
+        {
+          "ref": "AGENTS.md",
+          "declaredBy": {
+            "ref": "project:instructions"
+          },
+          "disposition": "CHECKLIST_NOT_SUBMITTED",
+          "totalLines": 4557,
+          "readLines": 4125,
+          "unreadRanges": [
+            [
+              4126,
+              4557
+            ]
+          ],
+          "checklistItems": 0
+        }
+      ]
+    }
+  ],
+  "native": {
+    "mandatoryFileSameOutputPath": {
+      "before": {
+        "completed": false,
+        "resultCode": "REVIEWER_RUN_FAILED",
+        "firstInput": 14464,
+        "lastPrecheck": 189004,
+        "covered": {
+          "lines": 4125,
+          "firstMissing": 4126
+        },
+        "materialReceipts": 33,
+        "exactReceiptsOnWire": 32,
+        "checklistSaved": false,
+        "compactBoundaries": 1,
+        "judgements": [],
+        "scope": null
+      },
+      "after": {
+        "completed": false,
+        "resultCode": "REVIEWER_RUN_FAILED",
+        "firstInput": 14708,
+        "lastPrecheck": 180696,
+        "covered": {
+          "lines": 4000,
+          "firstMissing": 4001
+        },
+        "materialReceipts": 32,
+        "exactReceiptsOnWire": 31,
+        "checklistSaved": false,
+        "compactBoundaries": 1,
+        "judgements": [],
+        "scope": {
+          "totalLines": 4557,
+          "readLines": 4000,
+          "unreadRanges": [
+            [
+              4001,
+              4557
+            ]
+          ],
+          "checklistItems": 0,
+          "disposition": "CHECKLIST_NOT_SUBMITTED"
+        }
+      }
+    },
+    "widerHostMandatoryFile": {
+      "before": {
+        "completed": true,
+        "resultCode": null,
+        "firstInput": 14451,
+        "lastPrecheck": 79168,
+        "covered": {
+          "lines": 4557,
+          "firstMissing": null
+        },
+        "materialReceipts": 38,
+        "exactReceiptsOnWire": 38,
+        "checklistSaved": true,
+        "compactBoundaries": 1,
+        "judgements": [
+          "DEVIATION"
+        ],
+        "scope": null
+      },
+      "after": {
+        "completed": true,
+        "resultCode": null,
+        "firstInput": 14727,
+        "lastPrecheck": 79314,
+        "covered": {
+          "lines": 4557,
+          "firstMissing": null
+        },
+        "materialReceipts": 38,
+        "exactReceiptsOnWire": 38,
+        "checklistSaved": true,
+        "compactBoundaries": 1,
+        "judgements": [
+          "DEVIATION"
+        ],
+        "scope": {
+          "totalLines": 4557,
+          "readLines": 4557,
+          "unreadRanges": [],
+          "checklistItems": 1,
+          "disposition": "REPRESENTED"
+        }
+      }
+    },
+    "inlineReview": {
+      "before": {
+        "reviewCompleted": false,
+        "failure": "REVIEWER_RUN_FAILED",
+        "mandatoryOriginalParts": 45,
+        "fullParts": 42,
+        "totalReadReceipts": 42,
+        "readReceiptsSeenOnWire": 39,
+        "checklistSaved": false,
+        "compactionBoundaries": 1,
+        "judgements": [],
+        "scope": null
+      },
+      "after": {
+        "reviewCompleted": false,
+        "failure": "REVIEWER_RUN_FAILED",
+        "mandatoryOriginalParts": 45,
+        "fullParts": 42,
+        "totalReadReceipts": 42,
+        "readReceiptsSeenOnWire": 39,
+        "checklistSaved": false,
+        "compactionBoundaries": 1,
+        "judgements": [],
+        "scope": {
+          "totalLines": 4557,
+          "readLines": 4266,
+          "unreadRanges": [
+            [
+              4267,
+              4557
+            ]
+          ],
+          "checklistItems": 0,
+          "disposition": "CHECKLIST_NOT_SUBMITTED"
+        }
+      }
+    },
+    "widerHostInlineReview": {
+      "before": {
+        "reviewCompleted": true,
+        "failure": null,
+        "mandatoryOriginalParts": 45,
+        "fullParts": 45,
+        "totalReadReceipts": 49,
+        "readReceiptsSeenOnWire": 49,
+        "checklistSaved": true,
+        "compactionBoundaries": 1,
+        "judgements": [
+          "DEVIATION"
+        ],
+        "scope": null
+      },
+      "after": {
+        "reviewCompleted": true,
+        "failure": null,
+        "mandatoryOriginalParts": 45,
+        "fullParts": 45,
+        "totalReadReceipts": 49,
+        "readReceiptsSeenOnWire": 49,
+        "checklistSaved": true,
+        "compactionBoundaries": 1,
+        "judgements": [
+          "DEVIATION"
+        ],
+        "scope": {
+          "totalLines": 4557,
+          "readLines": 4557,
+          "unreadRanges": [],
+          "checklistItems": 1,
+          "disposition": "REPRESENTED"
+        }
+      }
+    },
+    "inlineBusinessAdmission": {
+      "before": {
+        "transportRequests": 0,
+        "hostStatus": "context_overflow",
+        "scope": null
+      },
+      "after": {
+        "transportRequests": 0,
+        "hostStatus": "context_overflow",
+        "scope": null
+      }
+    },
+    "fileReference": {
+      "before": {
+        "transportRequests": 2,
+        "hostStatus": "stop",
+        "scope": null
+      },
+      "after": {
+        "transportRequests": 2,
+        "hostStatus": "stop",
+        "acceptanceSource": true,
+        "scope": null
+      }
+    }
+  },
+  "checklistCapacity": {
+    "count": 257,
+    "accepted": 256,
+    "unextractedRanges": [
+      [
+        257,
+        257
+      ]
+    ]
+  },
+  "tests": {
+    "targeted": {
+      "tests": 195,
+      "pass": 195,
+      "fail": 0,
+      "skipped": 0
+    },
+    "all": {
+      "files": 329,
+      "tests": 3462,
+      "pass": 3410,
+      "fail": 3,
+      "cancelled": 0,
+      "skipped": 49,
+      "failedFiles": [
+        "test/stop-host-integration.test.mjs",
+        "test/stop-review-groups.test.mjs",
+        "test/synthetic-coding-calibration.test.mjs"
+      ]
+    },
+    "hostIntegrationRerun": {
+      "tests": 30,
+      "pass": 30,
+      "fail": 0,
+      "skipped": 0
+    },
+    "calibrationRerun": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0
+    },
+    "zeroBudgetCase": {
+      "before": "UNVERIFIED",
+      "after": "UNVERIFIED",
+      "expectedByTest": "SKIPPED"
+    }
+  }
+}

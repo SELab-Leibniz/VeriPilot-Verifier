@@ -8,9 +8,9 @@ import { initialSddText } from './helpers/initial-sdd-pressure.mjs';
 
 const here = fileURLToPath(new URL('../', import.meta.url));
 const revision = path.resolve(process.argv[2] ?? here);
-const output = path.resolve(process.argv[3]);
 const expected = process.argv[4];
-assert(['before', 'after'].includes(expected), 'Pass RC root, a new evidence directory, and before or after.');
+assert(process.argv[3] && ['before', 'after'].includes(expected), 'Pass RC root, a new evidence directory, and before or after.');
+const output = path.resolve(process.argv[3]);
 const load = file => import(pathToFileURL(path.join(revision, file)).href);
 const { compileRuntimeV2Config } = await load('lib/runtime-v2/config.mjs');
 const { handleRuntimeV2Event } = await load('lib/runtime-v2/orchestrator.mjs');
@@ -19,6 +19,7 @@ const { sha256 } = await load('lib/runtime-v2/utils.mjs');
 const { ensureTask } = await load('lib/runtime-v2/task-store.mjs');
 const { stopFeedbackNotice } = await load('lib/openclaw/stop-feedback-notice.mjs');
 const { readReport, renderReport } = await load('lib/openclaw/report.mjs');
+await fs.mkdir(path.dirname(output), { recursive: true });
 await fs.mkdir(output);
 const ordinary = 'Ordinary mode must return three retries.';
 const sealed = 'Sealed mode must return zero retries.';
@@ -33,10 +34,10 @@ async function exercise(mode) {
   await fs.mkdir(root);
   await ensureTask({ projectRoot: root, sessionId: 'sdd-scope' });
   const doc = name => path.join(root, name);
-  const interrupt = mode === 'interrupted';
+  const interrupt = mode === 'interrupted' || mode === 'implicit-interrupted';
   const main = doc('workflow.md'), annex = doc('annex.md'), implementation = doc('retry.mjs');
   const spec = initialSddText(4547, 'chinese');
-  const prompt = interrupt ? '请依照 AGENTS.md 的完整规范验收密封模式。'
+  const prompt = mode === 'implicit-interrupted' ? '请验收本次发布。' : interrupt ? '请依照 AGENTS.md 的完整规范验收密封模式。'
     : 'Implement workflow.md and all of its mandatory annexes.' + (['named', 'partial'].includes(mode) ? ' This includes annex.md.' : '');
   if (interrupt) await fs.writeFile(doc('AGENTS.md'), spec);
   else await Promise.all([
@@ -98,25 +99,29 @@ async function exercise(mode) {
   assert.deepEqual(published.acceptanceReport ?? null, stop.acceptanceReport ?? null);
   const reportSections = renderReport(published).split('\n').filter(line => /^(已证实的偏差|尚未核实的范围|未验证项 )/u.test(line));
   return { mode, promptSha256: sha256(prompt), materialSha256: sha256(await fs.readFile(interrupt ? doc('AGENTS.md') : main)),
+    ...(interrupt ? {} : { annexSha256: sha256(await fs.readFile(annex)) }),
     candidateSha256: sha256(candidate), attempts, status: stop.status, reasonCode: stop.reasonCode, decision: stop.decision,
     scanCompleted: stop.coverage?.scanCompleted, confirmed: (stop.review?.metricObjectJudgements ?? []).filter(r => r.judgement === 'DEVIATION').length,
     acceptanceReport: stop.acceptanceReport ?? null, feedback: stop.feedback, notice: stopFeedbackNotice(stop), reportSections,
     evaluation: path.relative(output, evaluation).replaceAll('\\', '/') };
 }
 const cases = [];
-for (const mode of ['registered', 'omit', 'follow', 'named', 'mixed', 'interrupted', 'partial']) {
+for (const mode of ['registered', 'omit', 'follow', 'named', 'mixed', 'interrupted', 'partial', 'implicit-interrupted']) {
   cases.push(await exercise(mode));
   await fs.writeFile(path.join(output, 'result.json'), JSON.stringify(cases, null, 2) + '\n');
 }
-const [registered, omitted, followed, named, mixed, large, partial] = cases;
+const [registered, omitted, followed, named, mixed, large, partial, implicit] = cases;
 assert(named.confirmed === 1 && large.status === 'UNVERIFIED');
 assert.equal(large.materialSha256, 'cf01ab06a64b204b09ba2d9f4dedbf3e5bb5c89475c2d23a235b8f0a05c69043');
 assert(large.attempts.every(attempt => attempt.pages === 33));
+assert.equal(implicit.materialSha256, large.materialSha256);
+assert(implicit.attempts.every(attempt => attempt.pages === 33));
 if (expected === 'before') {
   assert.equal(registered.status, 'NO_DEVIATION_FOUND');
   assert.equal(omitted.status, 'NO_DEVIATION_FOUND');
   assert(followed.attempts.some(attempt => attempt.rejected === 'STOP_ORIGINAL_CHECKLIST_INVALID'));
   assert.equal(large.acceptanceReport, null);
+  assert.equal(implicit.acceptanceReport, null);
 } else {
   for (const arm of [registered, followed, named]) {
     assert.equal(arm.status, 'DEVIATION');
@@ -140,6 +145,10 @@ if (expected === 'before') {
   assert.deepEqual(src.unreadRanges, [[4126, 4557]]);
   assert.equal(large.acceptanceReport.confirmedDeviations.length, 0);
   assert.match(large.feedback, /4126–4557/u);
+  const projectSdd = implicit.acceptanceReport.sourceCoverage.sources.find(source => source.ref === 'AGENTS.md');
+  assert.equal(implicit.status, 'UNVERIFIED');
+  assert.equal(projectSdd.declaredBy.ref, 'project:instructions');
+  assert.deepEqual(projectSdd.unreadRanges, src.unreadRanges);
   assert.equal(partial.status, 'UNVERIFIED');
   assert.equal(partial.acceptanceReport.confirmedDeviations.length, 1);
   assert(partial.acceptanceReport.unverifiedItems.some(item => item.type === 'REQUIREMENT' && item.source?.ref === 'workflow.md'

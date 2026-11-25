@@ -74,6 +74,8 @@
 
 这一顺序允许明确取舍。局部任务沿用成本较低的默认路径，个别会话失活时用已验证进度恢复，穷尽整份规范的任务才承担分段和全局复核的成本。
 
+第一步已用强制附录漏审、164K 原件中断和第 257 条未入单的用例做了修改前后对照。[第一步实现与验证](sdd-stop-scope-validation.md)
+
 ## 复现范围与入口
 
 三条探索分支和本方案分支均基于 `a9b86dd`。A、B 走本机只读的 OpenClaw 原生会话和 RC Stop 工厂，响应由本地脚本提供。C 验证原件读取、条款依赖及程序合并。本方案分支在生产 Stop 工具上另做依据边界对照，并直接调用该宿主的工具参数校验器。实验没有访问线上模型，各项工作量的单位及原始记录见对应分支。
@@ -89,4 +91,4 @@ npm ci --prefix lib/review-task --ignore-scripts --no-audit --no-fund
 node scripts/validate-large-sdd-authority.mjs 'C:/Users/user/workspace/program_workspace/MatrixAssistant/resources/openclaw'
 ~~~
 
-本次运行保留在 [依据边界实测结果](../.runtime-correction/sdd-authority-qwJVij/result.json)。同一分支另有 172 项相关现有回归通过。[回归日志](../.runtime-correction/sdd-strategy-regressions.log)
+本次运行保留在 [依据边界实测结果](../../lc-strategy-20261125/.runtime-correction/sdd-authority-qwJVij/result.json)。同一分支另有 172 项相关现有回归通过。[回归日志](../../lc-strategy-20261125/.runtime-correction/sdd-strategy-regressions.log)
