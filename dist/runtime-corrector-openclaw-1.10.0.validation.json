@@ -1576,12 +1576,12 @@
   "reportCurrentQa": {
     "status": "PASS",
     "report": ".runtime-correction/runtime-corrector-progress.html",
-    "htmlSha256": "858b275c4202eff53c46de12d562454a163737daa31a4a995584d2a465c28768",
+    "htmlSha256": "a274d1174cd0eb414ca31a8e5e5ea9e86d0337e377097c8e4a7bc22f3b18175f",
     "receipt": {
-      "path": ".runtime-correction/validation/root-closed-trial-grade-report-sb4xvpf5/report-qa/receipt.json",
-      "sha256": "04ca01f14684769830cf6bee702d2dd1e19f6c6d434b1d9a6164c0612080c6e7"
+      "path": ".runtime-correction/validation/root-navigation-ci-report-s1m2qfkp/report-qa/receipt.json",
+      "sha256": "8ba7fa5e225d9bbc0cd2ad5f84a07f646aba29dbdece59d3eb0a1cfda1f8ac39"
     },
-    "actual": "cf4d1b/session64372 ->ee69fc/0 CLOSED",
+    "actual": "78b91c/session38740 ->7ddb8c/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1598,7 +1598,7 @@
     "browserErrors": 0,
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
-    "visualReadback": "walkthrough-en-1200 inspected; current37pass/separate2fail and unchangedcode clearly separated from preceding graded result; no overflow"
+    "visualReadback": "phone-en-1200 inspected; navigation-only source CI is clearly separate from unreleased loop guard; no overflow"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4657,7 +4657,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CURRENT_PACKAGE_TRIAL_CLOSED_INCOMPLETE_GRADED37PASS_SEPARATE2FAIL",
-    "htmlSha256": "858b275c4202eff53c46de12d562454a163737daa31a4a995584d2a465c28768",
+    "htmlSha256": "a274d1174cd0eb414ca31a8e5e5ea9e86d0337e377097c8e4a7bc22f3b18175f",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn4f8b71f13dc",
     "precedingCompletedRunReference": "evaluationRecords.ordinaryOn7c0286F020",
     "precedingWalkthroughMovedToExistingHistory": true,
@@ -10199,7 +10199,7 @@
     "visualReadback": "walkthrough-en-1200 inspected; closed current failure separated from preceding fully evaluated result; no overflow"
   },
   "prospectiveReviewerReliabilityFollowup": {
-    "status": "TRANSCRIPT_BOUNDS_FOCUSED_QUALIFIED_NEW_SOURCE_CI_PENDING_GUARD_PRIVATE_INTEGRATION",
+    "status": "TRANSCRIPT_BOUNDS_OWN_NINE_CI_PASS_GUARD_PRIVATE_SUCCESSOR_INTEGRATION",
     "navigationIntegration": {
       "path": ".runtime-correction/validation/root-transcript-bounds-integration-64uxrmcp/integration.json",
       "sha256": "38e91ce3bae716919bd2e4cb3ed60dbba795b6d7710dddb6e76d4e43cbf84037"
@@ -10213,6 +10213,58 @@
     "newRuntimeSourceOwnCiQualified": false,
     "newRuntimePackageReleased": false,
     "newModelResult": false,
-    "caseSpecificPluginLogicAdded": false
+    "caseSpecificPluginLogicAdded": false,
+    "navigationOwnCi": {
+      "sourceCommit": "b782b043c85cdd8bd90cea4f7bd0bf1b18701da4",
+      "runId": 45583917341,
+      "attempt": 1,
+      "status": "NINE_TEST_JOBS_SUCCESS_PUBLISH_SKIPPED",
+      "fullFilesPerOS": 413,
+      "terminal": {
+        "path": ".runtime-correction/validation/ci-fix/post-b782b04-natural-oo1ojfzb/terminal-receipt.json",
+        "sha256": "da5cb4f50c880581ee01f6bc31ce2317cafaddad0b95ab81370a73dc9afaf28e"
+      },
+      "readback": {
+        "path": ".runtime-correction/validation/ci-fix/post-b782b04-natural-oo1ojfzb/final-readback.json",
+        "sha256": "8b31d597406cd11b4ccc1ce93472a3cf4ed2cc0bcc75b6bc5219c0d2842b237a"
+      },
+      "rootEvidenceJoin": {
+        "path": ".runtime-correction/validation/ci-fix/post-b782b04-natural-oo1ojfzb/root-readback.json",
+        "sha256": "94239788a1de44a89a113560ccf74cea4d504e8dc583a1012eca12afc4ce79c4"
+      },
+      "rootOfficialSnapshot": {
+        "path": ".runtime-correction/validation/ci-fix/post-b782b04-natural-oo1ojfzb/root-official-job-snapshot.json",
+        "sha256": "4fb8c065ffc5fa05ca522db3ef8373aa4d3a3c1f33f81f73a0a8ab04f57d780a"
+      },
+      "includesNewGuard": false
+    },
+    "guardNotYetReleasedOrModelTested": true
+  },
+  "reportCurrentQaBeforeNavigationCi": {
+    "status": "PASS",
+    "report": ".runtime-correction/runtime-corrector-progress.html",
+    "htmlSha256": "858b275c4202eff53c46de12d562454a163737daa31a4a995584d2a465c28768",
+    "receipt": {
+      "path": ".runtime-correction/validation/root-closed-trial-grade-report-sb4xvpf5/report-qa/receipt.json",
+      "sha256": "04ca01f14684769830cf6bee702d2dd1e19f6c6d434b1d9a6164c0612080c6e7"
+    },
+    "actual": "cf4d1b/session64372 ->ee69fc/0 CLOSED",
+    "views": 4,
+    "languages": [
+      "en",
+      "zh-CN"
+    ],
+    "widths": [
+      1200,
+      390
+    ],
+    "sections": 6,
+    "collapsedHistories": 3,
+    "internalLinks": 7,
+    "externalRequests": 0,
+    "browserErrors": 0,
+    "rawHtmlNoExternalUrlDateOrHash": true,
+    "humanizerApplied": true,
+    "visualReadback": "walkthrough-en-1200 inspected; current37pass/separate2fail and unchangedcode clearly separated from preceding graded result; no overflow"
   }
 }
