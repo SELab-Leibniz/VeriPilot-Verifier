@@ -82,7 +82,7 @@ def main():
         try:
             payload = json.loads(line)
             tokenizer, render, _ = models[payload["model"]]
-            prompt = render(payload["messages"], payload.get("tools"))
+            prompt = payload["rawText"] if "rawText" in payload else render(payload["messages"], payload.get("tools"))
             encoding = tokenizer.encode(prompt, add_special_tokens=False)
             print(json.dumps({"tokens": len(encoding.ids), "renderedBytes": len(prompt.encode())}), flush=True)
         except (KeyError, TypeError, ValueError) as error:

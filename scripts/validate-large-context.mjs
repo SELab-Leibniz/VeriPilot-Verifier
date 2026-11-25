@@ -16,6 +16,7 @@ import { loadStopOriginalRequirements } from '../lib/runtime-v2/production-stop.
 import { ensureTask } from '../lib/runtime-v2/task-store.mjs';
 import { STOP_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { businessSnapshot, chineseText, createRepository, denseText, sourceName, sourceText } from './helpers/large-context-fixtures.mjs';
+import { runInitialSdd } from './helpers/initial-sdd-pressure.mjs';
 
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const args = process.argv.slice(2);
@@ -28,7 +29,7 @@ if (!arg('--host-root') || !arg('--python') || !arg('--tokenizers'))
 const hostRoot = path.resolve(arg('--host-root'));
 const outputRoot = path.resolve(arg('--output-root', path.join(sourceRoot, '.runtime-correction', 'context-' + randomUUID().slice(0, 8))));
 const selectedCases = arg('--cases')?.split(',');
-const caseNames = new Set(['calibration', 'local-projection', 'review-small', 'review-large', 'review-overflow',
+const caseNames = new Set(['calibration', 'local-projection', 'initial-sdd-164k', 'review-small', 'review-large', 'review-overflow',
   'review-wide-context', 'review-page-cap', 'review-dense-overflow', 'business-history', 'business-false-positive', 'business-single-input', 'business-summary-overflow']);
 for (const name of selectedCases ?? []) assert(caseNames.has(name), 'Unknown case: ' + name);
 const enabled = name => !selectedCases || selectedCases.includes(name);
@@ -169,7 +170,7 @@ async function fixtureFetch(input, init) {
   }));
   assert(!payload.messages.some(message => typeof message.content === 'string'
     && message.content.includes('UNRELATED_SDD_BENCHMARK_MODULE')), 'Unrelated source reached the wire.');
-  const request = { sequence: activeCase.requests.length + 1, kind, inputTokens: inputUsage.tokens,
+  const request = { sequence: activeCase.requests.length + 1, kind, model: payload.model, inputTokens: inputUsage.tokens,
     renderedBytes: inputUsage.renderedBytes, bodyBytes: Buffer.byteLength(body), wireEstimate: estimate(payload, activeCase.contextTokens),
     maxOutputTokens: payload.max_completion_tokens ?? payload.max_tokens, toolResults: rows };
   activeCase.requests.push(request);
@@ -178,10 +179,12 @@ async function fixtureFetch(input, init) {
     (activeCase.transportErrors ??= []).push({ wireFile, error });
     throw new Error(error);
   }
-  if (inputUsage.tokens >= (activeCase.providerWindow ?? modelWindow)) {
+  const capacityDemand = inputUsage.tokens + (activeCase.reserveOutput ? request.maxOutputTokens ?? 0 : 0);
+  if (inputUsage.tokens >= (activeCase.providerWindow ?? modelWindow) || capacityDemand > (activeCase.providerWindow ?? modelWindow)) {
     request.response = 'fixture_context_overflow';
     return new Response(JSON.stringify({ error: { code: 'context_length_exceeded',
-      message: 'This model maximum context length is ' + (activeCase.providerWindow ?? modelWindow) + ' tokens. The prompt has ' + inputUsage.tokens + ' tokens.' } }),
+      message: 'This model maximum context length is ' + (activeCase.providerWindow ?? modelWindow) + ' tokens. The prompt has ' + inputUsage.tokens + ' tokens.'
+        + (activeCase.reserveOutput ? ' Requested output: ' + request.maxOutputTokens + ' tokens.' : '') } }),
     { status: 400, headers: { 'content-type': 'application/json' } });
   }
   if (kind === 'compaction') {
@@ -297,19 +300,20 @@ async function reviewCase(baseConfig, runtime, spec) {
   await fs.mkdir(directory);
   const budget = spec.window ?? contextTokens;
   const record = { name: spec.name, directory, requests: [], calls: [], submissions: [], requestLimit: 64,
-    contextTokens: budget, providerWindow: spec.window ?? modelWindow };
-  record.reply = stopScript(spec, record);
+    contextTokens: budget, providerWindow: spec.providerWindow ?? spec.window ?? modelWindow, reserveOutput: spec.reserveOutput };
+  record.reply = spec.makeReply ? spec.makeReply(() => prepared.request.task, record) : stopScript(spec, record);
   activeCase = record;
   const nativeResults = [];
   const config = structuredClone(baseConfig);
   config.agents.defaults.workspace = spec.repo;
   config.agents.defaults.contextTokens = budget;
   if (spec.window) config.models.providers.custom.models.find(item => item.id === model.review).contextWindow = spec.window;
+  if (spec.maxOutput) config.models.providers.custom.models.find(item => item.id === model.review).maxTokens = spec.maxOutput;
   const sessionId = 'fixture-' + spec.name;
   const task = await ensureTask({ projectRoot: spec.repo, sessionId });
-  const snapshot = businessSnapshot(spec.contract, 5);
+  const snapshot = spec.snapshot ?? businessSnapshot(spec.contract, 5);
   const originalRequirements = await loadStopOriginalRequirements({ projectRoot: spec.repo, snapshot });
-  assert(originalRequirements.referencedFiles.some(file => path.resolve(spec.repo, file.path) === spec.contract),
+  if (!spec.snapshot) assert(originalRequirements.referencedFiles.some(file => path.resolve(spec.repo, file.path) === spec.contract),
     'The SDD attachment must be a mandatory original source.');
   const groundTruth = { taskId: task.taskId, version: 0, digest: null, claims: [] };
   const scopedRuntime = { ...runtime, config: { ...runtime.config, current: () => config } };
@@ -333,7 +337,7 @@ async function reviewCase(baseConfig, runtime, spec) {
       reviewScope: { kind: 'workspace-stop', objectIds: [], sourceIds: [] },
       fixedStopClassification: stopClass, workflowStages: [],
       hook: { last_assistant_message: snapshot.entries.at(-1).message.content },
-      population: { metrics: {}, reviewPolicy: { deviationOnly: true, metrics: { M11: true, M16: true } } },
+      population: { metrics: {}, reviewPolicy: { deviationOnly: spec.deviationOnly ?? true, metrics: { M11: true, M16: true } } },
     },
     async onPrepared(value) { prepared = value; },
   };
@@ -359,7 +363,9 @@ async function reviewCase(baseConfig, runtime, spec) {
   const transcript = record.sessionFile ? await jsonLines(record.sessionFile) : [];
   const evidence = { ...record, reply: undefined, nativeResults, result, reads, reviewDirectory: directoryOfReview,
     pressureLog: await pressureLog(record.sessionKey),
-    attachmentBytes: (await fs.stat(spec.contract)).size,
+    ...(spec.snapshot ? { originalUsers: originalRequirements.userMessages.map(message => ({
+      hash: message.sha256, bytes: Buffer.byteLength(message.text) })), namedReferences: originalRequirements.referencedFiles.length }
+      : { attachmentBytes: (await fs.stat(spec.contract)).size }),
     basisFiles: prepared?.request?.task?.basisFiles,
     hostCompactions: transcript.filter(entry => entry.type === 'compaction')
       .map(entry => ({ tokensBefore: entry.tokensBefore, summaryChars: entry.summary?.length })),
@@ -369,17 +375,22 @@ async function reviewCase(baseConfig, runtime, spec) {
   return evidence;
 }
 
-async function businessCase(baseConfig, runtime, { name, seedTurns = 0, perTurn = 0, currentLines = 0, denseOld = false }) {
+async function businessCase(baseConfig, runtime, { name, seedTurns = 0, perTurn = 0, currentLines = 0, denseOld = false,
+  initialPrompt, hostBudget = contextTokens, catalogWindow, providerWindow, maxOutput, reserveOutput, reply }) {
   const directory = path.join(outputRoot, name);
   await fs.mkdir(directory);
   const sessionFile = path.join(directory, 'session.jsonl');
   const sessionKey = 'agent:main:fixture-' + name;
   const sessionId = randomUUID();
-  const record = { name, directory, sessionFile, sessionKey, requests: [], requestLimit: 64, contextTokens,
-    reply: () => ({ text: '已收到新的验收步骤。' }) };
+  const record = { name, directory, sessionFile, sessionKey, requests: [], requestLimit: 64, contextTokens: hostBudget,
+    providerWindow, reserveOutput, reply: reply ?? (() => ({ text: '已收到新的验收步骤。' })) };
   activeCase = record;
   const config = structuredClone(baseConfig);
   config.agents.defaults.model.primary = 'custom/' + model.business;
+  config.agents.defaults.contextTokens = hostBudget;
+  const businessModel = config.models.providers.custom.models.find(item => item.id === model.business);
+  if (catalogWindow) businessModel.contextWindow = catalogWindow;
+  if (maxOutput) businessModel.maxTokens = maxOutput;
   const history = sessions.SessionManager.open(sessionFile);
   const now = Date.now() - 120000;
   const estimateMessages = [];
@@ -393,10 +404,10 @@ async function businessCase(baseConfig, runtime, { name, seedTurns = 0, perTurn 
     history.appendMessage(assistant);
     estimateMessages.push({ role: 'user', content: user.content }, { role: 'assistant', content: assistant.content[0].text });
   }
-  const prompt = currentLines ? chineseText(currentLines) : '请继续之前的验收，给出下一步。';
+  const prompt = initialPrompt ?? (currentLines ? chineseText(currentLines) : '请继续之前的验收，给出下一步。');
   estimateMessages.push({ role: 'user', content: prompt });
   const plain = { model: model.business, messages: estimateMessages };
-  const before = { ...await count(plain), precheck: estimate(plain) };
+  const before = { ...await count(plain), precheck: estimate(plain, hostBudget) };
   let result;
   try {
     const outcome = await runtime.agent.runEmbeddedAgent({
@@ -554,6 +565,9 @@ function verify(results) {
     check(record.result.text?.some(text => text.includes('Context overflow')), 'Expected exhausted native recovery');
   });
   expect('offline', results.deniedSockets === 0, 'Unexpected socket attempt');
+  if (enabled('initial-sdd-164k')) {
+    expect('initial-sdd-164k', results.initialSdd?.verified === true, 'Initial SDD study did not finish');
+  }
   return failures;
 }
 
@@ -619,6 +633,11 @@ try {
       results.cases.push(record);
       console.log(JSON.stringify({ case: spec.name, requests: record.requests.length,
         compactions: record.hostCompactions.length, before: record.before.tokens, error: record.result.error }));
+    }
+    if (enabled('initial-sdd-164k')) {
+      results.initialSdd = await runInitialSdd({ outputRoot, repo: repository.repo, count, model, modelWindow,
+        business: spec => businessCase(config, runtime, spec),
+        review: spec => reviewCase(config, runtime, { ...spec, repo: repository.repo }) });
     }
   }
 } finally {
