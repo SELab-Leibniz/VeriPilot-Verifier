@@ -28,6 +28,23 @@ import { createStopStartProtocol } from '../lib/openclaw/stop-start-protocol.mjs
 import { createStopCorrectionStore } from '../lib/runtime-v2/stop-correction-store.mjs';
 import { loadPublicToolArgumentsValidator } from '../lib/openclaw/compat-2026.7.1-2.mjs';
 
+async function expandChecklist(submit, page) {
+  assert(Buffer.byteLength(JSON.stringify(page)) <= 8192);
+  const restore = async pointer => {
+    let args = pointer.arguments, text = '';
+    do {
+      const detail = await submit('review_checklist', args);
+      assert(Buffer.byteLength(JSON.stringify(detail)) <= 8192);
+      assert.equal(detail.readProofGranted, false); assert.equal(detail.assessmentGranted, false);
+      text += detail.jsonText; args = detail.next?.arguments;
+    } while (args);
+    return JSON.parse(text);
+  };
+  const result = { ...page, ...(page.checklistDetails ? await restore(page.checklistDetails.readWith) : {}) };
+  if (Array.isArray(page.items)) result.items = await Promise.all(page.items.map(item => item.fullContentDeferred ? restore(item.readWith) : item));
+  return result;
+}
+
 async function fixture(t) {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' };
@@ -498,7 +515,7 @@ test('critical-path Stop plans independent captured process reads within the ori
   while (f.input.evidence.snapshot.entries.length < 14) f.input.evidence.snapshot.entries.push({ type: 'assistant', message: { content: 'Independent captured original.' } });
   const handle = await f.run(async ({ readAll, read, submit }) => {
     await readAll(); await f.scope(submit);
-    const checklist = await submit('review_checklist', {}), plan = checklist.processReadPlan;
+    const checklist = await expandChecklist(submit, await submit('review_checklist', {})), plan = checklist.processReadPlan;
     try { assert.ok(plan, 'selected checklist has no captured process read plan'); } catch (error) { targetFailure = error; throw error; }
     assert.equal(plan.navigationOnly, true); assert.equal(plan.maxBatchBytes, 32768); assert.equal(plan.maxBatchFiles, 16);
     assert.equal(plan.complete, true); assert(Buffer.byteLength(JSON.stringify(plan)) <= 4096);
@@ -513,13 +530,36 @@ test('critical-path Stop plans independent captured process reads within the ori
   assert.equal(handle.result.metricObjectJudgements.length, 1); await handle.close();
 });
 
+test('separate fresh and reused native scope summaries retain bounded lossless navigation', async t => {
+  const f = await fixture(t), artifacts = Array.from({ length: 48 }, (_, i) => ({ artifactId: `generic-artifact-${i}`,
+    path: `generic/${i}/` + 'delivery/'.repeat(30), description: 'Retain complete generic artifact navigation. '.repeat(10) }));
+  f.input.onScope = async () => ({ artifactCandidates: artifacts, genericPublicNavigation: 'Generic captured observation. '.repeat(18000) });
+  const handle = await f.run(async ({ readAll, submit }) => {
+    await readAll(); const freshWire = await f.scope(submit);
+    assert(Buffer.byteLength(JSON.stringify(freshWire)) <= 8192);
+    assert.equal(freshWire.items, 1); assert.equal(freshWire.files, 0); assert.equal(freshWire.next, 'review_checklist');
+    assert(freshWire.checklistDetails.fields.includes('artifactCandidates'));
+    const fresh = await expandChecklist(submit, freshWire); assert.deepEqual(fresh.artifactCandidates, artifacts);
+    assert(fresh.programEvidenceFiles.length > 20);
+    const reusedWire = await f.scope(submit);
+    assert(Buffer.byteLength(JSON.stringify(reusedWire)) <= 8192);
+    assert.equal(reusedWire.reused, true); assert.equal(reusedWire.items, 1); assert.equal(reusedWire.next, 'review_checklist');
+    assert(reusedWire.checklistDetails.fields.includes('programEvidenceFiles'));
+    const reused = await expandChecklist(submit, reusedWire);
+    assert.deepEqual(reused.programEvidenceFiles, fresh.programEvidenceFiles);
+    await f.result(submit, [], 'UNVERIFIED');
+    assert.equal((await submit('finish_stop_review', { summary: 'Read-only scope details supply no evidence or assessment.' })).complete, true);
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'UNVERIFIED'); await handle.close();
+});
+
 test('critical-path Stop plan truncation preserves inventory recovery and never certifies unread history', async t => {
   const f = await fixture(t); let failure;
   while (f.input.evidence.snapshot.entries.length < 80) f.input.evidence.snapshot.entries.push({ type: 'assistant', message: { content: 'Captured process original.' } });
   const handle = await f.run(async ({ readAll, submit }) => {
     try {
       await readAll(); await f.scope(submit);
-      const checklist = await submit('review_checklist', {}), plan = checklist.processReadPlan;
+      const checklist = await expandChecklist(submit, await submit('review_checklist', {})), plan = checklist.processReadPlan;
       assert.equal(plan.complete, false); assert.equal(plan.totalFiles, 80); assert(Buffer.byteLength(JSON.stringify(plan)) <= 4096);
       assert.equal(plan.recoverWith.tool, 'source_ls'); assert.equal(plan.recoverWith.arguments.offset, 0);
       assert(plan.batches.flatMap(batch => batch.files).length < plan.totalFiles);
@@ -655,9 +695,15 @@ test('bounded exact pending IDs retain honest omissions and original pagination 
         assert.equal(nav.pendingIds.length, 8); assert.equal(nav.omittedCount, 13);
         assert(!nav.pendingIds.includes(ids[1]));
         const page = await submit(nav.checklist.tool, nav.checklist.arguments);
-        assert.equal(page.nextOffset, 20);
-        const next = await submit('review_checklist', { offset: page.nextOffset, limit: 20 });
-        assert.equal(next.nextOffset, null); assert.deepEqual(next.items.map(item => item.taskId), ids.slice(20));
+        const listed = [...(await expandChecklist(submit, page)).items]; let next = page.next?.arguments
+          ?? (page.nextOffset === null ? null : { offset: page.nextOffset, limit: 20 });
+        while (next) {
+          const following = await submit('review_checklist', next);
+          assert(Buffer.byteLength(JSON.stringify(following)) <= 8192);
+          listed.push(...(await expandChecklist(submit, following)).items); next = following.next?.arguments
+            ?? (following.nextOffset === null ? null : { offset: following.nextOffset, limit: 20 });
+        }
+        assert.deepEqual(listed.map(item => item.taskId), ids);
         previous = nav;
       } else {
         assert.notEqual(nav.taskId, previous.taskId); assert.notEqual(nav.reviewTaskId, previous.reviewTaskId);
@@ -939,7 +985,7 @@ test('a mixed checklist keeps direct late invocation/result navigation without g
     { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'late-run', name: 'Bash', input: { command: 'node --test' } }] } },
     { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'late-run', content: 'Exit code 0; tests passed.' }] } });
   const handle = await f.run(async ({ readAll, read, submit }) => {
-    await readAll(); const checklist = await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' });
+    await readAll(); const checklist = await expandChecklist(submit, await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' }));
     assert.equal(checklist.total, 2);
     assert.notEqual(checklist.processNavigationOmitted, true);
     assert.equal(checklist.processEvidence.executionResultFileCount, 1);
@@ -991,7 +1037,7 @@ test('recent process navigation groups completed calls and leaves ambiguous or o
   let navigation;
   const handle = await f.run(async ({ readAll, submit }) => {
     await readAll();
-    navigation = (await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' })).processEvidence;
+    navigation = (await expandChecklist(submit, await submit('review_checklist', { stopClassification: 'TASK_COMPLETE' }))).processEvidence;
     await submit('submit_review', { taskId: 'M12:R1', verdict: 'UNVERIFIED', reason: 'Navigation alone provides no execution proof.', citeIds: [], finish: true });
   });
   const { executionSamples, recentExecutionPairs } = navigation;
@@ -2331,7 +2377,7 @@ test('a current source deviation can finish on submission only when separate rev
         if (mode.endsWith('-citation')) await assert.rejects(submit('submit_review', invalid), { code: 'TASK_CITATION_INVALID' });
         if (mode === 'process') {
           const processId = page.items.find(item => item.metricId === 'M11').objectId;
-          const { processEvidence } = await submit('review_checklist', { includeProcessEvidence: true });
+          const { processEvidence } = await expandChecklist(submit, await submit('review_checklist', { includeProcessEvidence: true }));
           const resultId = await read(processEvidence.executionSamples[0].resultFile);
           assert.equal((await submit('submit_review', { taskId: processId, verdict: 'DEVIATION',
             reason: 'The original process result reports debug mode.', citeIds: [resultId] })).processClassificationRequired, true);

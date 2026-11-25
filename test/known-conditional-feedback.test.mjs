@@ -7,10 +7,33 @@ import { loadStopOriginalRequirements } from '../lib/runtime-v2/production-stop.
 import { resolveStopReviewPolicy } from '../lib/runtime-v2/metric-policy.mjs';
 import { readOpenSpecPlan } from '../lib/openspec-plan.mjs';
 import { createOriginalSourceAnchor } from '../lib/runtime-v2/original-source-anchor.mjs';
+import { ORIGINAL_PROOF_SUBJECT_GUIDANCE } from '../lib/runtime-v2/review-result-validation.mjs';
 import { observeKnownOriginalObligations, knownOriginalObligations, knownOriginalObligationReader }
   from '../lib/runtime-v2/known-original-obligations.mjs';
 
 const assessment = { activation: 'ACTIVE', evidenceKind: 'TARGET_FACTS', reason: 'Current source exposes the requested streaming activation facts.' };
+async function checklistPages(tools, first) {
+  const items = [], known = [], pages = [];
+  let page = first;
+  const restore = async pointer => {
+    let args = pointer.arguments, text = '';
+    do {
+      const detail = await tools.submit('review_checklist', args);
+      assert.equal(detail.readProofGranted, false); assert.equal(detail.assessmentGranted, false);
+      assert(Buffer.byteLength(JSON.stringify(detail)) <= 8192);
+      text += detail.jsonText; args = detail.next?.arguments;
+    } while (args);
+    return JSON.parse(text);
+  };
+  do {
+    assert(Buffer.byteLength(JSON.stringify(page)) <= 8192); pages.push(page);
+    for (const row of page.items) items.push(row.fullContentDeferred ? await restore(row.readWith) : row);
+    for (const row of page.knownObligations?.items ?? []) known.push(row.fullContentDeferred ? await restore(row.readWith) : row);
+    const next = page.next?.arguments ?? (page.nextOffset !== null ? { offset: page.nextOffset, limit: 20 } : null);
+    page = next ? await tools.submit('review_checklist', next) : null;
+  } while (page);
+  return { items, known, pages };
+}
 async function fixture(t, { count = 1, conditional = true, long = false, amendment = false, execution = false, sharedResult = false, windowTrigger = false } = {}) {
   const f = await stopProtocolFixture(t, 'findings');
   f.input.request.reviewScope = { kind: 'workspace-stop' }; delete f.input.request.fixedStopClassification;
@@ -59,16 +82,17 @@ async function fixture(t, { count = 1, conditional = true, long = false, amendme
   f.input.readKnownOriginalObligations = knownOriginalObligationReader(f.owner);
   f.production = path.join(f.root, 'stream.mjs');
   await fs.writeFile(f.production, 'export const streaming = true;\nexport const ordered = values => [...values];\n');
-  f.prepare = async tools => {
+  f.prepare = async (tools, take = requirements.length) => {
     await tools.readAll();
     const originalFile = tools.brief.task.basisFiles.find(file => path.basename(file).startsWith('user-original-0'));
     const originalId = (await tools.read(originalFile)).details.citation.citeId;
-    const page = await tools.submit('set_original_checklist', { items: requirements.map((text, i) => ({ metricId: execution ? 'M12' : 'M16', verificationTarget: execution ? 'PROCESS' : 'IMPLEMENTATION', text,
+    const page = await tools.submit('set_original_checklist', { items: requirements.slice(0, take).map((text, i) => ({ metricId: execution ? 'M12' : 'M16', verificationTarget: execution ? 'PROCESS' : 'IMPLEMENTATION', text,
       ...(conditional && !(amendment && i === 1) ? { applicability: windowTrigger ? 'A later operation occurred.' : 'Streaming is enabled.' } : {}), knownCandidateId: f.candidates[i].id,
       knownDutyReason: long ? 'The exact original duty line is the complete retained stream obligation, including all boundary and ordering cases. '.repeat(3) : 'The original line states the complete retained duty.',
       citeId: originalId, lineStart: i + 2, lineEnd: i + 2 })), scope: { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 20 } });
     f.initialChecklistPage = page;
-    return requirements.map(text => page.items.find(item => item.description === text));
+    const complete = await checklistPages(tools, page);
+    return requirements.slice(0, take).map(text => complete.items.find(item => item.description === text));
   };
   f.rows = objects => f.candidates.map((candidate, i) => ({ id: candidate.id, disposition: 'CURRENT', objectId: objects[i].objectId,
     verdict: 'NO_CONFIRMED_DEVIATION', reason: 'Current acknowledged source establishes this original stream duty.' }));
@@ -98,15 +122,65 @@ test('known conditional feedback lists both context-required fields without losi
       assert(item.diagnostic.missingFields.includes('citeIds'));
       assert(item.diagnostic.missingFields.includes('conditionAssessment'));
     }
-    const page = await tools.submit('review_checklist', { offset: 0, limit: 20 });
-    assert.equal(page.knownObligations.items.length, 5);
-    for (const item of page.knownObligations.items) assert(item.currentAssessment.diagnostic.missingFields.includes('conditionAssessment'));
+    const page = await checklistPages(tools, await tools.submit('review_checklist', { offset: 0, limit: 20 }));
+    assert.equal(page.known.length, 5);
+    for (const item of page.known) assert(item.currentAssessment.diagnostic.missingFields.includes('conditionAssessment'));
     const current = (await tools.read(f.production)).details.citation.citeId;
     assert.equal((await tools.submit('finish_stop_review', { summary: 'Explicit activation and current proof supplied.', knownObligations:
       rows.map(row => ({ ...row, citeIds: [current], conditionAssessment: assessment })) })).complete, true);
   });
   assert.equal(handle.result.unverifiedItems.length, 0); assert.equal(f.calls.length, 1);
   assert(handle.result.knownOriginalCoverage.items.every(item => item.disposition === 'CURRENT')); await handle.close();
+});
+
+test('native checklist accepts legacy known-only offsets while explicit independent cursors stay strict', async t => {
+  const f = await fixture(t, { count: 3 });
+  const handle = await f.run(async tools => {
+    await f.prepare(tools, 1);
+    const first = await tools.submit('review_checklist', { offset: 0, limit: 1 });
+    assert.equal(first.nextOffset, null); assert.equal(first.knownObligations.nextOffset, 1);
+    const legacy = await tools.submit('review_checklist', { offset: 2, limit: 1 });
+    assert.deepEqual(legacy.items, []); assert.equal(legacy.knownObligations.items[0].id, f.candidates[2].id);
+    await assert.rejects(tools.submit('review_checklist', { offset: 2, knownOffset: 2, limit: 1 }), { code: 'REVIEW_NAVIGATION_RANGE' });
+    await assert.rejects(tools.submit('review_checklist', { offset: 4, limit: 1 }), { code: 'REVIEW_NAVIGATION_RANGE' });
+    const complete = await checklistPages(tools, first);
+    assert.deepEqual(complete.known.map(item => item.id), f.candidates.map(item => item.id));
+    const finish = await tools.submit('finish_stop_review', { summary: 'All retained duties remain explicitly unresolved.',
+      knownObligations: f.candidates.map(candidate => ({ id: candidate.id, disposition: 'UNVERIFIED', reason: 'Navigation supplies no current verdict.' })) });
+    assert.equal(finish.complete, true);
+  });
+  assert(handle.result.knownOriginalCoverage.items.every(item => item.disposition === 'UNVERIFIED')); await handle.close();
+});
+
+test('native checklist details preserve auxiliary content without granting source reads or assessments', async t => {
+  const f = await fixture(t);
+  f.input.request.artifactCandidates = Array.from({ length: 48 }, (_, i) => ({ artifactId: `generic-artifact-${i}`,
+    path: `generic/${i}/` + 'delivery/'.repeat(30), description: 'Full generic navigation text. '.repeat(10) }));
+  const handle = await f.run(async tools => {
+    assert(tools.params.extraSystemPrompt.includes(ORIGINAL_PROOF_SUBJECT_GUIDANCE));
+    const originalTool = tools.tools.get('set_original_checklist');
+    assert(originalTool.description.includes(ORIGINAL_PROOF_SUBJECT_GUIDANCE));
+    assert.equal(originalTool.parameters.properties.items.items.properties.verificationTarget.description, ORIGINAL_PROOF_SUBJECT_GUIDANCE);
+    const objects = await f.prepare(tools), page = f.initialChecklistPage;
+    assert(page.checklistDetails.fields.includes('artifactCandidates'));
+    let args = page.checklistDetails.readWith.arguments, content = '';
+    do {
+      const detail = await tools.submit('review_checklist', args);
+      assert.equal(detail.readProofGranted, false); assert.equal(detail.assessmentGranted, false);
+      assert.equal(detail.citation, undefined); assert(Buffer.byteLength(JSON.stringify(detail)) <= 8192);
+      content += detail.jsonText; args = detail.next?.arguments;
+    } while (args);
+    assert.deepEqual(JSON.parse(content).artifactCandidates, f.input.request.artifactCandidates);
+    await assert.rejects(tools.submit('review_checklist', { ...page.checklistDetails.readWith.arguments,
+      stopClassification: 'TASK_COMPLETE' }), { code: 'REVIEW_NAVIGATION_SCOPE' });
+    const first = await tools.submit('finish_stop_review', { summary: 'Details alone do not satisfy current proof.', knownObligations: f.rows(objects) });
+    assert.equal(first.complete, false); assert.equal(first.pendingKnownOriginalCount, 1);
+    assert(first.pendingKnownOriginals[0].diagnostic.missingFields.includes('citeIds'));
+    const final = await tools.submit('finish_stop_review', { summary: 'The missing proof remains explicitly unresolved.',
+      knownObligations: [{ id: f.candidates[0].id, disposition: 'UNVERIFIED', reason: 'Read-only details grant no source proof.' }] });
+    assert.equal(final.complete, true);
+  });
+  assert.equal(handle.result.knownOriginalCoverage.items[0].disposition, 'UNVERIFIED'); await handle.close();
 });
 
 test('known conditional feedback exposes the actual validator code before its same-worker repair', async t => {

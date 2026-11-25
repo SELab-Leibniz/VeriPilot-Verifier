@@ -474,7 +474,30 @@
       "Proposal original host error retained; Apply clean, Archive unexecuted.",
       "Linux grading on this Mac does not establish nativeMac equivalence.",
       "Current method result belongs only to c068/c252; later WIP fixes inherit no live qualification."
-    ]
+    ],
+    "proofSubjectDiagnosis": {
+      "status": "ACKNOWLEDGED_ARTIFACT_CITATIONS_DO_NOT_MATCH_FROZEN_SOURCE_SUBJECT",
+      "localization": {
+        "path": ".runtime-correction/validation/unverified-proof-owner-localization-25084-y7sjd4ph/fault-localization.json",
+        "sha256": "db5b1224d31b7310622699726b50d93947fd66c13bce139616e24cc03e5ac14f"
+      },
+      "requiredOwner": [
+        "SOURCE"
+      ],
+      "initialCitedOwners": [
+        "ARTIFACT",
+        "PROCESS"
+      ],
+      "finalCitedOwners": [
+        "ARTIFACT"
+      ],
+      "missingMandatoryBasis": false,
+      "missingObjectIdOrCiteIds": false,
+      "unreadOrStaleMarkdownCitations": false,
+      "frozenSubjectCanChange": false,
+      "automaticReclassificationGranted": false,
+      "existingOutcomeChanged": false
+    }
   },
   "latestCompletedDevelopmentRun": {
     "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
@@ -786,7 +809,30 @@
       "Proposal original host error retained; Apply clean, Archive unexecuted.",
       "Linux grading on this Mac does not establish nativeMac equivalence.",
       "Current method result belongs only to c068/c252; later WIP fixes inherit no live qualification."
-    ]
+    ],
+    "proofSubjectDiagnosis": {
+      "status": "ACKNOWLEDGED_ARTIFACT_CITATIONS_DO_NOT_MATCH_FROZEN_SOURCE_SUBJECT",
+      "localization": {
+        "path": ".runtime-correction/validation/unverified-proof-owner-localization-25084-y7sjd4ph/fault-localization.json",
+        "sha256": "db5b1224d31b7310622699726b50d93947fd66c13bce139616e24cc03e5ac14f"
+      },
+      "requiredOwner": [
+        "SOURCE"
+      ],
+      "initialCitedOwners": [
+        "ARTIFACT",
+        "PROCESS"
+      ],
+      "finalCitedOwners": [
+        "ARTIFACT"
+      ],
+      "missingMandatoryBasis": false,
+      "missingObjectIdOrCiteIds": false,
+      "unreadOrStaleMarkdownCitations": false,
+      "frozenSubjectCanChange": false,
+      "automaticReclassificationGranted": false,
+      "existingOutcomeChanged": false
+    }
   },
   "precedingCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_ORDINARY_LIVE_LEDGER_PROBE",
@@ -1814,8 +1860,8 @@
     "pushActual": "d52afc/session20564 ->dc6dcb/0 CLOSED"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-method-complete-unverified-qa/receipt.json",
-    "sha256": "ee7a93a88f48e97e084c8f9bee59c7ac1a808d720d610b7b63954db7e6fd8e02"
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-proof-owner-native-diagnosis-qa/receipt.json",
+    "sha256": "bab7a09536a47d3c34e04c529c29bdc00ab91369ee7f3c8aeb1a6690f22ca7d8"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4996,7 +5042,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
-    "htmlSha256": "d688d18455dc2ef63c5fa4ed950c984098e194dd1892f0b3f35ede3055d9a0c5",
+    "htmlSha256": "be16fdeaa2c83b1d82042f4f31136b549d120e35a0297977c1b6818e76d9a6dd",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
     "precedingDeadlineRunReference": "evaluationRecords.ordinaryOn56efD5",
     "earlierDeadlineFailureMovedToExistingHistory": true,
@@ -8612,7 +8658,30 @@
         "Proposal original host error retained; Apply clean, Archive unexecuted.",
         "Linux grading on this Mac does not establish nativeMac equivalence.",
         "Current method result belongs only to c068/c252; later WIP fixes inherit no live qualification."
-      ]
+      ],
+      "proofSubjectDiagnosis": {
+        "status": "ACKNOWLEDGED_ARTIFACT_CITATIONS_DO_NOT_MATCH_FROZEN_SOURCE_SUBJECT",
+        "localization": {
+          "path": ".runtime-correction/validation/unverified-proof-owner-localization-25084-y7sjd4ph/fault-localization.json",
+          "sha256": "db5b1224d31b7310622699726b50d93947fd66c13bce139616e24cc03e5ac14f"
+        },
+        "requiredOwner": [
+          "SOURCE"
+        ],
+        "initialCitedOwners": [
+          "ARTIFACT",
+          "PROCESS"
+        ],
+        "finalCitedOwners": [
+          "ARTIFACT"
+        ],
+        "missingMandatoryBasis": false,
+        "missingObjectIdOrCiteIds": false,
+        "unreadOrStaleMarkdownCitations": false,
+        "frozenSubjectCanChange": false,
+        "automaticReclassificationGranted": false,
+        "existingOutcomeChanged": false
+      }
     }
   },
   "previousDistributionPlacementCi": {
@@ -8714,13 +8783,118 @@
     "currentArchiveModelOutcomeInherited": false
   },
   "generalToolUsabilityFollowup": {
-    "status": "WORK_IN_PROGRESS_NOT_IN_CURRENT_PUBLISHED_ARCHIVE",
+    "status": "FOCUSED_AND_SOURCE_PEER_QUALIFIED_NEW_SOURCE_CI_PENDING",
     "scope": [
       "Actionable strict original-source range diagnostics",
-      "Lossless byte-bounded Stop checklist transport"
+      "Lossless byte-bounded Stop checklist transport",
+      "Explicit original proof-subject guidance and bounded required-versus-actual evidence diagnostics"
     ],
     "currentArchiveLiveResultInherited": false,
     "wipCiQualified": false,
-    "formalBenchmarkCredit": 0
+    "formalBenchmarkCredit": 0,
+    "localization": {
+      "path": ".runtime-correction/validation/unverified-proof-owner-localization-25084-y7sjd4ph/fault-localization.json",
+      "sha256": "db5b1224d31b7310622699726b50d93947fd66c13bce139616e24cc03e5ac14f"
+    },
+    "acceptanceRulesUnchanged": true,
+    "canonicalArchiveUpdated": false,
+    "realModelUsefulnessVerified": false,
+    "originalRange": {
+      "qualification": {
+        "path": ".runtime-correction/validation/original-read-range-guidance-resources-nfzqm0ne/qualification-receipt.json",
+        "sha256": "d8fdd182913df15a6d62338e868e0b739367b7a9c978c2ebbcf63ef366be04eb"
+      },
+      "focusedEachNode18And24": 91,
+      "sourcePeer": "CLEAR",
+      "qualificationInheritedByCanonicalArchive": false
+    },
+    "proofOwner": {
+      "qualification": {
+        "path": ".runtime-correction/validation/proof-owner-diagnostic-guidance-9d4k1r2s/qualification-receipt.json",
+        "sha256": "a63b145733d1a4952e7c0bdb2fe0f5918f5ec1ada0784c622c766203f98b2e61"
+      },
+      "focusedEachNode18And24": 26,
+      "sourcePeer": "CLEAR",
+      "qualificationInheritedByCanonicalArchive": false
+    },
+    "checklistTransport": {
+      "qualification": {
+        "path": ".runtime-correction/validation/stop-checklist-bounded-CpRexE/qualification-receipt.json",
+        "sha256": "8e07a113ae01eaa0cba94c46149835e746a24d85e356ac6983c1c1c0cc0d53e9"
+      },
+      "qualifiedSourceHold": {
+        "path": ".runtime-correction/validation/stop-checklist-bounded-CpRexE/qualified-source-hold.json",
+        "sha256": "9e7cc4ca85bf21d80d992896dc3170cce1d96e03ba7b48764939fcc3d974dc40"
+      },
+      "sourcePeer": {
+        "path": ".runtime-correction/validation/stop-checklist-bounded-CpRexE/peer-retention-source.v3.json",
+        "sha256": "efa84bb35ec05de7b8731dd69ed1fe8389b3d0e509cf7bf7c9d07e950998d228"
+      },
+      "eachNode18And24": {
+        "tests": 200,
+        "pass": 199,
+        "skip": 1,
+        "fail": 0,
+        "skipScope": "Existing Windows-only fixture"
+      },
+      "node18Args": [
+        "--experimental-global-webcrypto"
+      ],
+      "byteBudget": 8192,
+      "stockSourceFunctionControl": {
+        "boundedReplies": 714,
+        "maxBytes": 7978,
+        "oversizedInvalidJsonNegativeControls": 3,
+        "liveSdkOrModelExecution": false
+      },
+      "separateScopeEntryCovered": true,
+      "pageAndKnownCursorsIndependent": true,
+      "completeDutyTextPreserved": true,
+      "grantsReadProofOrAssessment": false
+    },
+    "workingRuntimePostimages": {
+      "lib/document-tools.mjs": "c63f6ac12fe23efaedd4880a784660dc1fddb7cd2913971ddb332cc928ad8b46",
+      "lib/runtime-v2/review-result-validation.mjs": "8d0bf66e3fa2e4d5e74e2f6da6d1b1ddaebe31dd0044179a9bf2db76b4928dde",
+      "lib/runtime-v2/stop-workspace-review.mjs": "bc0e175c1edc3e41e09c6e6b729d864fbc96498bd4c927fb74f9038057d0fdb0"
+    },
+    "sourceCommit": "ROOT_PENDING_COMMIT_BINDING",
+    "oldFailedAndUnflaggedControlsPreserved": true
+  },
+  "reportCurrentQaBeforeProofOwnerDiagnosis": {
+    "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-method-complete-unverified-qa/receipt.json",
+    "sha256": "ee7a93a88f48e97e084c8f9bee59c7ac1a808d720d610b7b63954db7e6fd8e02"
+  },
+  "nativeBootFollowup": {
+    "status": "OWN_VENDOR_LOG_SELF_KILL_REPORTED_SOCKET_PATH_FEASIBILITY_CONFIRMED_V11_PREPARING",
+    "freshLogReceipt": {
+      "path": ".runtime-correction/validation/phone-v10-fresh-log-forensics-q_vtvwfd/receipt.json",
+      "sha256": "863ee9113fcbf4c0da6fb759281121b79c692e554b1f2175be0c615fc98ed48b"
+    },
+    "observed": {
+      "vendorWatchdogReportsOwnPrimaryKillAfterBootTimeout": true,
+      "restartBootArgumentsEmpty": true,
+      "localIpcNameErrors": true,
+      "coldbootFlagContractValid": true
+    },
+    "hypotheses": {
+      "overlongTmpdirCausesIpcFailure": "OS_PATH_FEASIBILITY_SUPPORTED_QT_LINK_NOT_ESTABLISHED",
+      "ipcFailureCausesWatchdogTimeout": "NOT_ESTABLISHED"
+    },
+    "independentKernelSenderKnown": false,
+    "oldResourcesQueriedOrChanged": false,
+    "guestReadinessProven": false,
+    "formalBenchmarkCredit": 0,
+    "kernelSocketComparison": {
+      "path": ".runtime-correction/validation/phone-v11-socket-path-kernel-ncaxhpz_/receipt.json",
+      "sha256": "317088e135091affad18cf36ccf2c48a4d3933845bcd7d8a49033d7c81192555"
+    },
+    "comparison": {
+      "longPathBytes": 168,
+      "longResult": "AF_UNIX path too long",
+      "shortPathBytes": 67,
+      "shortResult": "BOUND",
+      "ownPathsCleaned": true,
+      "SDKOrVmLaunched": false
+    }
   }
 }
