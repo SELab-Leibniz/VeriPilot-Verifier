@@ -22,7 +22,7 @@ const scenarios = {
 };
 
 async function exerciseNativeReviewer(root, hostRoot, scenario) {
-  const projectRoot = path.join(root, 'project');
+  const projectRoot = path.join(root, scenario === 'local-lean' ? '项目 工作区' : 'project');
   await fs.mkdir(projectRoot);
   const requirement = 'Deliver a document containing the word Ready.';
   await fs.writeFile(path.join(projectRoot, 'deliverable.md'), 'Ready\n');
@@ -103,8 +103,13 @@ async function exerciseNativeReviewer(root, hostRoot, scenario) {
     const evidence = { hostVersion: runtime.version, scenario };
     if (codeMode) evidence.frame = await validateNativeRequirementFrame(input).catch(error => { throw providerError ?? error; });
     else {
-      evidence.stop = await validateStop({ factoryFor, projectRoot, taskId, requirement, sha256, schema: STOP_REVIEW_SCHEMA });
-      if (!localLean) {
+      const { matchesEvidence } = await plugin('lib/runtime-v2/evidence-state.mjs');
+      const stopFixture = { factoryFor, projectRoot, taskId, requirement, sha256, schema: STOP_REVIEW_SCHEMA };
+      evidence.stop = await validateStop({ ...stopFixture, matchesEvidence, stateDirectory: localLean ? '插件 缓存' : '.codegraph' })
+        .catch(error => { throw providerError ?? error; });
+      if (localLean) {
+        evidence.changedEvidence = await validateChangedEvidence(stopFixture).catch(error => { throw providerError ?? error; });
+      } else {
         evidence.baseline = await validateNativeBaselineAndAudit(input).catch(error => { throw providerError ?? error; });
         evidence.scoped = await validateNativeSkillAndDocument(input).catch(error => { throw providerError ?? error; });
       }
@@ -149,32 +154,96 @@ async function exerciseNativeReviewer(root, hostRoot, scenario) {
   }
 }
 
-async function validateStop({ factoryFor, projectRoot, taskId, requirement, sha256, schema }) {
+function workspaceStopInput({ projectRoot, taskId, requirement, sha256, schema }) {
+  const original = { ref: 'U1', text: requirement, sha256: sha256(Buffer.from(requirement)) };
+  return { projectRoot, taskId, role: 'stop-reviewer', schema,
+    reviewer: { model, timeoutMs: 30000, maxAttempts: 1 },
+    request: { reviewScope: { kind: 'workspace-stop' }, classificationContract: 2,
+      population: { metrics: {}, reviewPolicy: { metrics: { M01: true, M16: false } } } },
+    evidence: { groundTruth: { taskId, version: 0, claims: [], digest: sha256([]) },
+      originalRequirements: { userMessages: [original], projectFiles: [], materials: [], referencedFiles: [], digest: sha256(original) },
+      snapshot: { entries: [] } } };
+}
+
+function basisSteps(files, requirement) {
+  const userSource = files.find(file => path.basename(file).startsWith('user-original-'));
+  assert(userSource);
+  return [
+    ...files.map(file => ['source_read', { path: file }]),
+    ['set_original_checklist', { items: [{ metricId: 'M01', verificationTarget: 'ARTIFACT', text: requirement,
+      path: userSource, lineStart: 1, lineEnd: 1 }] }],
+  ];
+}
+
+async function validateStop(fixture) {
+  const { factoryFor, projectRoot, requirement, matchesEvidence, stateDirectory } = fixture;
   let sessionFile, basisFiles;
   const output = path.join(projectRoot, '.runtime-correction', 'fixture-output');
   const activeOutput = path.join(output, 'active.log');
+  const graphCache = path.join(projectRoot, stateDirectory, 'active');
+  const graphLog = path.join(graphCache, 'progress.log');
+  const agentCache = path.join(projectRoot, '.cac');
+  const failedRead = path.join(projectRoot, 'optional preview.log');
+  const delivery = path.join(projectRoot, 'deliverable.md');
   await fs.mkdir(output, { recursive: true });
+  await fs.mkdir(graphCache, { recursive: true });
   await fs.writeFile(activeOutput, 'Fixture runtime output.\n');
+  await fs.writeFile(graphLog, 'Fixture graph cache.\n');
+  await fs.writeFile(failedRead, Buffer.from([0xff]));
+  await fs.writeFile(delivery, 'Awaiting the fixture deliverable.\n');
   const factory = factoryFor(params => {
     sessionFile = params.sessionFile;
     ({ basisFiles } = JSON.parse(params.prompt).task);
-    const originalUserFile = basisFiles.find(file => path.basename(file).startsWith('user-original-'));
-    assert(originalUserFile);
     const steps = [
-      ...basisFiles.map(file => ['source_read', { path: file }]),
-      ['set_original_checklist', { items: [{ metricId: 'M01', verificationTarget: 'ARTIFACT', text: requirement,
-        path: originalUserFile, lineStart: 1, lineEnd: 1 }] }],
+      ...basisSteps(basisFiles, requirement),
+      ['source_read', { path: failedRead }],
+      ['source_grep', async payload => {
+        const last = payload.messages.findLast(message => message.role === 'tool');
+        assert.match(last.content, /Only UTF-8/u);
+        await fs.unlink(failedRead);
+        return { path: delivery, pattern: 'Awaiting the fixture' };
+      }],
+      ['source_read', payload => {
+        const last = payload.messages.findLast(message => message.role === 'tool');
+        assert(JSON.parse(last.content).hits.some(hit => hit.startsWith(delivery)));
+        return { path: delivery, contextOnly: true };
+      }],
+      ['source_read', async payload => {
+        const last = payload.messages.findLast(message => message.role === 'tool');
+        assert.match(last.content, /^\[RC context only\]\nAwaiting the fixture/u);
+        await fs.writeFile(delivery, 'Ready\n');
+        return { path: delivery };
+      }],
       ['source_ls', {}], ['source_find', { pattern: 'deliverable.md' }], ['source_grep', { pattern: 'Ready' }],
-      ['source_ls', { path: output }], ['source_read', { path: activeOutput }],
+      ['source_ls', { path: graphCache }], ['source_grep', { path: graphCache, pattern: 'Fixture graph cache' }],
+      ['source_read', payload => {
+        const last = payload.messages.findLast(message => message.role === 'tool');
+        assert(JSON.parse(last.content).hits.some(hit => hit.startsWith(graphLog)));
+        return { path: activeOutput };
+      }],
+      ['source_read', payload => {
+        const last = payload.messages.findLast(message => message.role === 'tool');
+        assert.match(last.content, /^\[RC context only\]\nFixture runtime output/u);
+        return { path: graphLog, contextOnly: true };
+      }],
       ['review_notes', async payload => {
         const last = payload.messages.findLast(message => message.role === 'tool');
-        assert.match(last.content, /Fixture runtime output/u);
-        assert.doesNotMatch(last.content, /^\[citeId=/u);
+        assert.match(last.content, /^\[RC context only\]\nFixture graph cache/u);
         await fs.appendFile(activeOutput, 'Runtime output continues changing.\n');
-        await fs.writeFile(path.join(output, 'later.log'), 'New runtime output.\n');
+        const rotated = path.join(graphCache, 'rotated progress.log');
+        await fs.rename(graphLog, rotated);
+        await fs.writeFile(graphLog, 'Replacement cache.\n');
+        await fs.unlink(rotated);
+        await fs.mkdir(agentCache);
+        await fs.writeFile(delivery, 'Ready\n');
         return { note: 'Workspace and output navigation complete.' };
       }],
-      ['review_history', { mode: 'state' }],
+      ['source_grep', { path: graphCache, pattern: 'Replacement cache' }],
+      ['review_history', payload => {
+        const last = payload.messages.findLast(message => message.role === 'tool');
+        assert(JSON.parse(last.content).hits.some(hit => hit.startsWith(graphLog)));
+        return { mode: 'state' };
+      }],
       ['review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true }],
       ['submit_review', payload => {
         const last = payload.messages.findLast(message => message.role === 'tool');
@@ -194,14 +263,7 @@ async function validateStop({ factoryFor, projectRoot, taskId, requirement, sha2
       return ['tool_call', { id: name, args }];
     };
   });
-  const original = { ref: 'U1', text: requirement, sha256: sha256(Buffer.from(requirement)) };
-  const response = await factory({ projectRoot, taskId, role: 'stop-reviewer', schema,
-    reviewer: { model, timeoutMs: 30000, maxAttempts: 1 },
-    request: { reviewScope: { kind: 'workspace-stop' }, classificationContract: 2,
-      population: { metrics: {}, reviewPolicy: { metrics: { M01: true, M16: false } } } },
-    evidence: { groundTruth: { taskId, version: 0, claims: [], digest: sha256([]) },
-      originalRequirements: { userMessages: [original], projectFiles: [], materials: [], referencedFiles: [], digest: sha256(original) },
-      snapshot: { entries: [] } } }).catch(error => {
+  const response = await factory(workspaceStopInput(fixture)).catch(error => {
     if (!sessionFile) throw error;
     return { failure: error.code ?? error.message };
   });
@@ -209,24 +271,69 @@ async function validateStop({ factoryFor, projectRoot, taskId, requirement, sha2
   const journal = await readMessages(path.join(path.dirname(sessionFile), 'observations.jsonl'));
   const receipts = journal.filter(message => message.details?.receiptBoundary === 'openclaw.tool_result_persist.v1');
   const directReads = persisted.filter(message => message.toolName === 'source_read' && message.isError === false);
-  const basisReads = directReads.filter(message => toolText(message).startsWith('[citeId='));
+  const evidenceReads = directReads.filter(message => toolText(message).startsWith('[citeId='));
   const evidence = { completed: response.reviewCompleted ?? false, failure: response.failure,
     checklist: persisted.some(message => message.toolName === 'set_original_checklist' && message.isError === false),
     wrapperResults: persisted.filter(message => message.toolName === 'tool_call').length,
     basisUnread: persisted.some(message => toolText(message).includes('Required original basis not fully read')),
-    basisFiles: basisFiles.length, directBasisReads: basisReads.length, receipts: receipts.length };
+    basisFiles: basisFiles.length, directEvidenceReads: evidenceReads.length, receipts: receipts.length };
   assert(evidence.completed, JSON.stringify(evidence));
   await response.close();
   assert.equal(response.result.metricObjectJudgements[0].judgement, 'PASS');
   assert.equal(evidence.checklist, true);
   assert.equal(evidence.wrapperResults, 0);
-  assert.deepEqual(receipts.map(receipt => receipt.details.citation.path).sort(), [...basisFiles].sort());
+  assert.deepEqual(receipts.map(receipt => receipt.details.citation.path).sort(), [...basisFiles, delivery].sort());
   const readTextById = records => new Map(records.map(record => [record.toolCallId, toolText(record)]));
-  assert.deepEqual(readTextById(receipts), readTextById(basisReads));
-  assert.equal(directReads.length - basisReads.length, 1);
+  assert.deepEqual(readTextById(receipts), readTextById(evidenceReads));
+  assert.equal(directReads.length - evidenceReads.length, 3);
+  assert(persisted.some(message => message.toolName === 'source_read' && message.isError && /Only UTF-8/u.test(toolText(message))));
+  assert.deepEqual([...response.reviewEvidence.files].sort(), [...basisFiles, delivery].sort());
+  await fs.writeFile(path.join(agentCache, 'session.log'), 'Additional output after the review.\n');
+  assert.equal(await matchesEvidence(response.reviewEvidence), true);
+  // Prove that a real change to the read delivery still invalidates the proof.
+  await fs.writeFile(delivery, 'The delivery changed.\n');
+  assert.equal(await matchesEvidence(response.reviewEvidence), false);
+  await fs.writeFile(delivery, 'Ready\n');
   const navigation = ['source_ls', 'source_find', 'source_grep', 'review_notes', 'review_history'];
   for (const toolName of navigation) assert(persisted.some(message => message.toolName === toolName && message.isError === false));
-  return { ...evidence, navigation, runtimeOutputChanged: true };
+  return { ...evidence, navigation, removedUnreadFile: true, evidenceReread: true, cacheRotated: true,
+    savedEvidenceCurrent: true, changedDeliveryRejected: true };
+}
+
+async function validateChangedEvidence(fixture) {
+  const { factoryFor, projectRoot, requirement } = fixture;
+  const source = path.join(projectRoot, '.cac', 'reviewed.txt');
+  await fs.writeFile(source, 'Ready\n');
+  const runs = [];
+  const factory = factoryFor(params => {
+    const { basisFiles } = JSON.parse(params.prompt).task;
+    const steps = [
+      ...basisSteps(basisFiles, requirement),
+      ['source_read', { path: source }],
+      ['review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true }],
+      ['submit_review', async payload => {
+        const last = payload.messages.findLast(message => message.role === 'tool');
+        const { items } = JSON.parse(last.content);
+        await fs.writeFile(source, 'The evidence changed before submission.\n');
+        return { taskId: items[0].taskId, verdict: 'PASS', reason: 'Use the earlier Ready value.', finish: true };
+      }],
+    ];
+    return async (payload, names) => {
+      const step = steps.shift();
+      if (!step) return 'The old evidence was rejected.';
+      const [name, args] = step;
+      assert(names.includes(name));
+      return [name, typeof args === 'function' ? await args(payload) : args];
+    };
+  }, runs);
+  await assert.rejects(factory(workspaceStopInput(fixture)), { code: 'BASELINE_INPUT_CHANGED' });
+  assert.equal(runs.length, 1);
+  const messages = runs[0].messages;
+  assert(messages.some(message => message.role === 'toolResult' && message.toolName === 'source_read'
+    && message.isError === false && toolText(message).includes(`range ${source}:`)));
+  assert(messages.some(message => message.role === 'toolResult' && message.toolName === 'submit_review'
+    && message.isError && /Read evidence changed/u.test(toolText(message))));
+  return { rejectedSubmission: 'BASELINE_INPUT_CHANGED' };
 }
 
 if (process.argv[2] === '--native-tool-search-fixture') {

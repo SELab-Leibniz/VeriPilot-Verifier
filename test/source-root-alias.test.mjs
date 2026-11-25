@@ -68,3 +68,20 @@ test('an aliased frozen root grants coverage only after its actual persisted rea
   await fs.writeFile(path.join(f.root, 'source.txt'), 'Changed original.\n');
   await assert.rejects(evidence.assertFrozen(), { code: 'BASELINE_INPUT_CHANGED' });
 });
+
+test('a context read through a junction can move before a later evidence read binds its real target', async t => {
+  const f = await fixture(t);
+  const evidence = await createTaskEvidence({ root: f.base, workspaceRoot: f.alias, active() {}, journal: { appendMessage() {} } });
+  const read = evidence.tools.find(tool => tool.name === 'source_read');
+  const context = await read.execute('context', { path: 'source.txt', contextOnly: true });
+  assert(context.details.contextOnly);
+  await fs.unlink(f.alias);
+  await fs.symlink(f.outside, f.alias, process.platform === 'win32' ? 'junction' : 'dir');
+  await evidence.assertFrozen();
+  const current = await read.execute('evidence', { path: 'source.txt' });
+  assert.equal(current.details.citation.path, path.join(f.outside, 'source.txt'));
+  assert.match(toolText(current), /OUTSIDE text/u);
+  await fs.unlink(f.alias);
+  await fs.symlink(f.root, f.alias, process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(evidence.assertFrozen(), { code: 'BASELINE_INPUT_CHANGED' });
+});

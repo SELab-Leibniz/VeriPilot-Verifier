@@ -7,13 +7,24 @@ import { createReviewerAgentPool } from '../lib/openclaw/review-concurrency.mjs'
 import { registerTaskTools } from '../lib/openclaw/task-tools.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
-import { ensureTask, taskDirectory, withTaskState } from '../lib/runtime-v2/task-store.mjs';
+import { ensureTask, findTask, taskDirectory, withTaskState } from '../lib/runtime-v2/task-store.mjs';
+import { matchesEvidence } from '../lib/runtime-v2/evidence-state.mjs';
 import { sha256 } from '../lib/runtime-v2/utils.mjs';
 
 test('production Stop moves from a real stage scope to task completion using only task receipts', async t => {
   const parent = path.resolve('.runtime-correction/stop-production-protocol-tests'); await fs.mkdir(parent, { recursive: true });
   const root = await fs.mkdtemp(path.join(parent, 'run-')); t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, 'spec.md'), 'The requested document describes the supplied value.\n');
+  const evidenceTarget = path.join(root, 'evidence source');
+  const replacementTarget = path.join(root, 'replacement source');
+  const evidenceAlias = path.join(root, 'review link');
+  const linkedFile = path.join(evidenceAlias, 'reference.txt');
+  const linkType = process.platform === 'win32' ? 'junction' : 'dir';
+  for (const directory of [evidenceTarget, replacementTarget]) {
+    await fs.mkdir(directory);
+    await fs.writeFile(path.join(directory, 'reference.txt'), 'A stable delivered reference.\n');
+  }
+  await fs.symlink(evidenceTarget, evidenceAlias, linkType);
   const transcript = path.join(root, 'host.jsonl');
   const entries = [{ type: 'user', uuid: 'U1', message: { content: 'Deliver a document describing the supplied value.' } }];
   const task = await ensureTask({ projectRoot: root, sessionId: 'production-protocol' });
@@ -58,6 +69,12 @@ test('production Stop moves from a real stage scope to task completion using onl
       assert.equal(params.workspaceDir, root);
       for (const file of brief.task.basisFiles) await read(file);
       await submit('review_scope', { completionClaim: selected !== 'INTERMEDIATE', requiredUserInput: null, externalBlocker: null, stopClassification: selected, ...(selected === 'STAGE_COMPLETE' ? { stage: 'design' } : {}), summary: 'The original response selects this scope.' });
+      if (selected === 'TASK_COMPLETE') {
+        const listing = await tools.get('source_ls').execute(crypto.randomUUID(), { path: root });
+        assert.equal(JSON.parse(listing.content[0].text).navigationOnly, true);
+        await fs.mkdir(path.join(root, 'generated-during-review'));
+        await read(linkedFile);
+      }
       let offset = 0;
       do {
         const result = await tools.get('review_checklist').execute(crypto.randomUUID(), { offset, limit: 20 });
@@ -111,6 +128,14 @@ test('production Stop moves from a real stage scope to task completion using onl
     if (index !== 2) assert.equal(outcome.stop.review.fileAssessments[0].status, 'PASS');
     else assert.equal(outcome.stop.review.collection.mode, 'findings-only');
     assert.equal(outcome.stop.correctionAttempt, 0);
+    if (classification === 'TASK_COMPLETE') {
+      const settled = await findTask({ projectRoot: root, sessionId: 'production-protocol' });
+      await fs.mkdir(path.join(root, 'generated-after-review'));
+      assert.equal(await matchesEvidence(settled.verification.evidence), true);
+      await fs.unlink(evidenceAlias);
+      await fs.symlink(replacementTarget, evidenceAlias, linkType);
+      assert.equal(await matchesEvidence(settled.verification.evidence), false, 'The saved evidence depends on the resolved source reached by the link');
+    }
   }
   assert.deepEqual(types, ['workspace-stop', 'workspace-stop', 'workspace-stop']);
 });

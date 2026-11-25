@@ -18,6 +18,7 @@ import { createProductionTraceSchema, validateProductionTrace } from '../lib/rev
 import { taskDirectory } from '../lib/runtime-v2/task-store.mjs';
 import { captureTaskStart } from '../lib/runtime-v2/task-changes.mjs';
 import { compileRuntimeV2Config } from '../lib/runtime-v2/config.mjs';
+import { matchesEvidence } from '../lib/runtime-v2/evidence-state.mjs';
 import { handleRuntimeV2Event } from '../lib/runtime-v2/orchestrator.mjs';
 import { FRAME_REVIEW_INSTRUCTIONS, frameReproduction } from '../lib/runtime-v2/requirement-frame.mjs';
 import { createStopStartProtocol } from '../lib/openclaw/stop-start-protocol.mjs';
@@ -658,8 +659,9 @@ test('a changed read dependency invalidates the review while unrelated edits do 
     await fs.writeFile(path.join(f.root, 'unrelated.md'), 'An unrelated concurrent edit.\n');
     await f.result(submit, [actual.details.citation.citeId]);
     await fs.writeFile(f.file, 'The evidence changed after its item receipt.\n');
+    assert.equal((await read(f.file, { contextOnly: true })).details.contextOnly, true);
     await submit('finish_stop_review', { summary: 'A stale claim must not pass.' });
-  }));
+  }), { code: 'BASELINE_INPUT_CHANGED' });
 });
 
 test('Git diff and untracked files are available as entry points without creating evidence receipts', async t => {
@@ -745,22 +747,34 @@ test('incomplete review preserves checked items across one continuation and neve
   assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
 });
 
-test('new files after a searched inventory invalidate the review instead of proving the earlier search complete', async t => {
+test('workspace discovery provides navigation while directory contents change', async t => {
   const f = await fixture(t);
-  await assert.rejects(f.run(async ({ readAll, read, submit, tools }) => {
+  const handle = await f.run(async ({ readAll, read, submit, tools }) => {
     await readAll(); await f.scope(submit);
-    await tools.get('source_find').execute(crypto.randomUUID(), { path: f.root, pattern: 'spec.md' });
+    const search = async pattern => {
+      const result = await tools.get('source_find').execute(crypto.randomUUID(), { path: f.root, pattern });
+      return JSON.parse(result.content[0].text);
+    };
+    const first = await search('new-writer.mjs');
+    assert.equal(first.navigationOnly, true);
+    assert.deepEqual(first.hits, []);
     const original = await read(f.file);
-    await fs.writeFile(path.join(f.root, 'new-writer.mjs'), 'export const value = 0;\n');
+    const newFile = path.join(f.root, 'new-writer.mjs');
+    await fs.writeFile(newFile, 'export const value = 0;\n');
+    assert.deepEqual((await search('new-writer.mjs')).hits, [newFile]);
     await f.result(submit, [original.details.citation.citeId]);
-  }));
+    await submit('finish_stop_review', { summary: 'The delivered value was read directly.' });
+  });
+  assert.equal(handle.reviewCompleted, true);
+  assert(!handle.reviewEvidence.files.includes(f.root));
+  assert.equal(await matchesEvidence(handle.reviewEvidence), true);
 });
 
-test('runtime output ancestors are navigable while original files and other directory inventories stay frozen', async t => {
-  for (const [name, runtimeOutput, changeEvidence, rejected] of [
-    ['new runtime sibling', true, false, false],
-    ['changed external evidence', true, true, true],
-    ['changed ordinary external inventory', false, false, true],
+test('external navigation tolerates directory churn and tracks explicit evidence reads', async t => {
+  for (const [name, runtimeOutput, changeEvidence] of [
+    ['new runtime sibling', true, false],
+    ['changed external evidence', true, true],
+    ['changed ordinary external inventory', false, false],
   ]) await t.test(name, async t => {
     const f = await fixture(t);
     const shared = path.join(path.dirname(f.root), 'shared-' + path.basename(f.root));
@@ -784,9 +798,39 @@ test('runtime output ancestors are navigable while original files and other dire
       await f.result(submit, [actual.details.citation.citeId]);
       await submit('finish_stop_review', { summary: 'Current source and original dependencies checked.' });
     });
-    if (rejected) await assert.rejects(run, { code: 'BASELINE_INPUT_CHANGED' });
-    else assert.equal((await run).result.metricObjectJudgements[0].judgement, 'PASS');
+    if (changeEvidence) await assert.rejects(run, { code: 'BASELINE_INPUT_CHANGED' });
+    else {
+      const handle = await run;
+      assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+      assert(!handle.reviewEvidence.files.includes(diagnostic));
+      assert(handle.reviewEvidence.files.includes(reference));
+      assert.equal(await matchesEvidence(handle.reviewEvidence), true);
+    }
   });
+});
+
+test('context-only reads tolerate changing logs and grant no required-basis coverage', async t => {
+  const f = await fixture(t);
+  const log = path.join(f.root, 'volatile.log');
+  await fs.writeFile(log, 'Background progress.\n');
+  const handle = await f.run(async ({ brief, readAll, read, submit }) => {
+    for (const file of [...brief.task.basisFiles, log]) {
+      const page = await read(file, { contextOnly: true });
+      assert.equal(page.details.contextOnly, true);
+      assert.equal(page.details.citation, undefined);
+      assert.match(page.content[0].text, /^\[RC context only\]/u);
+    }
+    await assert.rejects(f.scope(submit), { code: 'TASK_BASIS_UNREAD' });
+    await readAll(); await f.scope(submit);
+    const actual = await read(f.file);
+    await fs.appendFile(log, 'Another update.\n');
+    await f.result(submit, [actual.details.citation.citeId]);
+    await submit('finish_stop_review', { summary: 'The delivered value was read directly.' });
+  });
+  assert.equal(handle.result.metricObjectJudgements[0].judgement, 'PASS');
+  assert(!handle.reviewEvidence.files.includes(log));
+  assert(!Object.hasOwn(handle.reviewEvidence.readPaths, log));
+  assert.equal(await matchesEvidence(handle.reviewEvidence), true);
 });
 
 test('one session reuses source reads across implementation obligations while retaining M16 tracing', async t => {

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { createSourceTools, sourcePage, createSourcePager } from '../lib/review-task/source-tools.mjs';
 import { createLiveSourceTools } from '../lib/review-task/live-source-tools.mjs';
 import { createDocumentTools } from '../lib/document-tools.mjs';
+import { createTaskEvidence } from '../lib/review-task/task-evidence.mjs';
 
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-reader-lifecycle-')));
@@ -94,6 +95,68 @@ test('cached content never bypasses frozen path selection or live path observati
   for (const name of ['source.txt', 'same.txt', 'source.txt']) await live.execute('read', { path: name, limit: 1 });
   assert.deepEqual(paths.map(([requested, actual]) => [path.basename(requested), path.basename(actual)]),
     [['source.txt', 'source.txt'], ['same.txt', 'same.txt'], ['source.txt', 'source.txt']]);
+});
+
+test('a failed live read leaves no dependency when the unread file is removed', async t => {
+  const f = await fixture(t);
+  await fs.writeFile(f.file, Buffer.from([0xff]));
+  const evidence = await createTaskEvidence({ root: f.root, workspaceRoot: f.root, active() {}, journal: { appendMessage() {} } });
+  const read = evidence.tools.find(tool => tool.name === 'source_read');
+  await assert.rejects(read.execute('failed', { path: 'source.txt' }), /Only UTF-8/u);
+  await fs.unlink(f.file);
+  await evidence.assertFrozen();
+  assert.deepEqual([...evidence.resolutions], []);
+  assert.deepEqual([...evidence.snapshot], []);
+});
+
+test('a live read rejects bytes replaced before its page is issued, then can reread the current file', async t => {
+  const f = await fixture(t);
+  const evidence = await createTaskEvidence({ root: f.root, workspaceRoot: f.root, active() {}, journal: { appendMessage() {} } });
+  const read = evidence.tools.find(tool => tool.name === 'source_read');
+  const readFile = fs.readFile;
+  let replaced = false;
+  const mock = t.mock.method(fs, 'readFile', async (...args) => {
+    const bytes = await readFile(...args);
+    if (!replaced && args[0] === f.file) {
+      replaced = true;
+      await fs.writeFile(f.file, 'The replacement is current.\n');
+    }
+    return bytes;
+  });
+  try {
+    await assert.rejects(read.execute('racing', { path: 'source.txt' }), { code: 'BASELINE_INPUT_CHANGED' });
+  } finally { mock.mock.restore(); }
+  assert.equal(replaced, true);
+  assert.equal(evidence.resolutions.size, 0);
+  assert.equal(evidence.snapshot.size, 0);
+  const current = await read.execute('reread', { path: 'source.txt' });
+  assert.match(current.content[0].text, /The replacement is current/u);
+  assert(current.details.citation);
+  await evidence.assertFrozen();
+});
+
+test('removing a successfully read file invalidates its evidence with an input change', async t => {
+  const f = await fixture(t);
+  const evidence = await createTaskEvidence({ root: f.root, workspaceRoot: f.root, active() {}, journal: { appendMessage() {} } });
+  const read = evidence.tools.find(tool => tool.name === 'source_read');
+  const page = await read.execute('present', { path: 'source.txt' });
+  assert(page.details.citation);
+  await fs.unlink(f.file);
+  await assert.rejects(evidence.assertFrozen(), { code: 'BASELINE_INPUT_CHANGED' });
+});
+
+test('the final evidence reread detects a write before freshness checking completes', async t => {
+  const f = await fixture(t);
+  const evidence = await createTaskEvidence({ root: f.root, workspaceRoot: f.root, active() {}, journal: { appendMessage() {} } });
+  await evidence.tools.find(tool => tool.name === 'source_read').execute('verified', { path: 'source.txt' });
+  const readFile = fs.readFile;
+  const mock = t.mock.method(fs, 'readFile', async (...args) => {
+    const bytes = await readFile(...args);
+    if (args[0] === f.file) await fs.writeFile(f.file, 'The source changed during the final check.\n');
+    return bytes;
+  });
+  try { await assert.rejects(evidence.assertFrozen({ force: true }), { code: 'BASELINE_INPUT_CHANGED' }); }
+  finally { mock.mock.restore(); }
 });
 
 test('parsed-source caching evicts at both limits and never retains an oversized source', t => {

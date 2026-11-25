@@ -69,6 +69,27 @@ test('a filled byte budget never opens the following source file', async t => {
   assert.deepEqual(f.observed.map(row => row.file), ['a.txt']); assert.equal(io.closed, 1);
 });
 
+test('grep continues to other files when an enumerated cache disappears or changes type', async t => {
+  for (const [operation, replace] of [['stat', false], ['open', false], ['open', true]]) await t.test(`${operation} ${replace ? 'replacement' : 'deletion'}`, async t => {
+    const f = await fixture(t, { 'a-cache.log': 'needle in cache\n', 'z-source.txt': 'needle in source\n' });
+    const cache = path.join(f.root, 'a-cache.log'), original = fs[operation];
+    const deleteOnCall = operation === 'stat' ? 2 : 1;
+    let attempts = 0;
+    t.mock.method(fs, operation, async (...args) => {
+      if (args[0] === cache && ++attempts === deleteOnCall) {
+        await fs.unlink(cache);
+        if (replace) await fs.mkdir(cache);
+      }
+      return original(...args);
+    });
+    const result = await f.grep();
+    assert.equal(attempts, deleteOnCall);
+    assert.equal(result.navigationOnly, true);
+    assert.deepEqual(result.hits, [`${path.join(f.root, 'z-source.txt')}:1:needle in source`]);
+    assert.deepEqual(f.observed.map(row => row.file), ['z-source.txt']);
+  });
+});
+
 test('cancellation after actual bounded I/O closes the handle and registers no source', async t => {
   const f = await fixture(t, { 'a.txt': 'needle\n' }), controller = new AbortController(), reason = new Error('cancel bounded read');
   const io = monitor(t, f.root, () => controller.abort(reason));

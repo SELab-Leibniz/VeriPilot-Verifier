@@ -39,8 +39,9 @@ export async function stopProtocolFixture(t, kind = 'classification', options = 
     const brief = JSON.parse(params.prompt), tools = new Map(toolsFactory(params).map(tool => [tool.name, tool]));
     let turns = 0;
     const advance = () => { turns++; params.onAssistantMessageStart(); };
-    const read = async (file, { offset = 1, receipt = true, alter = false } = {}) => {
-      advance(); const toolCallId = crypto.randomUUID(), result = await tools.get('source_read').execute(toolCallId, { path: file, offset });
+    const read = async (file, { offset = 1, receipt = true, alter = false, contextOnly = false } = {}) => {
+      advance(); const toolCallId = crypto.randomUUID();
+      const result = await tools.get('source_read').execute(toolCallId, { path: file, offset, ...(contextOnly ? { contextOnly } : {}) });
       params.onAgentToolResult({ toolName: 'source_read', result, isError: false });
       if (receipt) hooks.get('tool_result_persist')({ toolName: 'source_read', toolCallId, isSynthetic: false,
         message: { role: 'toolResult', toolName: 'source_read', toolCallId, isError: false,

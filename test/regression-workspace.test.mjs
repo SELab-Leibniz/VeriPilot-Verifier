@@ -34,16 +34,19 @@ test('regression snapshot preserves current public tests and untracked source, w
     await assert.rejects(fs.access(path.join(copy, dir)), { code: 'ENOENT' });
 });
 
-test('toolchain writes in the snapshot leave a previously searched source inventory valid', async t => {
+test('toolchain output can change while an explicit source dependency stays protected', async t => {
   const f = await fixture(t);
   const evidence = await createTaskEvidence({ root: f.root, workspaceRoot: f.source, active() {}, journal: { appendMessage() {} } });
   await evidence.tools.find(tool => tool.name === 'source_find').execute('observe', { path: '.', pattern: 'not-present', includeGenerated: true });
+  const source = 'new-public-source.ets';
+  await evidence.tools.find(tool => tool.name === 'source_read').execute('read', { path: source });
   const copy = await prepareRegressionWorkspace(f.source);
   await fs.mkdir(path.join(copy, '.hvigor'));
   await fs.writeFile(path.join(copy, '.hvigor/new-build.log'), 'new output');
+  await fs.writeFile(path.join(f.source, '.hvigor/in-place-build.log'), 'new in-place output');
   await evidence.assertFrozen();
-  await fs.writeFile(path.join(f.source, '.hvigor/in-place-build.log'), 'mutates evidence');
-  await assert.rejects(evidence.assertFrozen(), error => error.code === 'BASELINE_INPUT_CHANGED');
+  await fs.writeFile(path.join(f.source, source), 'export const widget = { value: 8 }\n');
+  await assert.rejects(evidence.assertFrozen(), { code: 'BASELINE_INPUT_CHANGED' });
 });
 
 test('an isolated contract case preserves the original entry and never edits its source workspace', async t => {
