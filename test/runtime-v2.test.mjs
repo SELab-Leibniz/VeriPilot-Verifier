@@ -1288,7 +1288,9 @@ test("Stop blocks three terminal deviations, then records and allows the fourth"
   }
   assert.deepEqual(decisions, ["block", "block", "block", "allow"]);
   assert.equal(outcomes.at(-1).stop.reasonCode,'SESSION_CORRECTION_LIMIT');
-  assert.equal(outcomes.at(-1).stop.verificationIncomplete, true);
+  assert.equal(outcomes.at(-1).stop.status, 'DEVIATION');
+  assert.equal(outcomes.at(-1).stop.verificationIncomplete, false);
+  assert.equal(outcomes.at(-1).stop.admission, null);
   assert.equal(outcomes.at(-1).stop.correctionBudgetExhausted, true);
 });
 

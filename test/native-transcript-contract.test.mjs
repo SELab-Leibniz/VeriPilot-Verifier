@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { recordUserMessages } from "../lib/runtime-v2/original-requirements.mjs";
 import { observeNativeTranscript, nativeTranscriptObservation } from "../lib/openclaw/native-transcript.mjs";
 
 async function fixture(t, records) {
@@ -100,4 +101,42 @@ test("zero-history evidence uses the complete unbranched native first turn and e
     await fs.writeFile(f.transcriptPath, rows.map(JSON.stringify).join("\n") + "\n");
     assert.equal((await observeNativeTranscript(f.api, f.state)).initialTurnEvidence, null);
   }
+});
+
+test("MA setup commands stay out of requirements and preserve proof of the first business turn", async t => {
+  const command = (id, parentId, text) => [
+    message(id, parentId, "user", text, { idempotencyKey: id + ":user", __openclaw: { senderIsOwner: true } }),
+    message(id + "-reply", id, "assistant", [{ type: "text", text: "{}" }], {
+      provider: "openclaw", model: "gateway-injected", api: "openai-responses",
+      stopReason: "stop", usage: { totalTokens: 0 }, idempotencyKey: id,
+    }),
+  ];
+  const setup = [...command("project", null, "/rc-project init"), ...command("session", "project-reply", "/rc-session on")];
+  const business = message("business", "session-reply", "user", "Build a Todo List app.");
+  const f = await fixture(t, [header, ...setup, business]);
+  f.api.runtime.version = "2026.7.1-2";
+  const savedBefore = await fs.readFile(f.transcriptPath);
+  const projectRoot = path.dirname(f.transcriptPath);
+  // A replay of an existing project can already have archived these commands.
+  await recordUserMessages({ projectRoot, sessionId: f.state.sessionId, snapshot: nativeTranscriptObservation([...setup, business]) });
+
+  const observation = await observeNativeTranscript(f.api, f.state);
+  assert.equal(observation.initialTurnEvidence?.firstUserRecordId, "business");
+  assert.deepEqual(observation.entries.filter(e => e.type === "user" && !e.isMeta).map(e => e.uuid), ["business"]);
+  assert.deepEqual((await recordUserMessages({ projectRoot, sessionId: f.state.sessionId, snapshot: observation })).map(r => r.text),
+    ["Build a Todo List app."]);
+  assert.deepEqual((await recordUserMessages({ projectRoot, sessionId: f.state.sessionId, snapshot: { entries: [] } })).map(r => r.text),
+    ["Build a Todo List app."]);
+  assert.deepEqual(await fs.readFile(f.transcriptPath), savedBefore);
+
+  await fs.writeFile(f.transcriptPath, [header, ...setup].map(r => JSON.stringify(r)).join("\n") + "\n");
+  const zero = await observeNativeTranscript(f.api, f.state);
+  assert.equal(zero.emptySessionEvidence?.kind, "EMPTY_HOST_EXECUTION_HISTORY");
+  assert.equal(zero.lastExternalUser, null);
+
+  setup[3].message.idempotencyKey = "unrelated";
+  await fs.writeFile(f.transcriptPath, [header, ...setup, business].map(r => JSON.stringify(r)).join("\n") + "\n");
+  const ambiguous = await observeNativeTranscript(f.api, f.state);
+  assert.equal(ambiguous.initialTurnEvidence, null);
+  assert.deepEqual(ambiguous.entries.filter(e => e.type === "user" && !e.isMeta).map(e => e.uuid), ["session", "business"]);
 });

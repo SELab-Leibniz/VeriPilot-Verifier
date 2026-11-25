@@ -266,12 +266,14 @@ test("budget exhaustion preserves unresolved state and emits a host-consumable w
   assert.equal(last.decision, "allow");
   const state = await h.state(last.taskId);
   assert.equal(state.status, "COMPLETED_WITH_ISSUES");
-  assert.equal(state.verification.status, "UNVERIFIED");
-  assert.equal(state.verification.previousVerification.status,'DEVIATION');
+  assert.equal(state.verification.status, "DEVIATION");
+  assert.equal(state.verification.evaluationId, last.stop.evaluationId);
   assert.ok(Object.values(state.deviations).some((family) => family.status === "OPEN"));
   assert.match(encodeHookOutput("Stop", {}, last).systemMessage, /FLOW_CORRECTION_LIMIT/u);
   assert.doesNotMatch(last.stop.review.summary, /Everything passed/u);
-  assert.equal(last.stop.review.metricObjectJudgements.length,0,'quota exhaustion must not execute or invent a new review');
+  assert.equal(last.stop.coverage.scanCompleted, true);
+  assert.ok(last.stop.review.metricObjectJudgements.length > 0);
+  assert.equal(last.stop.admission, null);
 });
 
 

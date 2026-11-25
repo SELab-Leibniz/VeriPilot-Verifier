@@ -350,7 +350,7 @@ flowchart TB
 - `lib/openclaw/task-session.mjs`：已有私有会话、同会话新运行身份、禁止并发运行、工具绑定与关闭机制。
 - `lib/review-task/review-task.mjs`：已有工具提交、证据校验、成员保存、上层回调、累计轮次与有限续跑。
 - `lib/openclaw/task-tools.mjs`、`lib/review-task/task-evidence.mjs`：读取证明依赖最终宿主持久化消息，诊断 observer 不授予原文读取证明。
-- `lib/runtime-v2/stop-correction-assessment.mjs`：额度入口位于模型准备之前；存在最多三次的有限准备尝试；审查截止与结算截止分离。
+- `lib/runtime-v2/stop-correction-assessment.mjs`：缺少可用于修复的额度记录时仍可审查。审查确认偏差后核对修复名额。准备最多尝试三次，审查和结算分别有截止时间。
 - `lib/runtime-v2/stop-review-store.mjs`：逐项权威存储、当前性校验、部分结果与完整性语义。
 - `lib/runtime-v2/stop-correction-store.mjs`：反馈预留与可信实际启动记账分离，同执行身份去重。
 - `lib/review-task/baseline-task.mjs`、`lib/runtime-v2/baseline-task.mjs`：候选批次、完成回执、候选代次及正式基线发布边界。
@@ -514,7 +514,7 @@ flowchart TB
 - 审查 Agent 在宿主已有授权内自主读取当前业务文件、搜索并追踪必要依赖。
 - Stop 审查不再额外保存被审查业务文件全文、输入树副本、引用整文件备份或独立正文回放档案。结果、原因、引用元数据、进度与回执仍是插件自己的状态。
 - 每次审查只传当前正式要求、应审对象、必要路径与上轮评审记录路径；不把全部上轮正文塞进提示词。
-- 每个通过原有进入判断、实际开始审查的新 `stopId`，重新评审其本轮应审对象。上轮 PASS、DEVIATION 或 UNVERIFIED 都只作历史参考，不自动成为本轮结论。已关闭流程、额度不足等情况仍按原规则跳过，不能为“重评”绕过 Stop 准入。
+- 每个通过原有进入判断、实际开始审查的新 `stopId`，重新评审其本轮应审对象。上轮 PASS、DEVIATION 或 UNVERIFIED 都只作历史参考，不自动成为本轮结论。已关闭流程仍按原规则跳过。额度不足时保留本轮审查结论，自动修改仍受准入限制。
 - 同一次 Stop 的重复事件幂等、同一次 worker 的已保存项回执和有限续跑继续复用，避免把“每轮重评”误写为同一轮反复重派。
 
 “模块复用”指保留职责、策略和外部契约；审查调用处仍可能需要新增历史路径字段、重评身份及引用元数据适配。基线/分类等模块内部若还有来源副本，不在本次删除范围；不能将本方案表述为整个插件或宿主零正文落盘。OpenClaw 正常会话转录仍遵循宿主策略。

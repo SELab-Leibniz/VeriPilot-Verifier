@@ -413,8 +413,9 @@ for (const scenario of [
   { name: "no confirmed deviation", verdict: "PASS", status: "NO_DEVIATION_FOUND", options: { startProtocol: true } },
   { name: "Stop disabled", status: "DISABLED", options: { enabled: false } },
   { name: "all metrics disabled", status: "DISABLED", options: { metricEnabled: false } },
-  { name: "session quota exhausted", reason: "SESSION_CORRECTION_LIMIT", status: "UNVERIFIED", options: { startProtocol: true, sessionLimit: 0 } },
-  { name: "flow quota exhausted", reason: "FLOW_CORRECTION_LIMIT", status: "UNVERIFIED", options: { startProtocol: true, flowLimit: 0 } },
+  { name: "session quota exhausted", reason: "SESSION_CORRECTION_LIMIT", status: "DEVIATION", options: { startProtocol: true, sessionLimit: 0 } },
+  { name: "flow quota exhausted", reason: "FLOW_CORRECTION_LIMIT", status: "DEVIATION", options: { startProtocol: true, flowLimit: 0 } },
+  { name: "zero budget with a clean review", verdict: "PASS", status: "NO_DEVIATION_FOUND", options: { startProtocol: true, sessionLimit: 0 } },
   { name: "unsupported start protocol", reason: "HOST_START_PROTOCOL_UNSUPPORTED", status: "DEVIATION", options: {} },
   { name: "business run failed", reason: "HOST_RUN_NOT_COMPLETED", status: "UNVERIFIED", terminalStatus: "error", options: {} },
 ]) test(`production release: ${scenario.name} restores host admission without taking user input`, async t => {

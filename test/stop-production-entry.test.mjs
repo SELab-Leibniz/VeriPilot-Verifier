@@ -297,22 +297,31 @@ test("Stop reviews a published implementation subset without accepting an unreso
   assert.equal((await createStopCorrectionStore({ directory: f.directory }).inspect("session")).used, 0);
 });
 
-test("production entry checks zero budget before onboarding, baseline, classifier or group work", async t => {
-  const f = await fixture(t, { stop: { maxCorrectionsPerFlow: 0 } });
+test("zero correction budget reviews the work but reserves no repair", async t => {
+  const f = await fixture(t, { verdict: "DEVIATION", stop: { maxCorrectionsPerFlow: 0 }, startProtocol: { version: 1 } });
   await f.event("SessionStart", { source: "startup" });
   const result = await f.event("Stop");
-  assert.equal(result.stop.status, "UNVERIFIED",'a budget-skipped review never presents a completed verification');
-  assert.deepEqual(f.calls, []);
+  assert.equal(result.stop.status, "DEVIATION");
+  assert.equal(result.decision, "allow");
   assert.equal(result.stop.reasonCode, "FLOW_CORRECTION_LIMIT");
-  assert.equal((await findTask({projectRoot:f.root,sessionId:'session'})).verification.status,'UNVERIFIED');
+  assert.equal(result.stop.admission, null);
+  assert.equal(result.stop.coverage.scanCompleted, true);
+  const ledger = await createStopCorrectionStore({ directory: f.directory }).inspect("session");
+  assert.equal(ledger.used, 0);
+  assert.deepEqual(ledger.admissions, {});
 });
 
-test("existing-session migration is explicit and performs no automatic model work", async t => {
-  const f = await fixture(t);
-  const result = await f.event("Stop");
-  assert.equal(result.stop.status, "UNVERIFIED");
-  assert.equal(result.stop.reasonCode, "STOP_SESSION_MIGRATION_REQUIRED");
-  assert.deepEqual(f.calls, []);
+test("unknown session history allows review without guessing the repair count", async t => {
+  for (const verdict of ["PASS", "DEVIATION"]) await t.test(verdict, async t => {
+    const f = await fixture(t, { verdict, startProtocol: { version: 1 } });
+    const result = await f.event("Stop");
+    assert.equal(result.stop.status, verdict === "PASS" ? "NO_DEVIATION_FOUND" : verdict, result.stop.reasonCode);
+    assert.equal(result.decision, "allow");
+    assert.equal(result.stop.reasonCode, verdict === "PASS" ? "NO_DEVIATION_FOUND" : "STOP_SESSION_MIGRATION_REQUIRED");
+    assert.equal(result.stop.admission, null);
+    assert.equal(result.stop.coverage.scanCompleted, true);
+    assert.equal(await createStopCorrectionStore({ directory: f.directory }).inspect("session"), null);
+  });
 });
 
 test("disabled Stop duties need neither historical quota initialization nor model work", async t => {

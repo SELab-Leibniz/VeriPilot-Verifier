@@ -69,14 +69,18 @@ test("config rejects invalid scalar types, bounds, legacy conflicts and reserve 
   assert.equal(migrated.migrationWarnings.length, 2);
 });
 
-test("AC-05/09: zero limits skip before review; reservations and deliveries are not usage", async t => {
+test("AC-05/09: zero limits block repair after review; reservations and deliveries are not usage", async t => {
   for (const field of ["maxCorrectionsPerSession", "maxCorrectionsPerFlow"]) {
     const f = await fixture(t);
     const entry = await f.begin("zero", { config: { enabled: true, [field]: 0 } });
-    assert.equal(entry.stop.reviewStatus, "SKIPPED");
-    assert.equal(entry.stop.control, "ALLOW");
-    assert.match(entry.stop.releaseReason, /CORRECTION_LIMIT/);
-    assert.equal((await f.store.inspect("session")).used, 0);
+    assert.equal(entry.stop.reviewStatus, "PENDING");
+    assert.equal(entry.stop.control, "WAIT_REVIEW");
+    assert.equal(await f.reserve("zero"), null);
+    const ledger = await f.store.inspect("session");
+    assert.equal(ledger.stops.zero.reviewStatus, "DEVIATION");
+    assert.equal(ledger.stops.zero.control, "ALLOW");
+    assert.match(ledger.stops.zero.releaseReason, /CORRECTION_LIMIT/);
+    assert.equal(ledger.used, 0);
   }
   const f = await fixture(t);
   await f.begin("one");
@@ -88,16 +92,19 @@ test("AC-05/09: zero limits skip before review; reservations and deliveries are 
   assert.equal(state.admissions[admission.id].accounting, "RESERVED");
 });
 
-test("AC-02/10/11: real starts charge both quotas once; third Stop is skipped", async t => {
+test("AC-02/10/11: real starts charge both quotas once; third review can publish a deviation", async t => {
   const f = await fixture(t), options = { config: { enabled: true, maxCorrectionsPerFlow: 2 } };
   for (const id of ["one", "two"]) {
     await f.begin(id, options);
     const admission = await f.reserve(id);
     await Promise.all([f.observe(admission), f.observe(admission), f.observe(admission)]);
   }
-  const { stop } = await f.begin("three", options);
-  assert.equal(stop.reviewStatus, "SKIPPED");
-  assert.equal(stop.releaseReason, "FLOW_CORRECTION_LIMIT");
+  const entry = await f.begin("three", options);
+  assert.equal(entry.stop.reviewStatus, "PENDING");
+  assert.equal(await f.reserve("three"), null);
+  const { three } = (await f.store.inspect("session")).stops;
+  assert.equal(three.reviewStatus, "DEVIATION");
+  assert.equal(three.releaseReason, "FLOW_CORRECTION_LIMIT");
   assert.equal((await f.store.inspect("session")).used, 2);
 });
 
@@ -197,9 +204,17 @@ test("stage completion preserves quota exhaustion and cannot reopen a cancelled 
       await f.store.settleReview({ sessionId: "session", stopId: "stage", status: "PASS", progress: { complete: true } });
     }
     const next = await f.begin("coding", options);
-    assert.equal(next.stop.control, "ALLOW");
-    assert.equal(next.stop.reviewStatus, "SKIPPED");
-    assert.equal(next.stop.releaseReason, outcome === "limit" ? "FLOW_CORRECTION_LIMIT" : "CORRECTION_FLOW_CLOSED");
+    if (outcome === "limit") {
+      assert.equal(next.stop.control, "WAIT_REVIEW");
+      assert.equal(await f.reserve("coding"), null);
+      const { coding } = (await f.store.inspect("session")).stops;
+      assert.equal(coding.reviewStatus, "DEVIATION");
+      assert.equal(coding.releaseReason, "FLOW_CORRECTION_LIMIT");
+    } else {
+      assert.equal(next.stop.control, "ALLOW");
+      assert.equal(next.stop.reviewStatus, "SKIPPED");
+      assert.equal(next.stop.releaseReason, "CORRECTION_FLOW_CLOSED");
+    }
     assert.equal((await f.store.inspect("session")).used, outcome === "limit" ? 1 : 0);
   });
 });
@@ -301,8 +316,9 @@ test("AC-04: assessment releases after delivery and never reblocks while trackin
   await f.observe(admission);
   assert.equal((await f.store.inspect("session")).stops.one.releasedAt, delivered.releasedAt);
   const entry = await f.begin("two", options);
-  assert.equal(entry.stop.reviewStatus, "SKIPPED");
-  assert.equal(entry.stop.releaseReason, "FLOW_CORRECTION_LIMIT");
+  assert.equal(entry.stop.reviewStatus, "PENDING");
+  assert.equal(await f.reserve("two"), null);
+  assert.equal((await f.store.inspect("session")).stops.two.releaseReason, "FLOW_CORRECTION_LIMIT");
 });
 
 test("AC-06/07/08/12: session ledger survives tasks, mode changes, reload and process recreation", async t => {
@@ -312,7 +328,9 @@ test("AC-06/07/08/12: session ledger survives tasks, mode changes, reload and pr
   const store = createStopCorrectionStore({ directory: f.directory, now: f.now });
   const next = await store.beginStop({ sessionId: "session", flowId: "new-task-flow", stopId: "two",
     sourceInput: { origin: "HUMAN", id: "user-2" }, config: { enabled: true, waitMode: "assessment", maxCorrectionsPerSession: 1 } });
-  assert.equal(next.stop.releaseReason, "SESSION_CORRECTION_LIMIT");
+  assert.equal(next.stop.control, "WAIT_REVIEW");
+  assert.equal(await f.reserve("two"), null);
+  assert.equal((await store.inspect("session")).stops.two.releaseReason, "SESSION_CORRECTION_LIMIT");
   assert.equal((await store.inspect("session")).used, 1);
   assert.equal((await store.inspect("session")).flows["new-task-flow"].used, 0);
   const other = await f.begin("other", { sessionId: "different-session" });
@@ -332,7 +350,8 @@ test("AC-08/36: duplicate Stop keeps its snapshot; next Stop applies config with
   assert.deepEqual(duplicate.stop.config, original.stop.config);
   const next = await f.begin("two", { config: { enabled: true, reviewGroupSize: 1, maxCorrectionsPerFlow: 1 } });
   assert.equal(next.stop.config.reviewGroupSize, 1);
-  assert.equal(next.stop.releaseReason, "FLOW_CORRECTION_LIMIT");
+  assert.equal(await f.reserve("two"), null);
+  assert.equal((await f.store.inspect("session")).stops.two.releaseReason, "FLOW_CORRECTION_LIMIT");
 });
 
 test("migration never invents a zero history for an existing session", async t => {
@@ -481,7 +500,9 @@ test("unknown in-flight capacity is not mislabeled as used; later trustworthy ca
   f.set(stop.deadlineAt);
   await f.store.expireStop({ sessionId: "session", stopId: "one" });
   const next = await f.begin("two", { flowId: "new-flow", sourceInput: { origin: "HUMAN", id: "user-2" }, config: { enabled: true, maxCorrectionsPerSession: 1 } });
-  assert.equal(next.stop.releaseReason, "SESSION_ADMISSION_PENDING");
+  assert.equal(next.stop.control, "WAIT_REVIEW");
+  assert.equal(await f.reserve("two"), null);
+  assert.equal((await f.store.inspect("session")).stops.two.releaseReason, "SESSION_ADMISSION_PENDING");
   assert.equal(next.stop.capacity.sessionUsed, 0);
   assert.equal(next.stop.capacity.sessionReserved, 1);
   await f.store.confirmNotStarted({ sessionId: "session", admissionId: admission.id, evidence: "host queue removed, executor fenced, never started" });
