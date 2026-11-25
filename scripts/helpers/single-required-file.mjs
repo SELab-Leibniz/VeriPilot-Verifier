@@ -161,6 +161,7 @@ async function inspect(record, material) {
   const prechecks = record.pressureLog.filter(line => line.includes('pre-prompt check'));
   const pressure = /\bestimatedPromptTokens=(\d+)/.exec(prechecks.at(-1) ?? '');
   return { name: record.name, mandatory: record.basisFiles.includes(material.file), materialSha256: material.sha256,
+    sourceCoverage: record.result.sourceCoverage ?? record.result.review?.sourceCoverage,
     firstInput: ordinary[0].inputTokens, originalAtStart, reserveRequestedOutput: record.reserveOutput,
     covered: coverage(materialReads, material.lines), materialReceipts: materialReads.length, exactReceiptsOnWire: seen.size,
     fullInOneAcceptedRequest, firstProviderOverflow: firstOverflow,
@@ -250,6 +251,12 @@ export async function runSingleRequiredFile({ outputRoot, repo, count, model, mo
     && zh.compactBoundaries > 0 && zh.nativeErrors.some(error => error.kind === 'context_overflow'),
     'The host stopped mid-file after compaction reading the same 164K Chinese SDD as one mandatory project file');
   const zhWide = find('one-zh-wide-host');
+  const reported = zh?.sourceCoverage?.sources.find(row => row.ref === 'AGENTS.md');
+  check(zh?.sourceCoverage?.checklistSubmitted === false && reported?.disposition === 'CHECKLIST_NOT_SUBMITTED'
+    && reported.readLines === zh.covered.lines && reported.totalLines === study.materials.zh.lines
+    && reported.unreadRanges.length === 1 && reported.unreadRanges[0][0] === zh.covered.firstMissing
+    && reported.unreadRanges[0][1] === study.materials.zh.lines,
+    'Native failure reports the missing original lines and the missing checklist separately from read receipts');
   check(zhWide?.materialSha256 === zh.materialSha256 && zhWide.covered.firstMissing === null
     && zhWide.completed && zhWide.judgements.includes('DEVIATION'), 'Wider host precheck control finishes the same physical Chinese material');
   study.verified = study.failures.length === 0;

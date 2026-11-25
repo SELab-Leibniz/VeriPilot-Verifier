@@ -186,6 +186,7 @@ async function reviewSummary(record, document) {
   }
   const source = Buffer.concat(buffers);
   return { name: record.name, reviewCompleted: record.result.reviewCompleted ?? false,
+    sourceCoverage: record.result.sourceCoverage ?? record.result.review?.sourceCoverage,
     failure: record.result.code ?? record.result.collection?.failures?.[0]?.code ?? null,
     judgements: record.result.review?.metricObjectJudgements?.map(row => row.judgement) ?? [],
     inputSha256: sha(source), rawInlineIdentical: source.equals(Buffer.from(document.text)), sourceBytes: source.length,
@@ -243,6 +244,7 @@ export async function runInitialSdd({ outputRoot, repo, count, model, modelWindo
         snapshot: { entries: await readOpenClawTranscript(rec.sessionFile) }, referenceTier: true });
       const named = manifest.referencedFiles.find(file => file.path === includedFile);
       result.namedBasis = named ? { sha256: named.sha256, bytes: named.bytes, mandatory: named.mandatory !== false } : null;
+      result.acceptanceSource = manifest.acceptanceSources?.some(row => row.path === includedFile && row.sha256 === named?.sha256);
     }
     if (name === 'initial-zh-admit' && result.delivered && result.fullInTranscript) admittedTranscript = rec.sessionFile;
     study.business.push(result);
@@ -283,12 +285,17 @@ export async function runInitialSdd({ outputRoot, repo, count, model, modelWindo
   check(blocked.estimate > positive.requests[0]?.tokens && dense.estimate < dense.requests[0]?.tokens,
     'Opposite estimation errors for Chinese and dense JSON/path inputs at the same token target');
   check(by['initial-file'].delivered && by['initial-file'].requests.every(r => r.fullSddCopies === 0)
-    && by['initial-file'].namedBasis?.sha256 === documents.zh.meta.sha256 && by['initial-file'].namedBasis?.mandatory === false, 'File transport, three original lines and Stop authority');
+    && by['initial-file'].namedBasis?.sha256 === documents.zh.meta.sha256 && by['initial-file'].namedBasis?.mandatory === false
+    && by['initial-file'].acceptanceSource, 'File transport retains the complete SDD as a governed source outside the upfront budget');
   check(by['initial-zh-output-control'].requests.some(r => r.kind === 'prompt' && r.fullSddCopies === 1
     && r.tokens < modelWindow && r.tokens + r.output > modelWindow && r.response === 'fixture_context_overflow'), 'Output reservation control');
   check(study.reviews.length === 2 && study.reviews.every(r => r.rawInlineIdentical && r.namedReferences === 0
     && r.mandatoryOriginalParts > 1 && r.earlyGateBlocked), 'RC rebound the exact inline original, gated mandatory sections');
   const normal = study.reviews.find(r => r.name === 'initial-review-default');
+  const scope = normal?.sourceCoverage?.sources.find(row => row.sha256 === normal.inputSha256);
+  check(normal?.sourceCoverage?.checklistSubmitted === false && scope?.disposition === 'CHECKLIST_NOT_SUBMITTED'
+    && scope.readLines > 0 && scope.readLines < scope.totalLines && scope.unreadRanges.length > 0,
+    'Inline original parts retain a single original message identity and expose the unprocessed line ranges');
   check(normal && !normal.reviewCompleted && !normal.checklistSaved && normal.fullParts < normal.mandatoryOriginalParts
     && normal.checkpointPendingBasisFiles > 0 && normal.compactionBoundaries > 0 && normal.maxToolResultAppearances > 1
     && normal.readReceiptsSeenOnWire > 0 && normal.readReceiptsSeenOnWire < normal.totalReadReceipts,

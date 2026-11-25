@@ -102,6 +102,7 @@ async function review({ name, extraByte = false, readPolicy, includeException = 
     tailReceipted: workflowReceipts.some(page => page.start <= ruleLine && page.end >= ruleLine),
     attemptedChecklistSize: checklist.length, completed: handle?.reviewCompleted ?? false, blocked: blocked ?? null,
     dispositions: (handle?.result.reviewCoverage?.items ?? []).map(item => item.disposition),
+    sourceCoverage: handle?.result.sourceCoverage ?? null,
     oracle, reviewDirectory: path.relative(output, directory).replaceAll('\\', '/') };
   await handle?.close();
   return result;
@@ -118,10 +119,12 @@ async function checkUnboundManifest() {
     await fs.writeFile(file, bytes);
     const manifest = await loadStopOriginalRequirements({ projectRoot: root, snapshot, referenceTier: true });
     const named = manifest.referencedFiles.find(entry => entry.path === 'workflow.md');
-    versions.push({ trueSha256: sha256(bytes), manifestSha256: named.sha256, bytes: named.bytes, digest: manifest.digest });
+    const accepted = manifest.acceptanceSources.find(source => source.path === 'workflow.md');
+    versions.push({ trueSha256: sha256(bytes), manifestSha256: named.sha256, scopeSha256: accepted.sha256, bytes: named.bytes, digest: manifest.digest });
   }
   assert.notEqual(versions[0].trueSha256, versions[1].trueSha256);
-  assert.equal(versions[0].digest, versions[1].digest);
+  assert.notEqual(versions[0].digest, versions[1].digest);
+  assert(versions.every(version => version.scopeSha256 === version.trueSha256));
   assert(versions.every(version => version.manifestSha256 === null));
   return versions;
 }
@@ -163,9 +166,12 @@ async function checkChecklistCapacity() {
   assert.equal(attempts[0].code, 'HOST_ARGUMENT_VALIDATION');
   assert.equal(attempts[1].accepted, 256);
   assert.equal(attempts[2].code, 'TASK_SUBMISSION_CONFLICT');
-  assert.equal(handle.result.reviewCoverage.total, 256);
+  assert.equal(handle.result.reviewCoverage.items.filter(item => item.type === 'REQUIREMENT').length, 256);
+  const remaining = handle.result.sourceCoverage.sources.find(source => source.ref === 'codes.md');
+  assert.equal(handle.reviewCompleted, false);
+  assert.deepEqual(remaining.unextractedRanges, [[257, 257]]);
   await handle.close();
-  return { hostVersion, requirements: rules.length, sourceBytes: (await fs.stat(file)).size, attempts };
+  return { hostVersion, requirements: rules.length, sourceBytes: (await fs.stat(file)).size, attempts, remaining };
 }
 
 const runs = [];
@@ -178,11 +184,12 @@ for (const spec of [
 const [at, above, full, targeted] = runs;
 assert(runs.every(run => run.authoritySha256 === at.authoritySha256));
 assert(at.mandatory && !at.completed && at.blocked === 'TASK_BASIS_UNREAD');
-assert(!above.mandatory && above.completed && above.workflowReceipts === 0);
-assert.deepEqual(above.dispositions, ['NO_CONFIRMED_DEVIATION']);
-assert(full.mandatory && full.completed && full.tailReceipted);
-assert.deepEqual(full.dispositions, above.dispositions);
-assert(!targeted.mandatory && targeted.completed && targeted.workflowReceipts === 1 && targeted.tailReceipted);
+assert(!above.mandatory && !above.completed && above.workflowReceipts === 0);
+assert(above.sourceCoverage.sources.some(source => source.ref === 'workflow.md' && source.readLines === 0));
+assert(full.mandatory && !full.completed && full.tailReceipted);
+assert(full.sourceCoverage.sources.some(source => source.ref === 'workflow.md' && source.disposition === 'SOURCE_NOT_REPRESENTED'));
+assert(!targeted.mandatory && !targeted.completed && targeted.workflowReceipts === 1 && targeted.tailReceipted);
+assert(targeted.sourceCoverage.sources.some(source => source.ref === 'workflow.md' && source.disposition === 'SOURCE_PARTLY_READ'));
 assert(targeted.dispositions.includes('DEVIATION'));
 const report = { layer: 'Production Stop tools and receipt validation with a scripted in-process reviewer.', ruleLine,
   runs, unboundVersions: await checkUnboundManifest(), checklistCapacity: await checkChecklistCapacity() };

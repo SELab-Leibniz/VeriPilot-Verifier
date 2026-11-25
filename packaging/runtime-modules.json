@@ -129,6 +129,8 @@
     "lib/runtime-v2/stop-citations.mjs",
     "lib/runtime-v2/stop-unverified.mjs",
     "lib/runtime-v2/stop-review-coverage.mjs",
+    "lib/runtime-v2/stop-acceptance-sources.mjs",
+    "lib/runtime-v2/stop-source-coverage.mjs",
     "lib/runtime-v2/stop-classification.mjs",
     "lib/runtime-v2/task-changes.mjs",
     "lib/runtime-v2/task-store.mjs",

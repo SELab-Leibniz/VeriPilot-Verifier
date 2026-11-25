@@ -348,7 +348,7 @@ async function reviewCase(baseConfig, runtime, spec) {
     result = { reviewCompleted: handle.reviewCompleted, collection: handle.collection, review: handle.result };
     await handle.close();
   } catch (error) {
-    result = { code: error.code, error: error.message, cause: error.cause?.message };
+    result = { code: error.code, error: error.message, cause: error.cause?.message, sourceCoverage: error.sourceCoverage };
   }
   const directoryOfReview = prepared?.requestDirectory;
   const observations = directoryOfReview ? (await jsonLines(path.join(directoryOfReview, 'observations.jsonl'))) : [];
