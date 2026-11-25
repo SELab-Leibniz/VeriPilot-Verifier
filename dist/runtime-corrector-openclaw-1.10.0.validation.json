@@ -188,11 +188,11 @@
     "noFailedCancelledOrTimedOutFiles": true
   },
   "currentPackageRealModelEvaluation": {
-    "status": "NO_NEW_MODEL_RESULT_FOR_CURRENT_CANONICAL_PACKAGE",
+    "status": "IN_PROGRESS_CURRENT_CANONICAL_PACKAGE_GENERAL_ON_WALKTHROUGH",
     "sourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
     "archiveSha256": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
-    "modelTrialPerformed": false,
-    "modelTrialLaunched": false,
+    "modelTrialPerformed": true,
+    "modelTrialLaunched": true,
     "finalOutcomeAvailable": false,
     "inheritsPrecedingArchiveEvidence": false,
     "precedingCompletedRun": "evaluationRecords.ordinaryOn7c0286F020",
@@ -204,7 +204,61 @@
     "formal13TaskCredit": 0,
     "matchedPairCredit": 0,
     "archiveExecuted": false,
-    "wholeOpenSpecLifecycleValidated": false
+    "wholeOpenSpecLifecycleValidated": false,
+    "modelTrialCompleted": false,
+    "realModelRequestsObserved": true,
+    "operator": ".runtime-correction/validation/public-run-4f8b71f1accf48",
+    "sourceHold": {
+      "path": ".runtime-correction/validation/general-config-fullworkflow-held-4rx7hk_g/source-hold.json",
+      "sha256": "1f49fb4d0de96ff27e0e35f16b9453373db10403b4ac483496820193bcf3b3fe"
+    },
+    "liveAdmission": {
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/live-admission.json",
+      "sha256": "bd3af540f48f42d0d159b87308bed43c0bcf9a6277890d08d54958ce3c39fd39"
+    },
+    "actualLaunch": "099332/session69257 LIVE",
+    "runtimeBuildSourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
+    "evaluatorQualifiedSourceCommit": "f25811349dc89166018025a23655a2acba967578",
+    "checkoutAtLaunch": "09c97ce32f844c462b31a095a4a96985fec99d44",
+    "codingModel": "deepseek-flash",
+    "allSevenReviewerModels": "deepseek-v4-pro",
+    "wallLimitMs": 3600000,
+    "maxRequests": 256,
+    "capsSessionFlow": [
+      2,
+      2
+    ],
+    "implementationChallengeMode": "sampled",
+    "strictFourFalse": true,
+    "ordinaryApproval": true,
+    "workflowProtocol": {
+      "version": 2,
+      "id": "openspec-full-lifecycle-v2"
+    },
+    "controllerArchiveRequested": true,
+    "modelArchiveTurn": false,
+    "pluginArchiveMigrationQualified": false,
+    "startingCorrectness": "NOT_ESTABLISHED",
+    "publicRequestAndStarterFilesByteExact": true,
+    "publicStarterFiles": 3,
+    "originalPublicRequirements": "R1-R8 configuration resolver inspect/repair task",
+    "publicPreflight": {
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/public-check-receipt.json",
+      "sha256": "3066c84731673a1a9dbcdc5608d3d1fb45f93c074b95ca9269dc73bb5a7bc628"
+    },
+    "publicPreflightActual": "a6ed75/session37531 ->3f2d98/0 CLOSED",
+    "stockSetup": {
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/setup-receipt.json",
+      "sha256": "c0ce9f19345bbd85567c79902754669d4adcc46d059fbc139e2508526629f321"
+    },
+    "stockSetupActual": "807b5c/session26536 ->5dbe20/0 CLOSED",
+    "installed281Exact": true,
+    "publicChecksBeforeCoding": 2,
+    "privateCanaryDeniedBeforeRead": true,
+    "archiveHelperImportUnderSameCodingPolicyPassed": true,
+    "noGraderOrPriorMissHintsSupplied": true,
+    "currentPackageHistoryInherited": false,
+    "workflowFinished": false
   },
   "latestCompletedDevelopmentRun": {
     "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_ORIGINAL_APPLY_ERROR_PRESERVED",
@@ -1464,12 +1518,12 @@
   "reportCurrentQa": {
     "status": "PASS",
     "report": ".runtime-correction/runtime-corrector-progress.html",
-    "htmlSha256": "bc7028511cf0ca662414a3b7d774219e5c16e3eb6bc9dd64935fcc7603b34493",
+    "htmlSha256": "5d44323c523470a8a9224e503ccfcb2303738c87aa784953f0bdfe449d63ac13",
     "receipt": {
-      "path": ".runtime-correction/validation/root-progress-check-2komi6iw/report-qa/receipt.json",
-      "sha256": "9be7be7067818d9a720edb4328406cc2552e686d1fda107093ff99344a46434a"
+      "path": ".runtime-correction/validation/root-current-model-report-t7f9wdky/report-qa-final/receipt.json",
+      "sha256": "595c68d424c19d5001abf6a238ac8c68ef8310c660bc8b64b6451bcd6f9c4318"
     },
-    "actual": "75900b/session73082 ->46b8cd/0 CLOSED",
+    "actual": "29dcac/session37667 ->2a6dd6/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1486,7 +1540,7 @@
     "browserErrors": 0,
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
-    "visualReadback": "phone-zh-CN-390.png inspected; no overflow"
+    "visualReadback": "walkthrough-en-1200 inspected; currentlivecase separatelylabeledfromprecedingcompletedresult; nooverflow"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -1858,7 +1912,7 @@
     "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
     "regularMembers": 281,
     "runtimeModules": 213,
-    "status": "ENGINEERING_QUALIFIED_NO_NEW_MODEL_RESULT",
+    "status": "ENGINEERING_QUALIFIED_REAL_MODEL_WALKTHROUGH_IN_PROGRESS",
     "full": {
       "path": ".runtime-correction/validation/ci-fix/post-be6dcb2-natural-o7f7rkn1/terminal-receipt.json",
       "sha256": "f58941285355673d3b3bc4bb34ee4f560c37b751054ce8bf9c31270465f98b7d"
@@ -1889,8 +1943,9 @@
     "precedingCompletedModelWalkthrough": "evaluationRecords.ordinaryOn25084C252",
     "noRebuild": true,
     "qualityBenefitEstablished": false,
-    "modelTrialPerformed": false,
-    "promotionPacket": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi"
+    "modelTrialPerformed": true,
+    "promotionPacket": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi",
+    "modelTrialCompleted": false
   },
   "earlierCompletedDevelopmentRuns": [
     {
@@ -4543,8 +4598,8 @@
     "publicationReady": true
   },
   "reportCurrentWalkthrough": {
-    "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_APPLY_ERROR_PRESERVED",
-    "htmlSha256": "5efdc1c47f642741a0decc610926de545509b1f7180525f41908f1c65018c7d7",
+    "status": "CURRENT_PACKAGE_TRIAL_LIVE_PRECEDING_COMPLETED_WALKTHROUGH_RETAINED",
+    "htmlSha256": "5d44323c523470a8a9224e503ccfcb2303738c87aa784953f0bdfe449d63ac13",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn7c0286F020",
     "precedingCompletedRunReference": "evaluationRecords.ordinaryOn25084C252",
     "precedingWalkthroughMovedToExistingHistory": true,
@@ -4569,7 +4624,8 @@
     },
     "finalHostStatus": "NO_DEVIATION_FOUND",
     "originalApplyTurn": "ERROR_PRESERVED",
-    "fullyVerifiedWorkingCaseEstablished": false
+    "fullyVerifiedWorkingCaseEstablished": false,
+    "activeModelTrialReference": "currentPackageRealModelEvaluation"
   },
   "latestCompletedGeneralComparison": {
     "status": "ALL_FOUR_CLOSED_FROZEN_GRADED_NO_MEASURED_QUALITY_GAIN",
@@ -6869,6 +6925,33 @@
       "humanizerApplied": true,
       "rootVisualInspection": "Chinese390currentnativeandArchiveprogressinspected",
       "newEvaluatorFullCiPending": true
+    },
+    {
+      "status": "PASS",
+      "report": ".runtime-correction/runtime-corrector-progress.html",
+      "htmlSha256": "bc7028511cf0ca662414a3b7d774219e5c16e3eb6bc9dd64935fcc7603b34493",
+      "receipt": {
+        "path": ".runtime-correction/validation/root-progress-check-2komi6iw/report-qa/receipt.json",
+        "sha256": "9be7be7067818d9a720edb4328406cc2552e686d1fda107093ff99344a46434a"
+      },
+      "actual": "75900b/session73082 ->46b8cd/0 CLOSED",
+      "views": 4,
+      "languages": [
+        "en",
+        "zh-CN"
+      ],
+      "widths": [
+        1200,
+        390
+      ],
+      "sections": 6,
+      "collapsedHistories": 3,
+      "internalLinks": 7,
+      "externalRequests": 0,
+      "browserErrors": 0,
+      "rawHtmlNoExternalUrlDateOrHash": true,
+      "humanizerApplied": true,
+      "visualReadback": "phone-zh-CN-390.png inspected; no overflow"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -9560,7 +9643,7 @@
     "fullLocalSuiteRepeated": false,
     "realModelRequests": 0,
     "formalPairCredit": 0,
-    "harnessSourceBindingNext": "Own exact f258 CI is complete. Qualify exact Git-descendant packaged bytes and modes before selecting f258 as a new campaign harness source; retain original be6 artifact build source separately.",
+    "harnessSourceBindingNext": "Exact unchanged281archive/287constructorinput/514harnesspath equivalence is sealed and Rootjoined. CurrentgeneralON privateadapter binds originalbe6build/f258evaluator/09launchcheckout separately; no package rebuild or inherited modelresult.",
     "evaluatorSourceCommit": "f25811349dc89166018025a23655a2acba967578",
     "ownSourceCI": {
       "status": "SUCCESS",
@@ -9664,6 +9747,90 @@
     "semanticOrCausalQualityBenefitProven": false
   },
   "publicNativeDiagnostic": {
+    "status": "UNAVAILABLE_PUBLIC_FIXTURE_MODULE_MANIFEST_MISSING_BEFORE_NATIVE_TESTS",
+    "actual": "b15fe1/session32150 ->f676c5/1 CLOSED",
+    "elapsedMs": 43874.2587079978,
+    "sourceHold": {
+      "path": ".runtime-correction/validation/native-public-copy-probe-held-n5w37xbd/source-hold.v2.json",
+      "sha256": "42aa6b93d72b66187084835b04e06329c6b3d3b30a0fd3753e50f1c50fb81413"
+    },
+    "ownerReceipt": {
+      "path": ".runtime-correction/validation/native-public-copy-probe-held-n5w37xbd/run-1/receipt.json",
+      "sha256": "c73d5825c2ce306564181677556cb89de58ece976ecc5a619d620532d318b735"
+    },
+    "independentClosedReadback": {
+      "path": ".runtime-correction/validation/public-probe-closed-readback-g1wn3bb9/receipt.json",
+      "sha256": "2e70c85f946bad88975a49ff349d7e56e8d6abf045729384df985af0336c470a"
+    },
+    "rootPreAdmission": {
+      "path": ".runtime-correction/validation/native-public-copy-probe-held-n5w37xbd/root-pre-admission-readback.v2.json",
+      "sha256": "ec42d20c69a3aac7d928c942db17f6324a46d471cd6a3b9d28c7696a2b01fe1e"
+    },
+    "freshBootObserved": true,
+    "workspaceCopiesBoth18FilesBytesAndModesMatched": true,
+    "defaultBuildAttempts": 2,
+    "actualBuildError": "OHPM00608002 missing entry/oh-package.json5 in public diagnostic fixtures",
+    "nativeTestsObserved": 0,
+    "rawNativeBytes": 0,
+    "exportsAvailable": "UNVERIFIED",
+    "finalInputGuardPassed": true,
+    "knownOwnedCleanup": true,
+    "allCommandStreamsFinal": true,
+    "stalePortPolicyV1DetectedBeforeExecution": true,
+    "fourEndpointLiteralFixOnly": true,
+    "originalV1HoldAndRootPreflightAndPeerBlockedPreserved": true,
+    "originalClosedOutcomeRetagged": false,
+    "noOldGuestReuse": true,
+    "modelRequests": 0,
+    "formalPairCredit": 0,
+    "successorApproach": "Correct trustedpublictoy module manifests and perform standaloneDEFAULTbuild-only preflight beforeanotherguest."
+  },
+  "unpackedDistributionRepair": {
+    "status": "RESTORED_FROM_UNCHANGED_CANONICAL_ARCHIVE",
+    "receipt": {
+      "path": ".runtime-correction/validation/restore-unpacked-13dc-y24smtmf/receipt.json",
+      "sha256": "3a9c98df10990b507e639bd214adc7151d2f4b750ddecc4ece134b0ec055d39f"
+    },
+    "actual": "c5a622/0",
+    "previousRegularFiles": 278,
+    "previousStaleExistingFiles": 19,
+    "previousMissingFiles": 3,
+    "oldFolderPreserved": true,
+    "currentRegularFiles": 281,
+    "allCurrentBytesAndExecuteBitsEqualArchive": true,
+    "rebuild": false,
+    "pluginOrModelOutcomeRetagged": false
+  },
+  "evaluatorHarnessContentEquivalence": {
+    "status": "PASS_BYTE_AND_MODE_EQUIVALENCE_ONLY",
+    "proof": {
+      "path": ".runtime-correction/validation/artifact-be6-harness-f258-equivalence/receipt.json",
+      "sha256": "ab57c333f004bf03ec275816e53bcd9172e75182e885af7d3a0f33fae6d374da"
+    },
+    "rootJoin": {
+      "path": ".runtime-correction/validation/artifact-be6-harness-f258-equivalence/root-independent-join.json",
+      "sha256": "470173adb42767eb781e0ff63eb82c827bb7b8f512a2b578bf9cfa4c9c3aaea7"
+    },
+    "reportOnlySupplement": {
+      "path": ".runtime-correction/validation/artifact-be6-harness-f258-equivalence/supplement-report-only-ci-and-restore.json",
+      "sha256": "b5e3ba0497195c74a6f6cc943421f9e810c49dbf7bf5cb1ef27858f2ba65fb71"
+    },
+    "archiveBuildSourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
+    "evaluatorQualifiedSourceCommit": "f25811349dc89166018025a23655a2acba967578",
+    "checkoutAtModelLaunch": "09c97ce32f844c462b31a095a4a96985fec99d44",
+    "packageConstructorInputsEqual": 287,
+    "harnessFilesEqualF258To09": 514,
+    "runtimeModulesEqual": 213,
+    "packageMembersBound": 281,
+    "archiveRebuilt": false,
+    "newStockRunClaimedByEquality": false,
+    "own09PublicationCi": "EXPECTED_PATHS_IGNORE_NO_NEW_PUSH_RUN_OBSERVED",
+    "own09Snapshot": {
+      "path": ".runtime-correction/validation/ci-fix/post-09c97ce-report-only-71bjtwgi/receipt.json",
+      "sha256": "3e4a69a26972fb5f36e0e8207902224737700fb53ba0ef9058117ef38addf214"
+    }
+  },
+  "previousPublicNativeDiagnostic": {
     "status": "UNAVAILABLE_HELPER_COPY_FAILED_BEFORE_SDK_BUILD",
     "actual": "eccfc5/session4996 ->68f159/1 CLOSED",
     "elapsedMs": 38926.32812499505,
