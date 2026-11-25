@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readJson, sha256 } from '../lib/runtime-v2/utils.mjs';
 import { sharedBasisFixture as fixture } from './helpers/runtime-v2-shared-basis-fixture.mjs';
+import { runtimeFailureDiagnostics } from './helpers/runtime-failure-diagnostics.mjs';
 
 for (const finalValid of [false, true]) test(`skill-ergonomics native full replacement ${finalValid ? 'explicit complete repair' : 'keeps invalid final candidate unverified'}`, async t => {
   const f = await fixture(t); f.state.useNativeGraph = true;
@@ -14,8 +15,17 @@ for (const finalValid of [false, true]) test(`skill-ergonomics native full repla
     if (index === 1) delete result.sourceInterpretationReviews;
     return result;
   };
-  await f.select();
+  const selected = await f.select();
   const stopped = await f.invoke('Stop', { last_assistant_message: 'The requested work is complete.' });
+  if (f.state.skillReviewCandidates.length !== 3) {
+    const token = value => typeof value === 'string' && /^[A-Z][A-Z0-9_]{0,79}$/u.test(value) ? value : undefined;
+    t.diagnostic(JSON.stringify({ phase: 'SKILL_REPAIR_CANDIDATE_COUNT',
+      selectedStopStatus: token(selected?.stop?.status), observedCandidates: f.state.skillReviewCandidates.length,
+      graphRequests: f.calls.filter(call => call.request?.skillGraphOnly).length,
+      skillReviewRequests: f.calls.filter(call => call.role === 'skill-reviewer' && !call.request?.skillGraphOnly).length,
+      diagnostics: await runtimeFailureDiagnostics({ root: f.root, calls: f.calls,
+        post: { phase: 'STOP_RETURNED', reviewStatus: stopped?.stop?.status, reasonCode: stopped?.stop?.reasonCode } }) }));
+  }
   assert.equal(f.state.skillReviewCandidates.length, 3, 'one initial response plus the unchanged two repairs');
   assert.equal(Object.hasOwn(f.state.skillReviewCandidates[1], 'sourceInterpretationReviews'), false);
   assert.equal(f.state.skillReviewCandidates[2].sourceInterpretationReviews.length, f.state.nativeInput.evidence.skillGroundTruth.constraints.length);

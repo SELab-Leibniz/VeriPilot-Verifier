@@ -1646,24 +1646,17 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "actual": "cb959f/session2557 ->8258f0/0 CLOSED",
+    "actual": "ff5e81/session26888 ->9b281f/0 CLOSED",
     "receipt": {
-      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-current-diagnosis-final-qa/receipt.json",
-      "sha256": "5aaf959c5330e1f6cc4a1673111bf497e4143bb5768e2e9ba4943789135b8754"
+      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-pc-verified-ci-diagnostics-qa/receipt.json",
+      "sha256": "acf82d342c79f75cf146d2626a7d7c786ac558834604decacc69e3f577022e2a"
     },
-    "htmlSha256": "e1216ac5a23cfdd5e5d841da841b1f16b26a4ca63d6d44060fdd3fb3806199f5",
+    "htmlSha256": "a5c3efdb8fdab929d4f3c93010c566441b5aa9ec10d68ed063911e4e35b1ae4e",
     "views": 4,
     "externalRequests": 0,
     "errors": 0,
-    "rootViewed": [
-      "walkthrough-en-1200.png",
-      "phone-zh-CN-390.png"
-    ],
-    "precedingRevisionQa": {
-      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-current-method-grade-qa-successor/receipt.json",
-      "actual": "657371/session69696 ->17021f/0 PASS"
-    },
-    "preservedSandboxBrowserStartupFailure": "e3544f/1 no layout observation; allowed successor passed"
+    "layoutInvariant": "6sections3collapsedhistories7internallinks",
+    "nativeBootAndCurrentCiFailureIncluded": true
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4782,7 +4775,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_APPLY_ERROR_PRESERVED",
-    "htmlSha256": "e1216ac5a23cfdd5e5d841da841b1f16b26a4ca63d6d44060fdd3fb3806199f5",
+    "htmlSha256": "a5c3efdb8fdab929d4f3c93010c566441b5aa9ec10d68ed063911e4e35b1ae4e",
     "modelOutcomeReference": "currentPackageRealModelEvaluation",
     "precedingCompletedRunReference": "evaluationRecords.ordinaryOn25084C252",
     "precedingWalkthroughMovedToExistingHistory": true,
@@ -9010,7 +9003,29 @@
     },
     "localImageFilesPinned": 15,
     "localImageBytes": 4752039330,
-    "vendorChecksumsVerified": false
+    "vendorChecksumsVerified": false,
+    "freshCreatedProfile": {
+      "sdkCreateTerminal": "656e39/1 wrapper unqualified, nativeSDKchild0",
+      "originalWrapperStatus": "UNAVAILABLE_RETAIN_NO_RETRY",
+      "wrapperFailure": "Expected .hvd suffix; vendor created plain directory",
+      "originalAttemptPreserved": true,
+      "sdkCreateRetryPerformed": false,
+      "observedLayoutReadback": {
+        "path": ".runtime-correction/validation/mac2in1-created-layout-readback-fh4l4x0r/receipt.json",
+        "sha256": "21382fd7a1518d0b723df22131863ca14c4b2fe0c3bc9a1feadea42fc1e3b82e"
+      },
+      "rootActualReadback": {
+        "path": ".runtime-correction/validation/mac2in1-api24-create-held-e7vff5o2/root-create-actual-terminal.json",
+        "sha256": "4b982f49910aa80a9e0a155cad894159f394276db69a81af11faa63a9866844a"
+      },
+      "deviceType": "2in1",
+      "apiVersion": "24",
+      "softwareVersion": "6.1.0.125",
+      "cpuArch": "arm64",
+      "vendorDefaultProductModel": "MateBook Pro",
+      "bootExercised": true,
+      "original10PcSuitesQualified": false
+    }
   },
   "previousReportWalkthroughBeforeCurrentToolUsabilityClosure": {
     "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
@@ -9039,5 +9054,210 @@
     },
     "finalHostStatus": "UNVERIFIED"
   },
-  "previousCompletedDevelopmentRunReference": "evaluationRecords.ordinaryOn25084C252"
+  "previousCompletedDevelopmentRunReference": "evaluationRecords.ordinaryOn25084C252",
+  "frozenStageNavigationFollowup": {
+    "status": "SOURCE_PUBLISHED_FOCUSED49_EACH_PASS_OWN_CI_WINDOWS_SKILL_REPAIR_FIXTURE_FAILURE_UNDER_INVESTIGATION",
+    "sourceCommit": "85f87184cbd9da5074bc6824ccd27bd305ef1e21",
+    "sourceHold": {
+      "path": ".runtime-correction/validation/frozen-stage-guidance-xoydx03z/source-hold.json",
+      "sha256": "f25ca579bb0965532f41721e8eb79e8e933b57df154b630c7420362e7e77b9ba"
+    },
+    "qualification": {
+      "path": ".runtime-correction/validation/frozen-stage-guidance-xoydx03z/qualification.json",
+      "sha256": "73836f388610e595eb1fad9bed923f0a4a02dacd79c148ad0756ecd1321a616d"
+    },
+    "independentSourcePeer": {
+      "path": ".runtime-correction/validation/frozen-stage-guidance-xoydx03z/peer-retention-source.json",
+      "sha256": "21ac1467fc97b9a251101e3acdc9423dbe8fae2b01ebfbface7f51917b0d179b"
+    },
+    "rootReadback": {
+      "path": ".runtime-correction/validation/frozen-stage-guidance-xoydx03z/root-readback.json",
+      "sha256": "88668e5464682cc6da19f30f84086a09efd18ac2436984ec3364082517fc5b49"
+    },
+    "actualFocusedRuns": [
+      "0db0aa/0 Node24",
+      "cd59d2/0 Node18+webcrypto"
+    ],
+    "checksEachEngine": 49,
+    "onlyProductionChange": "Bounded frozen-stage rejection diagnostic; same predicate/order/immutability/source and coverage checks",
+    "canonicalArchiveIncludesThisPatch": false,
+    "newModelTrialPerformed": false,
+    "qualityGainProven": false,
+    "formalCredit": 0,
+    "ownNaturalCiObservation": {
+      "runId": 45546299395,
+      "attempt": 1,
+      "headSha": "85f87184cbd9da5074bc6824ccd27bd305ef1e21",
+      "status": "EIGHT_SUCCESS_ONE_WINDOWS_SHARD_FAILED",
+      "publisher": "SKIPPED",
+      "fullInventory": 408,
+      "windowsShardUnion": "102+102+102+102 disjoint exact408",
+      "macOS": {
+        "pass": 5199,
+        "skip": 33,
+        "fail": 0
+      },
+      "linux": {
+        "pass": 5195,
+        "skip": 37,
+        "fail": 0
+      },
+      "windows": {
+        "pass": 5183,
+        "skip": 45,
+        "fail": 2
+      },
+      "allThreeNode18Jobs": "SUCCESS",
+      "terminalReceipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-85f8718-natural-spb4waow/terminal-receipt.json",
+        "sha256": "f5f1331e4c4a9dbbf342a8c60b782827dc564509a928c1ca322e8512726e116d"
+      },
+      "independentReadback": {
+        "path": ".runtime-correction/validation/ci-fix/post-85f8718-natural-spb4waow/final-readback.json",
+        "sha256": "51b4107b30165de842844f759ddb416058bd1fb7b72788b1273d76f3faedb463"
+      },
+      "soleFailedFile": "test/runtime-v2-skill-review-repair.test.mjs",
+      "failedChecks": 2,
+      "observedScriptedSkillReviewResponses": 0,
+      "cause": "UNKNOWN; fixture state not retained by original test, safe failure-only diagnostics are being added",
+      "ciRerunOrDispatchPerformed": false
+    }
+  },
+  "full13NativeInstrumentMap": {
+    "status": "PREPARED_SELECTED_ROUTES_NOT_NATIVE_QUALIFIED",
+    "sourceHoldV2": {
+      "path": ".runtime-correction/validation/full13-native-instrument-map-held-08azw1x7/source-hold.v2.json",
+      "sha256": "56edfd65cca81ce83eabfa6edb3ba51d2b7583adfd003296dc87cd57d090cb91"
+    },
+    "projectManifestsAndBuildProfilesObserved": 52,
+    "tasks": 13,
+    "phoneTasks": 3,
+    "twoInOneTasks": 10,
+    "all13CalibratedUnderThisConfig": false,
+    "singleCasePhoneCalibrationInherited": false,
+    "hostBuildBoundaryQualified": false,
+    "guestNetworkBoundaryQualified": false,
+    "modelCandidatesAdmittedToPrivateGradeUnderThisRoute": false,
+    "formalCredit": 0
+  },
+  "reportCurrentQaBeforeFrozenStageFollowup": {
+    "status": "PASS",
+    "actual": "cb959f/session2557 ->8258f0/0 CLOSED",
+    "receipt": {
+      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-current-diagnosis-final-qa/receipt.json",
+      "sha256": "5aaf959c5330e1f6cc4a1673111bf497e4143bb5768e2e9ba4943789135b8754"
+    },
+    "htmlSha256": "e1216ac5a23cfdd5e5d841da841b1f16b26a4ca63d6d44060fdd3fb3806199f5",
+    "views": 4,
+    "externalRequests": 0,
+    "errors": 0,
+    "rootViewed": [
+      "walkthrough-en-1200.png",
+      "phone-zh-CN-390.png"
+    ],
+    "precedingRevisionQa": {
+      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-current-method-grade-qa-successor/receipt.json",
+      "actual": "657371/session69696 ->17021f/0 PASS"
+    },
+    "preservedSandboxBrowserStartupFailure": "e3544f/1 no layout observation; allowed successor passed"
+  },
+  "freshPrivatePcBootControl": {
+    "status": "VERIFIED_FIRST_2IN1_BOOT_AND_OWNED_CLEANUP",
+    "actual": "6659af/session55678 ->22033a/0 CLOSED",
+    "sourceHold": {
+      "path": ".runtime-correction/validation/mac2in1-boot-control-held-pgq0vq4l/source-hold.json",
+      "sha256": "2de83e6b9ba50bfab9e08d3e25a102196075c9e0370992532128fc2a340d7736"
+    },
+    "rootAdmission": {
+      "path": ".runtime-correction/validation/mac2in1-boot-control-held-pgq0vq4l/root-boot-admission.json",
+      "sha256": "24348c3fb9b06fa29a3b6228a0f536b7f2683c6da1a02e12c786fe6c87975cf1"
+    },
+    "peerSource": {
+      "path": ".runtime-correction/validation/mac2in1-boot-control-held-pgq0vq4l/peer-quality-source.json",
+      "sha256": "2f0171c94227026aefe2cc301eb996d1e074d4ad125e31ded155815a6cb27e8a"
+    },
+    "receipt": {
+      "path": ".runtime-correction/validation/mac2in1-boot-control-held-pgq0vq4l/run-1/receipt.json",
+      "sha256": "442ba92bdd5214109c7eb5d84de726fe2f9eeb6f1f452420b8cde06773d90e77"
+    },
+    "outerReceipt": {
+      "path": ".runtime-correction/validation/mac2in1-boot-control-held-pgq0vq4l/root-outer-receipt.json",
+      "sha256": "6ba0982c3a7c0a3594407a4426b79dd450801e7c368d2613a9d3eb2601032d24"
+    },
+    "outerElapsedMs": 33867.22,
+    "bootControlObserved": true,
+    "identity": {
+      "const.ohos.apiversion": "24",
+      "const.product.devicetype": "2in1",
+      "const.product.software.version": "emulator 6.1.0.125(SP12DEVC00E47R1P3)",
+      "bootevent.boot.completed": "true"
+    },
+    "allCommandStreamsFinal": true,
+    "immutableInputsStableAfterCleanup": true,
+    "knownOwnedCleanupConfirmed": true,
+    "knownBirths": 44,
+    "knownGroups": 36,
+    "agreementAcknowledgmentWrites": 0,
+    "gracefulStop": {
+      "commandExitZero": true,
+      "withinTwoSecondClosure": "UNVERIFIED",
+      "elapsedMs": 2003.755,
+      "overallPrimaryEofAndOwnedCleanupConfirmed": true
+    },
+    "guestNetworkIsolationQualified": false,
+    "full13CalibrationQualified": false,
+    "original10PcSuitesQualified": false,
+    "formalCredit": 0,
+    "independentReadback": {
+      "path": ".runtime-correction/validation/mac2in1-boot-independent-e8e7wvmk/receipt.json",
+      "sha256": "a6cd7cc8abdbf2309ca530cfc5f345578e0f44b0f57d369a69f5ff2f8dabd8e4"
+    },
+    "commandCaptures": 33,
+    "realEofStreams": 66,
+    "birthGatesVerified": 99,
+    "strictCreatedIniBytesStable": true,
+    "image15MetadataVersionsStable": true,
+    "primaryVmExitCode": 0,
+    "primaryVmSignalUsed": false,
+    "onlyGuardedHdcServerSigterm": true
+  },
+  "skillReviewCiFailureDiagnostics": {
+    "status": "TEST_ONLY_FOLLOWUP_QUALIFIED_PENDING_OWN_NATURAL_CI",
+    "sourcePreimageCommit": "85f87184cbd9da5074bc6824ccd27bd305ef1e21",
+    "file": "test/runtime-v2-skill-review-repair.test.mjs",
+    "postimageSha256": "7f78e7af806ad117f49fdc7ad610d4de9c847d2298593562a1ee98653a412776",
+    "sourceHold": {
+      "path": ".runtime-correction/validation/skill-review-failure-diagnostics-ttfylep5/source-hold.json",
+      "sha256": "9f724c02f31a30798db398a9f8db833d472a9af7b30ac48281ff33b9fd562892"
+    },
+    "qualification": {
+      "path": ".runtime-correction/validation/skill-review-failure-diagnostics-ttfylep5/qualification.json",
+      "sha256": "e0aec6994ee0877b6ffb6ccec18f1c81e50c56b6c181ffec1b5a47652a9d22f1"
+    },
+    "rootNestedPinsReadback": 7,
+    "existingCasesPassEachEngine": 2,
+    "assertionsAndCapsUnchanged": true,
+    "productionCodeUnchanged": true,
+    "windowsCauseEstablished": false,
+    "windowsRootCauseFixClaimed": false,
+    "failureEmissionExercisedByPositiveCases": false,
+    "preservedCiFailureReference": "frozenStageNavigationFollowup.ownNaturalCiObservation"
+  },
+  "protectedBuildHostPrimitive": {
+    "status": "ACTUAL_ENGINEERING_CONTROL_PASS_ONLY_NATIVE_SDK_ROUTE_UNQUALIFIED",
+    "actual": "63f122/0 CLOSED",
+    "readback": {
+      "path": ".runtime-correction/validation/native-protected-worker-successor-held-b1nvzgo6/host-canary-actual-readback.json",
+      "sha256": "c851a3de5ee94a9adb3e508219b30dfb5b7bd01c963dd77d29975039f57b874e"
+    },
+    "ownedStages": 3,
+    "checks": 23,
+    "directAndInheritedCurrentNodeBuildHooksExercised": true,
+    "attributablePrivatePathAndTcpDenial": true,
+    "allowedSourceConfigAndScratchOperationsWork": true,
+    "nativeSdkOrOhpmOrHvigorOrHdcOrVmActions": 0,
+    "privateGradeOrGuestNetworkBoundaryQualified": false,
+    "optionalBuildExecutorAdapter": "PROPOSAL_ONLY",
+    "formalCredit": 0
+  }
 }
