@@ -1463,21 +1463,30 @@
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "actual": "f74200/session64209 ->16264e/0 CLOSED",
+    "report": ".runtime-correction/runtime-corrector-progress.html",
+    "htmlSha256": "bc7028511cf0ca662414a3b7d774219e5c16e3eb6bc9dd64935fcc7603b34493",
     "receipt": {
-      "path": ".runtime-correction/validation/root-integrated-workflow-v2-tfo697ko/report-qa/receipt.json",
-      "sha256": "9d69b7533f9c384f1edc40ca60d5dda8bab36f1f915ea8bdbad43c732eb8f575"
+      "path": ".runtime-correction/validation/root-progress-check-2komi6iw/report-qa/receipt.json",
+      "sha256": "9be7be7067818d9a720edb4328406cc2552e686d1fda107093ff99344a46434a"
     },
-    "htmlSha256": "5efdc1c47f642741a0decc610926de545509b1f7180525f41908f1c65018c7d7",
+    "actual": "75900b/session73082 ->46b8cd/0 CLOSED",
     "views": 4,
+    "languages": [
+      "en",
+      "zh-CN"
+    ],
+    "widths": [
+      1200,
+      390
+    ],
+    "sections": 6,
+    "collapsedHistories": 3,
+    "internalLinks": 7,
     "externalRequests": 0,
-    "errors": 0,
-    "layoutInvariant": "6sections3collapsedhistories7internallinks",
-    "englishAndSimplifiedChineseOneFile": true,
-    "externalUrlsDatesHashesInRawHtml": 0,
+    "browserErrors": 0,
+    "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
-    "rootVisualInspection": "Chinese390currentnativeandArchiveprogressinspected",
-    "newEvaluatorFullCiPending": true
+    "visualReadback": "phone-zh-CN-390.png inspected; no overflow"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -6842,6 +6851,24 @@
       "humanizerApplied": true,
       "freshFull13CalibrationAndSourceCiIncluded": true,
       "rootVisualInspection": "EN1200 walkthrough and ZH390 native-route screenshots inspected"
+    },
+    {
+      "status": "PASS",
+      "actual": "f74200/session64209 ->16264e/0 CLOSED",
+      "receipt": {
+        "path": ".runtime-correction/validation/root-integrated-workflow-v2-tfo697ko/report-qa/receipt.json",
+        "sha256": "9d69b7533f9c384f1edc40ca60d5dda8bab36f1f915ea8bdbad43c732eb8f575"
+      },
+      "htmlSha256": "5efdc1c47f642741a0decc610926de545509b1f7180525f41908f1c65018c7d7",
+      "views": 4,
+      "externalRequests": 0,
+      "errors": 0,
+      "layoutInvariant": "6sections3collapsedhistories7internallinks",
+      "englishAndSimplifiedChineseOneFile": true,
+      "externalUrlsDatesHashesInRawHtml": 0,
+      "humanizerApplied": true,
+      "rootVisualInspection": "Chinese390currentnativeandArchiveprogressinspected",
+      "newEvaluatorFullCiPending": true
     }
   ],
   "previousLedgerPromotionFields": {
@@ -9520,7 +9547,7 @@
     }
   },
   "evaluatorFollowup": {
-    "status": "SOURCE_APPLIED_FOCUSED_AND_CONTROLLER_CONTROL_PASS_OWN_CI_PENDING",
+    "status": "SOURCE_APPLIED_FOCUSED_CONTROLLER_AND_OWN_NINE_CI_TEST_JOBS_PASS",
     "basePublishedHead": "6cfa72b4faf9f54cd867524c0c0ec90f52d50c04",
     "pluginArchiveChanged": false,
     "installedPluginSourceCommitUnchanged": "be6dcb223f434afabc34f32a3643ac3251705572",
@@ -9533,10 +9560,35 @@
     "fullLocalSuiteRepeated": false,
     "realModelRequests": 0,
     "formalPairCredit": 0,
-    "harnessSourceBindingNext": "After own new source CI, qualify exact Git descendant runtime/archive byte equivalence before new campaign release pins."
+    "harnessSourceBindingNext": "Own exact f258 CI is complete. Qualify exact Git-descendant packaged bytes and modes before selecting f258 as a new campaign harness source; retain original be6 artifact build source separately.",
+    "evaluatorSourceCommit": "f25811349dc89166018025a23655a2acba967578",
+    "ownSourceCI": {
+      "status": "SUCCESS",
+      "head": "f25811349dc89166018025a23655a2acba967578",
+      "runId": 45564182212,
+      "attempt": 1,
+      "testJobsSuccess": 9,
+      "publisherSkipped": true,
+      "officialFilesEachOs": 412,
+      "windowsDisjointPartition": [
+        103,
+        103,
+        103,
+        103
+      ],
+      "receipt": {
+        "path": ".runtime-correction/validation/ci-fix/post-f258113-natural-ct_j_cot/terminal-receipt.json",
+        "sha256": "f882be6ee2eeb6e39017402bd14f42111c3402befea418e36adecd16137545ee"
+      },
+      "rootReadback": {
+        "path": ".runtime-correction/validation/ci-fix/post-f258113-natural-ct_j_cot/root-readback.json",
+        "sha256": "5a8c23713478aef8532950c76d7b8754c3c252216facd16207ec7323074bd191"
+      },
+      "inheritsPreviousCi": false
+    }
   },
   "nativeBuildExecutorFollowup": {
-    "status": "ROOT_APPLIED_FOCUSED_ONLY",
+    "status": "ROOT_APPLIED_FOCUSED_AND_OWN_NINE_CI_TEST_JOBS_PASS",
     "qualification": {
       "path": ".runtime-correction/validation/protected-build-executor-api-private-oc1vjn35/root-focused-qualification.json",
       "sha256": "683f416435a91723f6b6e763bc46102e888d85d6e03c7a003a3cce66e3652863"
@@ -9576,7 +9628,11 @@
     "oldCalibrationGradesRetagged": false,
     "genuineErrorsOrFailuresPassed": false,
     "exactInstalledHypiumHARSourceIdentityClaimed": false,
-    "full13NativeRouteQualified": false
+    "full13NativeRouteQualified": false,
+    "ownSourceCI": {
+      "path": ".runtime-correction/validation/ci-fix/post-f258113-natural-ct_j_cot/terminal-receipt.json",
+      "sha256": "f882be6ee2eeb6e39017402bd14f42111c3402befea418e36adecd16137545ee"
+    }
   },
   "prospectiveCandidateQualityGradingV2": {
     "status": "ROOT_APPLIED_FOCUSED_PASS_NO_REAL_CAMPAIGN",
@@ -9606,5 +9662,45 @@
     "legacyPlanAnd39HistoryRetagged": false,
     "formalCredit": 0,
     "semanticOrCausalQualityBenefitProven": false
+  },
+  "publicNativeDiagnostic": {
+    "status": "UNAVAILABLE_HELPER_COPY_FAILED_BEFORE_SDK_BUILD",
+    "actual": "eccfc5/session4996 ->68f159/1 CLOSED",
+    "elapsedMs": 38926.32812499505,
+    "ownerReceipt": {
+      "path": ".runtime-correction/validation/native-public-export-probe-held-vaz3wgw1/run-1/receipt.json",
+      "sha256": "9d2ea594602781a713bf94affeeb099e712642fd1bc963181e9b7b4ec78c5143"
+    },
+    "independentClosedReadback": {
+      "path": ".runtime-correction/validation/public-probe-closed-readback-9deulqjh/receipt.json",
+      "sha256": "3c23ab92d12d746e82626ed636354aa8cd7e3c793a9cbede1b2da03cc85ca391"
+    },
+    "rootBoundedJoin": {
+      "path": ".runtime-correction/validation/public-probe-closed-readback-9deulqjh/root-join.json",
+      "sha256": "ad43cc56f495ef63607ddf14b6bb2cbf4d5c4f6d3c5297c7e75425bf92374e74"
+    },
+    "sourceFaultLocalization": {
+      "path": ".runtime-correction/validation/public-probe-copy-diagnosis-8qtoii1e/case.json",
+      "sha256": "718d0e4788676fd97a0b9876a6f8f3ac90fd28ca480c523cf373f1e03130ac6d"
+    },
+    "sourceFaultEvidenceJoins": {
+      "path": ".runtime-correction/validation/public-probe-copy-diagnosis-8qtoii1e/evidence-joins.json",
+      "sha256": "308c1b5267b3d7f8bf23756ac5a77bf426965e0d88cb95256ed28d0d7e643c77"
+    },
+    "sameNodePureCopyActual": "c3204a/0",
+    "pureObservedCopyError": "ERR_FS_CP_EEXIST",
+    "originalHelperErrorName": "SystemError",
+    "originalSpecificErrnoRetained": false,
+    "freshBootObserved": true,
+    "finalInputGuardPassed": true,
+    "knownOwnedCleanup": true,
+    "streamsFinalEof": true,
+    "sdkPublicControlBuildStarted": false,
+    "exportsAvailable": "UNVERIFIED",
+    "originalRunRetagged": false,
+    "oldGuestReused": false,
+    "modelRequests": 0,
+    "formalPairCredit": 0,
+    "successorFixStatus": "PRIVATE_SOURCE_AND_REAL_FILESYSTEM_REGRESSION_IN_PROGRESS"
   }
 }
