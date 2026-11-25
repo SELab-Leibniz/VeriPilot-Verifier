@@ -1442,7 +1442,7 @@
   },
   "branchPublication": {
     "branch": "codex/openclaw-runtime-corrector",
-    "status": "ROOT_ARTIFACT_PUBLICATION_PENDING",
+    "status": "PUSHED_FEATURE_BRANCH_ONLY_OWN_PUBLICATION_CI_PASS",
     "sourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
     "archiveSha256": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
     "sourceCiRun": 45549274998,
@@ -1450,33 +1450,34 @@
       "path": ".runtime-correction/validation/ci-fix/post-be6dcb2-natural-o7f7rkn1/terminal-receipt.json",
       "sha256": "f58941285355673d3b3bc4bb34ee4f560c37b751054ce8bf9c31270465f98b7d"
     },
-    "artifactPublicationCommit": null,
-    "commitActual": null,
-    "pushActual": null,
+    "artifactPublicationCommit": "6cfa72b4faf9f54cd867524c0c0ec90f52d50c04",
+    "commitActual": "c15293/0",
+    "pushActual": "79e86f/session23897 ->784676/0 CLOSED",
     "mainMerged": false,
     "rootOwnsGitPublication": true,
     "previousPublicationRetainedIn": {
       "path": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi/previous-current-package-fields.json",
       "sha256": "08b4d115047f33ec3c166420c301d4f94e2bc6e83b70d23be401227d726ef044"
-    }
+    },
+    "publicationReceiptPath": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi/branch-publication.json"
   },
   "reportCurrentQa": {
     "status": "PASS",
-    "actual": "c4b6f2/session11906 ->b0319c/0 CLOSED",
+    "actual": "f74200/session64209 ->16264e/0 CLOSED",
     "receipt": {
-      "path": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi/report-full13-current-qa/receipt.json",
-      "sha256": "1caa7eb095cc8857b1f244d78c9fda6240d55b2e9c93df906b4d2f8cdcdcfe6f"
+      "path": ".runtime-correction/validation/root-integrated-workflow-v2-tfo697ko/report-qa/receipt.json",
+      "sha256": "9d69b7533f9c384f1edc40ca60d5dda8bab36f1f915ea8bdbad43c732eb8f575"
     },
-    "htmlSha256": "32ea5e8cdb411d99618e94121db96b9b2c209dcd1e74baefe608d37ca31181a3",
+    "htmlSha256": "5efdc1c47f642741a0decc610926de545509b1f7180525f41908f1c65018c7d7",
     "views": 4,
     "externalRequests": 0,
     "errors": 0,
     "layoutInvariant": "6sections3collapsedhistories7internallinks",
     "englishAndSimplifiedChineseOneFile": true,
-    "externalLinksDatesHashes": 0,
+    "externalUrlsDatesHashesInRawHtml": 0,
     "humanizerApplied": true,
-    "freshFull13CalibrationAndSourceCiIncluded": true,
-    "rootVisualInspection": "EN1200 walkthrough and ZH390 native-route screenshots inspected"
+    "rootVisualInspection": "Chinese390currentnativeandArchiveprogressinspected",
+    "newEvaluatorFullCiPending": true
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4534,7 +4535,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_APPLY_ERROR_PRESERVED",
-    "htmlSha256": "32ea5e8cdb411d99618e94121db96b9b2c209dcd1e74baefe608d37ca31181a3",
+    "htmlSha256": "5efdc1c47f642741a0decc610926de545509b1f7180525f41908f1c65018c7d7",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn7c0286F020",
     "precedingCompletedRunReference": "evaluationRecords.ordinaryOn25084C252",
     "precedingWalkthroughMovedToExistingHistory": true,
@@ -6823,6 +6824,24 @@
     {
       "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-apply-active-qa/receipt.json",
       "sha256": "5cb5d586f1d7572659901a50eab300599c10b5d93f679ff69a3fb2fb5f48e160"
+    },
+    {
+      "status": "PASS",
+      "actual": "c4b6f2/session11906 ->b0319c/0 CLOSED",
+      "receipt": {
+        "path": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi/report-full13-current-qa/receipt.json",
+        "sha256": "1caa7eb095cc8857b1f244d78c9fda6240d55b2e9c93df906b4d2f8cdcdcfe6f"
+      },
+      "htmlSha256": "32ea5e8cdb411d99618e94121db96b9b2c209dcd1e74baefe608d37ca31181a3",
+      "views": 4,
+      "externalRequests": 0,
+      "errors": 0,
+      "layoutInvariant": "6sections3collapsedhistories7internallinks",
+      "englishAndSimplifiedChineseOneFile": true,
+      "externalLinksDatesHashes": 0,
+      "humanizerApplied": true,
+      "freshFull13CalibrationAndSourceCiIncluded": true,
+      "rootVisualInspection": "EN1200 walkthrough and ZH390 native-route screenshots inspected"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -7303,16 +7322,28 @@
     }
   },
   "distributionPlacementCi": {
-    "status": "NOT_YET_OBSERVED_FOR_NEW_CANONICAL_ARCHIVE",
+    "status": "SUCCESS_NINE_OWN_TEST_JOBS_PUBLISHER_SKIPPED",
+    "publicationCommit": "6cfa72b4faf9f54cd867524c0c0ec90f52d50c04",
     "sourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
     "archiveSha256": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
-    "runId": null,
-    "receipt": null,
-    "inheritsPreviousPublicationCi": false,
-    "previousPlacementCiRetainedIn": {
-      "path": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi/previous-current-package-fields.json",
-      "sha256": "08b4d115047f33ec3c166420c301d4f94e2bc6e83b70d23be401227d726ef044"
-    }
+    "runId": 45555939483,
+    "attempt": 1,
+    "receipt": {
+      "path": ".runtime-correction/validation/ci-fix/post-6cfa72b-natural-3_z6eb1_/terminal-receipt.json",
+      "sha256": "869f8cdde3682e38ac365b43775ebb4b2c213303200079f1e1991dd3cd6ffbfd"
+    },
+    "independentReadback": {
+      "path": ".runtime-correction/validation/ci-fix/post-6cfa72b-natural-3_z6eb1_/final-readback.json",
+      "sha256": "7d5e35afe3a02f97e97bd9401ac8e21a0ce56372ce63c90b089809f9a74e1bd8"
+    },
+    "rootReadback": {
+      "path": ".runtime-correction/validation/ci-fix/post-6cfa72b-natural-3_z6eb1_/root-readback.json",
+      "sha256": "3ccf42c119c66fe19c04a83418ad3c9696c5dee58c172f43388ce7ce76a915fa"
+    },
+    "allNineCheckoutHeadsExact": true,
+    "allNineArtifact17Passed": true,
+    "fullFilesEachOS": 408,
+    "inheritsPreviousPublicationCi": false
   },
   "nextLiveLedgerPilot": {
     "status": "EXERCISED_PARTIAL_OR_LATE_STOP_DEADLINE_E_NOT_MET_CODE_GRADE_PASS",
@@ -9412,7 +9443,7 @@
     }
   },
   "prospectiveFullWorkflowGap": {
-    "status": "IDENTIFIED_PRIVATE_IMPLEMENTATION_IN_PROGRESS",
+    "status": "OPTIONAL_CONTROLLER_ARCHIVE_IMPLEMENTED_AND_ENGINEERING_QUALIFIED",
     "currentHarnessScope": "Proposal -> ordinary approval -> Apply -> Stop",
     "archiveSupportedAndValidated": false,
     "wholeOpenSpecLifecycleValidated": false,
@@ -9424,8 +9455,43 @@
       "path": ".runtime-correction/validation/openspec-archive-offline-control-b5791k1y/prospective-workflow-and-grading-v2-proposal.json",
       "sha256": "5e0785a8891e99c736a81a21ff560e8d6734489213f3ec83db41345971a27e68"
     },
-    "allClosedIntegrityValidCandidateGradingImplemented": false,
-    "legacy39PairDefinitionRetagged": false
+    "allClosedIntegrityValidCandidateGradingImplemented": true,
+    "legacy39PairDefinitionRetagged": false,
+    "optionalFlag": "--complete-openspec-workflow",
+    "optionalPlanChoiceMustBeFrozenBeforeFirstRequest": true,
+    "defaultLegacyScopeUnchanged": true,
+    "archiveControllerSupportedAndValidated": true,
+    "realModelArchiveTurnQualified": false,
+    "pluginArchiveMigrationQualified": false,
+    "qualifiedCandidatePopulation": "Identity-valid frozen artifact after settled turns/nativeStop and terminal command; unsafe/unfrozen candidates remain ungraded.",
+    "integratedSourceQualification": {
+      "path": ".runtime-correction/validation/root-integrated-workflow-v2-tfo697ko/qualification.json",
+      "sha256": "58033014a318dcffbfae5d9390df3fdb48af84a5d47fff5fd248aa3b86b903c4"
+    },
+    "archiveSourceHold": {
+      "path": ".runtime-correction/validation/openspec-archive-workflow-wiring-private-i2c6365s/source-hold.v4.json",
+      "sha256": "781d45fc2c6c47c3a469280aaacd01394585b8696ec7dd9f77eb587d203a9ce1"
+    },
+    "archiveSourcePeer": {
+      "path": ".runtime-correction/validation/openspec-archive-workflow-wiring-private-i2c6365s/peer-retention-source.v4.json",
+      "sha256": "3601cc5bb2d64669eece6b141e887ff162ba2c6a29653004bde7958f296ffcc9"
+    },
+    "actualControllerControl": {
+      "path": ".runtime-correction/validation/archive-controller-official-90s-held-o6rabli5/receipt.json",
+      "sha256": "893b0fb05e8a7b824a64465f29ff3b745e66d2cc421f482407b1f625c393790f"
+    },
+    "actualControllerIndependentReadback": {
+      "path": ".runtime-correction/validation/archive90-independent-readback-1333f8eb/receipt.json",
+      "sha256": "22c7bf692bb9fc0f21eaed3d4b3dfc82005c30292e23d961e55b0e1296fc3188"
+    },
+    "syntheticActorAndStop": true,
+    "actualControllerNodeChecks": 2,
+    "actualControllerElapsedMs": 74474.66554199491,
+    "preArchiveCandidateUnchanged": true,
+    "oldShortControlFailurePreserved": {
+      "path": ".runtime-correction/validation/archive-controller-official-held-zz_urt6d/root-closed-partial-readback.json",
+      "sha256": "4354a5fbc1cc83c8726a1e193215b8d82df77dc34a4c98c1aa289ef2f0cd475a"
+    }
   },
   "reportCurrentQaBeforeFull13Calibration": {
     "status": "PASS",
@@ -9440,5 +9506,105 @@
     "errors": 0,
     "layoutInvariant": "6sections3collapsedhistories7internallinks",
     "nativeBootAndCurrentCiFailureIncluded": true
+  },
+  "precedingDistributionPlacementCiBefore6cfa": {
+    "status": "NOT_YET_OBSERVED_FOR_NEW_CANONICAL_ARCHIVE",
+    "sourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
+    "archiveSha256": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
+    "runId": null,
+    "receipt": null,
+    "inheritsPreviousPublicationCi": false,
+    "previousPlacementCiRetainedIn": {
+      "path": ".runtime-correction/validation/promote-13dc-frozen-stage-held-gmtsxqwi/previous-current-package-fields.json",
+      "sha256": "08b4d115047f33ec3c166420c301d4f94e2bc6e83b70d23be401227d726ef044"
+    }
+  },
+  "evaluatorFollowup": {
+    "status": "SOURCE_APPLIED_FOCUSED_AND_CONTROLLER_CONTROL_PASS_OWN_CI_PENDING",
+    "basePublishedHead": "6cfa72b4faf9f54cd867524c0c0ec90f52d50c04",
+    "pluginArchiveChanged": false,
+    "installedPluginSourceCommitUnchanged": "be6dcb223f434afabc34f32a3643ac3251705572",
+    "installedPluginArchiveSha256Unchanged": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
+    "integratedQualification": {
+      "path": ".runtime-correction/validation/root-integrated-workflow-v2-tfo697ko/qualification.json",
+      "sha256": "58033014a318dcffbfae5d9390df3fdb48af84a5d47fff5fd248aa3b86b903c4"
+    },
+    "focusedDisjointTestsEachNode18Node24": 97,
+    "fullLocalSuiteRepeated": false,
+    "realModelRequests": 0,
+    "formalPairCredit": 0,
+    "harnessSourceBindingNext": "After own new source CI, qualify exact Git descendant runtime/archive byte equivalence before new campaign release pins."
+  },
+  "nativeBuildExecutorFollowup": {
+    "status": "ROOT_APPLIED_FOCUSED_ONLY",
+    "qualification": {
+      "path": ".runtime-correction/validation/protected-build-executor-api-private-oc1vjn35/root-focused-qualification.json",
+      "sha256": "683f416435a91723f6b6e763bc46102e888d85d6e03c7a003a3cce66e3652863"
+    },
+    "independentSourcePeer": {
+      "path": ".runtime-correction/validation/protected-build-executor-api-private-oc1vjn35/peer-ci-root-applied-build-source.json",
+      "sha256": "5b2ae4f130e5d7d69d664f0fd7330ced2464d61493ef7fc29ac91fcf3d163611"
+    },
+    "newOptionalTrustedExecutor": true,
+    "defaultCommandsAndExecutorPreserved": true,
+    "cancellationPropagationFixed": true,
+    "newCancellationPreimage": "14867d/1 sixpassed onefailed",
+    "checksEachNode18Node24": 12,
+    "sdkBridgeActuallyQualified": false,
+    "guestNetworkQualified": false,
+    "privateModelCandidateNativeGradeQualified": false
+  },
+  "nativeReporterContractFollowup": {
+    "status": "ROOT_APPLIED_PRIMARY_CONTRACT_AND_CLOSED_RAW_REPLAY_PASS",
+    "officialContract": {
+      "path": ".runtime-correction/validation/hypium-reporter-contract-private-9a4qk0ro/contract-receipt.json",
+      "sha256": "8340861f0f992b94d0df9676efc763ce5faef175e22bcc0f42d33f1293bd86aa"
+    },
+    "rootQualification": {
+      "path": ".runtime-correction/validation/hypium-reporter-contract-private-9a4qk0ro/root-focused-qualification.json",
+      "sha256": "163d134846f93dc8d1225740dd213a9d47759d9a16fce7a9992361f15783108c"
+    },
+    "checksEachNode18Node24": 14,
+    "actualClosedReplay": {
+      "path": ".runtime-correction/validation/closed-native-parser-replay-ay4khmgc/receipt.json",
+      "sha256": "6e2b0217986acb4a531e6b22946960d0b39be7749c665e839b12209b9d691325"
+    },
+    "actualReplay": "8bf2fd/0",
+    "savedPcPhases": 20,
+    "aggregateFormatClassificationsCorrected": 5,
+    "individualOutcomesChanged": 0,
+    "oldCalibrationGradesRetagged": false,
+    "genuineErrorsOrFailuresPassed": false,
+    "exactInstalledHypiumHARSourceIdentityClaimed": false,
+    "full13NativeRouteQualified": false
+  },
+  "prospectiveCandidateQualityGradingV2": {
+    "status": "ROOT_APPLIED_FOCUSED_PASS_NO_REAL_CAMPAIGN",
+    "protocolId": "all-valid-closed-frozen-candidates-v2",
+    "sourceHold": {
+      "path": ".runtime-correction/validation/campaign-candidate-grading-v2-private-7w_cx6ju/source-hold.final.json",
+      "sha256": "765e674976dc04238b2d83a61e3577229835d7d914e64544db48e65211ce731b"
+    },
+    "independentSourcePeer": {
+      "path": ".runtime-correction/validation/campaign-candidate-grading-v2-private-7w_cx6ju/peer-ci-source.final.json",
+      "sha256": "d04d396e9b2207d197b0260c56eb18eb76a8b5c75d883a9ca6cddda9a50df913"
+    },
+    "integratedQualification": {
+      "path": ".runtime-correction/validation/root-integrated-workflow-v2-tfo697ko/qualification.json",
+      "sha256": "58033014a318dcffbfae5d9390df3fdb48af84a5d47fff5fd248aa3b86b903c4"
+    },
+    "checksEachNode18Node24IncludingLegacy": 44,
+    "businessCompletionRequiredForQualityGrade": false,
+    "lintPassRequiredForQualityGrade": false,
+    "archiveCompletionRequiredForQualityGrade": false,
+    "actualFrozenIdentityAndSettlementRequired": true,
+    "allPlannedSlotsVisible": true,
+    "workflowResultsPreservedSeparately": true,
+    "publicLintToolsPinnedBeforeCoding": 3,
+    "unknownPublicLintIdentityKeepsIndividualGrade": true,
+    "unknownPublicLintIdentityCanFormMatchedPair": false,
+    "legacyPlanAnd39HistoryRetagged": false,
+    "formalCredit": 0,
+    "semanticOrCausalQualityBenefitProven": false
   }
 }

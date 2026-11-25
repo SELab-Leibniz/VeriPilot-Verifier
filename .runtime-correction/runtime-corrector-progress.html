@@ -179,7 +179,7 @@
           </ul>
         </figure>
         <p>The plugin reviews configured document writes and handles OpenClaw’s Stop event. Its private reviewer has read-only access to the workspace; OpenClaw performs the edits. The evaluation configures <code>deepseek-flash</code> for coding and <code>deepseek-v4-pro</code> for review.</p>
-        <p>The current evaluation harness runs Proposal, approval, Apply and Stop. It has no verified Archive phase. A direct OpenSpec control showed that a zero exit can still archive incomplete work or leave a change unarchived, so a future Archive phase must check task completion, document movement and merged specifications explicitly.</p>
+        <p>Earlier evaluation runs ended at Stop. New plans can select a controller Archive phase after approved Apply and native Stop settlement. It checks task completion, exact document relocation, merged specifications and a fresh code check, while retaining the original grading patch. The controller passed an official-CLI engineering control with synthetic actor records. A real-model Archive turn and the plugin’s handling of archived plan paths remain unqualified.</p>
         <p>The installable package reads each project’s requirements and verification settings. Benchmark cases, task-specific checks and grading logic stay in the evaluation workspace. The benchmark freezes code before Archive so it can grade the delivered patch independently.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -205,7 +205,7 @@
         </figure>
         <p>插件审查配置范围内的文档写入，并处理 OpenClaw 的 Stop 事件。私有审查器以只读方式检查工作区，代码改动由 OpenClaw 执行。当前评估配置 <code>deepseek-flash</code> 编码，配置 <code>deepseek-v4-pro</code> 审查。</p>
         <p>可安装插件读取当前项目的需求和验证配置。基准任务、任务专用检查和评分逻辑保留在评估工作区。基准测试在 Archive 前冻结代码，独立评估最终交付的补丁。</p>
-        <p>当前评估脚本只执行 Proposal、批准、Apply 和 Stop，尚无经核验的 Archive 阶段。直接运行 OpenSpec 的对照表明，退出码为零仍可能归档未完成任务，或根本没有完成归档。因此后续归档阶段须明确检查任务完成、文档迁移及规范合并结果。</p>
+        <p>较早的评估运行结束于 Stop。新计划可预先选择由控制器执行 Archive，在获批 Apply 与原生 Stop 均结束后，检查任务完成、文档精确迁移、规范合并及当前代码，同时保留原始评分补丁。该控制器已通过使用合成编码记录的官方 CLI 工程对照。真实模型的 Archive 回合，以及插件对归档后方案路径的处理，仍未取得资格。</p>
       </div>
     </section>
     <section id="decisions" aria-labelledby="decisions-title decisions-title-zh">
@@ -335,7 +335,7 @@
         <h2 id="results-title">What the 13-task benchmark has shown</h2>
         <p class="intro">SWE-ArkTS-Bench evaluates the plugin on 13 coding tasks. The plan repeats each task three times: 39 OFF/ON pairs and 78 runs. Each pair contains one OFF run and one ON run on the same task. The repetitions are intended to show variation between model runs. OFF disables runtime correction; ON enables it. Both use the same coding model, task input, OpenSpec workflow, public checks and time budget.</p>
         <p>Hidden tests and reference solutions stay in the private grading environment. The evaluator grades frozen patches against a calibrated runtime. A formal quality comparison requires two eligible, verified grades from the same setup. The zero below counts qualifying comparisons, not failed tasks. Workflow failures, missing grades and environment interruptions remain in the record.</p>
-        <p>The formal filter depends on workflow completion, an outcome the corrector may change. An optional candidate-evidence reader now keeps every listed run visible, including unstarted, missing and partial results, alongside workflow status. It verified the earlier pair’s retained grades while preserving their different eligibility. It reads existing grades; automatically grading every valid frozen benchmark candidate is still planned. The formal definition and 39-pair plan remain unchanged.</p>
+        <p data-grading-protocol="en">Earlier campaigns required workflow completion before grading. The new opt-in protocol grades each identity-verified, settled, frozen candidate even when Apply, lint or Archive fails. It records workflow status separately and keeps every planned slot visible. Public lint-tool identities are pinned before coding; unknown identities retain individual grades without matched-comparison credit. Unsafe or unfrozen workspaces remain ungraded. Existing records keep their original eligibility; no formal pair has been added.</p>
         <dl id="status" class="metrics">
           <div><dt>Formal matched pairs</dt><dd>0 / 39</dd><dd class="caption">13 tasks × 3 paired repetitions</dd></div>
           <div><dt>Phone reference controls passed</dt><dd>3 / 3</dd><dd class="caption">Fresh adapted route; whole-run final check failed</dd></div>
@@ -348,7 +348,7 @@
         <h2 id="results-title-zh">13 个任务的基准测试进展</h2>
         <p class="intro">SWE-ArkTS-Bench 用 13 个编码任务评估插件。计划每项任务重复三次，共 39 个 OFF/ON 配对、78 次运行。每对包含同一任务的一次 OFF 和一次 ON，重复运行用于观察模型结果的波动。OFF 关闭运行时纠偏，ON 启用纠偏。两组使用相同的编码模型、任务输入、OpenSpec 流程、公开检查和时间预算。</p>
         <p>隐藏测试和参考解保留在私有评分环境中。评估器使用已校准的运行时对冻结补丁评分。正式质量比较要求同一环境中的两组均符合条件，并取得经核验的评分。下方的零表示已满足条件的比较数量，不是失败任务数。流程失败、评分缺失和环境中断继续保留在记录中。</p>
-        <p>正式比较以工作流完成为前提，而纠偏器本身可能改变这一结果。现已加入可选的候选证据读取器，把清单中的每次运行及其工作流状态一并保留，包括未启动、缺失和结果不完整的情况。它已核验先前一对运行保存的评分，同时保留两组原有的不同资格。读取器使用已有评分；自动评估每个有效冻结基准补丁仍属后续工作。现有正式定义和 39 配对计划保持不变。</p>
+        <p data-grading-protocol="zh-CN">较早的评估要求工作流完成后才评分。新的可选协议会评估每份身份已核实、运行已结束且有效冻结的候选，即使 Apply、lint 或 Archive 失败，也保留其代码评分。工作流状态单独记录，全部计划运行均保持可见。公开 lint 工具的身份在编码前固定；身份无法核实的情况保留单次评分，但不计入匹配比较。不安全或未冻结的工作区仍不评分。既有记录保留原资格，没有新增正式配对。</p>
         <dl id="status-zh" class="metrics">
           <div><dt>正式匹配配对</dt><dd>0 / 39</dd><dd class="caption">13 个任务 × 每项 3 对重复运行</dd></div>
           <div><dt>手机参考对照通过</dt><dd>3 / 3</dd><dd class="caption">全新适配路线；整轮最终检查失败</dd></div>
@@ -1166,7 +1166,7 @@
         <p data-late-duty-work="en">The current plugin keeps the initial evaluation cohort fixed and retains later source-validated discoveries in a separate ledger. Two errors are fixed: a completed review’s business verdict could discard valid observations, and a valid final-only row could cause the whole table to be rejected. All 65 focused checks pass on Node 24 and Node 18, and in the working tree. Invalid staging IDs remain rejected. The earlier 403-file run missed both errors; the corrected source has now passed full CI. Item, byte and correction limits are unchanged. The earlier six-duty live result remains a result for the preceding plugin.</p>
         <p data-candidate-package="en">The updated installable plugin passed builds for all three hosts, 17 artifact checks on each tested Node version and six stock OpenClaw commands. Independent readback matched all 281 installed files to the archive. The only runtime change explains how to use an already-frozen requirement list without replacing it or dropping its obligations. The new package has not had a model trial; the completed walkthrough above used its predecessor.</p>
 
-        <p data-ci-current="en">The updated source passed all nine CI test jobs, covering all 408 files on each operating system, plus the Node 18 checks. Two Windows Skill review-repair checks failed in the preceding run. The follow-up retained their assertions and limits and added bounded failure diagnostics. They passed in the new run; the earlier failure’s cause remains unknown.</p>
+        <p data-ci-current="en">The published plugin’s source and its publication each passed all nine CI jobs. A preceding Windows Skill review failure remains unexplained; its assertions and limits are unchanged. The evaluator follow-up described here passed focused local checks. Its full CI is pending.</p>
         <p data-package-successor="en">The first package-verification attempt failed when its sandbox blocked a read of a pinned source file. Its six passing build stages were retained. A separate trusted read-only verifier and six stock installation commands then passed on the exact same archive. The original failure remains recorded; these are engineering checks, with no new model or quality result.</p>
         <p data-pilot-current="en">Before coding, the current trial verified 149 unchanged starter files and passed all 668 public checks. It recorded 38 Flash and 83 Pro requests within the original one-hour/256-request limit. After owned cleanup and freeze, independent code checks passed 8/8, 668/668 and 6/6. This unpaired development case adds no formal benchmark pair; Archive was not run.</p>
         <h3>Benchmark execution route</h3>
@@ -1174,6 +1174,8 @@
         <p data-pc-image-route="en">All ten PC tasks compiled in both starting and reference versions. Five reported every expected test identity but retained regression errors; one also had ten regression failures in both versions. The other five reported “App died” before any test identity. A separate aggregate-result parser mismatch affected five phases. Its correction would leave the real failures intact. The underlying runtime causes are still unknown.</p>
         <p data-full-map-status="en">The final integrity check rejected the normal [General] section in emulator-generated hardware configuration, leaving the original full-run status UNAVAILABLE. A separate post-closure audit verified all 176 pinned input files and 30 image files unchanged, and checked 925 operational conditions. It preserves the failed check and the three-versus-ten task results. The full 13-task environment remains unqualified.</p>
         <p>The public build preflight completed dependency installation and both app/test builds, producing two unsigned app packages with all 118 prepared inputs unchanged. A stock-host control completed the tool-and-broker path using a local stub, rejected invalid arguments and blocked another session’s call despite cached tool metadata. </p>
+        <p data-evaluator-followup="en">Source fixes now preserve build cancellation and accept Hypium’s error-only aggregate format while retaining every test error. Fourteen parser and evidence checks and twelve build-interface checks pass on each tested Node version. Replaying 20 saved PC reports corrected five format classifications and changed no individual outcome. Original grades remain unchanged, and the PC environment remains unqualified.</p>
+        <p data-archive-controller="en">The optional Archive path passed 27 focused checks on each tested Node version. Its official-CLI control completed Archive, merged-spec validation, two real Node tests and the final delivery seal in about 74 seconds. Actor and Stop records were synthetic. The earlier short control completed Archive but missed its delivery seal and remains incomplete. These are controller checks, with no new model or correction-quality result.</p>
         <p data-native-current="en">The adapted route uses API 26 builds and API 24 devices; equivalence to the original API 23 environment remains unproven. Host isolation primitives passed controlled checks, but the protected build-to-grading bridge and guest network boundary still need execution evidence before privately grading model-generated native code. These tools stay outside the general-purpose plugin.</p>
         <p>The isolated evaluator passed 25 controlled qualification groups and a separate boundary check in a Linux container on this Mac. The earlier four configuration-resolver deliveries were graded with its original 37 checks in the qualified Linux container on this Mac. The extra two CLI probes remain separate. This does not establish native-macOS equivalence, complete semantic coverage or public-test quality.</p>
       </div>
@@ -1192,7 +1194,7 @@
         <p data-late-duty-work="zh-CN">当前插件固定初始评估集合，并用独立台账保留后续发现且来源已校验的需求。两处错误已修正：已完成审查的业务结论可能丢弃有效观察；有效但尚无暂存编号的最终需求，可能导致整张表被拒绝。Node 24、Node 18 及当前工作区上的 65 项专项检查全部通过，无效暂存编号仍被拒绝。此前完整 403 份文件测试没有发现这两处错误；修正后的源码现已通过完整 CI。条目、字节及纠偏额度上限保持不变。此前六项义务的实际运行结果仍归属于前一版插件。</p>
         <p data-candidate-package="zh-CN">更新后的可安装插件已通过三个宿主的构建、两个受测 Node 版本上各 17 项包检查，以及六项原版 OpenClaw 命令检查。独立复核确认 281 份安装文件与归档一致。唯一的运行时代码改动说明如何使用已冻结的需求清单，同时保留原有义务并继续拒绝替换清单。新安装包尚未进行模型试验；上方已完成的走查使用前一版安装包。</p>
 
-        <p data-ci-current="zh-CN">更新后的源码已通过全部九项 CI 测试任务，各操作系统的 408 份测试文件及 Node 18 检查均已完成。前一轮有两项 Windows Skill 审查修复检查失败。后续修改保留原断言与时限，增加有界失败诊断，两项检查随后通过。此前失败的原因仍未确定。</p>
+        <p data-ci-current="zh-CN">已发布插件的源码与发布提交均通过了全部九项 CI。此前 Windows 的 Skill 审查失败原因仍未确定，相关断言及时限保持原样。本页所述评估器后续改动已通过本地专项检查，完整 CI 仍待完成。</p>
         <p data-package-successor="zh-CN">首次包核验因沙箱阻止读取一份已固定的源码文件而失败，其六个已通过的构建阶段继续保留。随后，独立的可信只读核验器与六项原版安装命令在同一份归档上通过。原始失败仍保留；这些工程检查没有产生新的模型或质量结果。</p>
         <p data-pilot-current="zh-CN">当前试验编码前已核对 149 份起始文件不变，并通过全部 668 项公开检查。原定一小时、256 次请求上限内记录到 Flash 38 次、Pro 83 次请求。所属资源清理并冻结后，独立代码检查通过 8/8、668/668 和 6/6。这项未配对开发案例不增加正式基准配对，没有执行 Archive。</p>
         <h3>基准执行路线</h3>
@@ -1200,6 +1202,8 @@
         <p data-pc-image-route="zh-CN">十项 PC 任务的起始版本与参考解均编译通过。其中五项报告了全部预期测试身份，但仍有回归错误；其中一项的两个版本还各有十项回归失败。另外五项在报告任何测试身份前就出现“App died”。独立的汇总结果解析器不匹配影响了五个阶段，修正解析器不会消除真实失败。底层运行时原因仍未确定。</p>
         <p data-full-map-status="zh-CN">最终完整性检查拒绝了模拟器生成的硬件配置中的正常 [General] 分节，原始整轮状态因此保留为 UNAVAILABLE。关闭后的独立审计确认 176 份固定输入和 30 份镜像文件均未改变，并核验了 925 项运行条件。该审计保留失败检查及“三项通过、十项未取得资格”的结果，完整 13 项任务环境仍未取得资格。</p>
         <p>公开构建预检已完成依赖安装及应用、测试构建，生成两个未签名应用包，全部 118 项准备输入保持不变。原版宿主对照用本地桩完成工具到受保护代理的调用，拒绝无效参数，并在另一会话看到缓存工具描述时仍阻止了它的实际调用。</p>
+        <p data-evaluator-followup="zh-CN">源码修正现已保留构建取消状态，并接受 Hypium 仅有运行错误时的汇总格式，同时保留每项真实测试错误。两个受测 Node 版本上，各通过 14 项解析与证据检查、12 项构建接口检查。重放 20 份已保存的 PC 阶段报告后，五处格式分类得到修正，逐项结果均未改变。原始评分继续保留，PC 环境仍未取得资格。</p>
+        <p data-archive-controller="zh-CN">可选 Archive 路径在两个受测 Node 版本上各通过 27 项专项检查。官方 CLI 对照在约 74 秒内完成归档、合并规范校验、两项真实 Node 测试及最终交付封存。编码与 Stop 记录是合成的。此前较短的对照完成了归档，却未完成交付封存，仍保留为未完成。这些控制器检查没有产生新的模型或纠偏质量结果。</p>
         <p data-native-current="zh-CN">当前适配路线使用 API 26 编译和 API 24 设备，尚未证明与原 API 23 环境等价。宿主隔离基础能力已通过受控检查；对模型生成的原生代码进行私有评分前，受保护的构建与评分衔接及来宾网络边界仍需实际验证。这些工具保留在通用插件之外。</p>
         <p>隔离评分器已在这台 Mac 的 Linux 容器中通过 25 组受控资格检查，以及一项独立边界检查。此前四份配置解析交付已在这台 Mac 的合格 Linux 容器中完成原定 37 项评分，另两项 CLI 探针单独保留。这不能证明原生 macOS 等价、语义完整覆盖或公开测试质量。</p>
       </div>

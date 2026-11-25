@@ -79,10 +79,79 @@ async function campaignInputs(dataset, ids = cases) {
   }));
 }
 
-function describePlan(inputs, repetitions, kind, model) {
+function describePlan(inputs, repetitions, kind, model, protocol, fullWorkflow) {
   return planWithTaskPins(inputs.map(({ id, task, datasetDigest, publicBytes }) => ({
     id, baseCommit: task.base_commit, datasetSha256: datasetDigest, publicSha256: digest(publicBytes),
-  })), repetitions, kind, model);
+  })), repetitions, kind, model, protocol, fullWorkflow);
+}
+
+export const closedFrozenGradingV2 = Object.freeze({
+  id: 'all-valid-closed-frozen-candidates-v2', version: 2,
+  candidatePopulation: 'CLOSED_SETTLED_FROZEN_IDENTITY_VALID',
+  businessCompletionRequired: false, lintPassRequired: false, archiveCompletionRequired: false,
+  lintToolIdentity: 'PRE_TREATMENT_PUBLIC_FILES_OR_EXPLICIT_AVAILABILITY',
+});
+
+export const fullOpenSpecWorkflowV2 = Object.freeze({ version: 2, id: 'openspec-full-lifecycle-v2' });
+function workflowProtocol(plan) {
+  if (plan.workflowProtocol === undefined) return null;
+  assert.deepEqual(plan.workflowProtocol, fullOpenSpecWorkflowV2, 'Unknown or changed frozen workflow protocol');
+  return fullOpenSpecWorkflowV2;
+}
+
+function gradingProtocol(plan) {
+  if (plan.gradingProtocol === undefined) return null;
+  assert.deepEqual(plan.gradingProtocol, closedFrozenGradingV2, 'Unknown or changed frozen grading protocol');
+  return closedFrozenGradingV2;
+}
+
+export const pairedLintToolFiles = Object.freeze({
+  vendorIndexSha256: 'index.js', hpauditorIndexSha256: 'linter/performanceAgent/index.js',
+  hpauditorBinarySha256: 'linter/performanceAgent/hpaudit',
+});
+
+// Only three public vendor files: never run a tool or open user configuration.
+export async function capturePairedLintTools(toolRoot, io = fs) {
+  const requestedRoot = path.resolve(toolRoot), files = {};
+  let canonicalRoot, rootError;
+  try { canonicalRoot = await io.realpath(requestedRoot); }
+  catch (error) { rootError = error; }
+  const known = new Set(['ENOENT', 'ENOTDIR', 'EACCES', 'EPERM', 'NON_REGULAR', 'NON_CANONICAL', 'TOO_LARGE', 'FILE_CHANGED']);
+  for (const [key, relative] of Object.entries(pairedLintToolFiles)) {
+    try {
+      if (rootError) throw rootError;
+      const file = path.join(canonicalRoot, 'codelinter', relative), before = await io.lstat(file);
+      const reject = code => { throw Object.assign(new Error(code), { code }); };
+      if (!before.isFile() || before.isSymbolicLink()) reject('NON_REGULAR');
+      if (await io.realpath(file) !== file) reject('NON_CANONICAL');
+      if (!Number.isSafeInteger(before.size) || before.size > 8 * 1024 * 1024) reject('TOO_LARGE');
+      const bytes = await io.readFile(file), after = await io.lstat(file);
+      if (['dev', 'ino', 'size', 'mtimeMs', 'ctimeMs', 'mode'].some(name => before[name] !== after[name])
+        || bytes.length !== before.size) reject('FILE_CHANGED');
+      files[key] = { relative, availability: 'PRESENT', sha256: digest(bytes), bytes: bytes.length,
+        executable: Boolean(before.mode & 0o111) };
+    } catch (error) {
+      const reason = known.has(error?.code) ? error.code : 'IO_UNAVAILABLE';
+      files[key] = { relative, availability: ['ENOENT', 'ENOTDIR'].includes(reason) ? 'MISSING' : 'UNAVAILABLE', reason };
+    }
+  }
+  return { kind: 'PUBLIC_LINT_TOOL_FILES_V2', requestedRoot, canonicalRoot: canonicalRoot ?? null, files,
+    identityComplete: Object.values(files).every(row => row.availability !== 'UNAVAILABLE') };
+}
+
+export async function recheckPairedLintTools(toolRoot, expected, io = fs) {
+  assert.deepEqual(await capturePairedLintTools(toolRoot, io), expected, 'Public lint tools changed after campaign preflight');
+}
+
+function assertPairedLintToolPin(pin) {
+  assert.equal(pin?.kind, 'PUBLIC_LINT_TOOL_FILES_V2', 'V2 required lint lacks its pre-treatment tool pin');
+  assert.deepEqual(Object.keys(pin.files).sort(), Object.keys(pairedLintToolFiles).sort(), 'V2 lint tool pin has different files');
+  for (const [key, relative] of Object.entries(pairedLintToolFiles)) {
+    const row = pin.files[key]; assert.equal(row.relative, relative);
+    assert(['PRESENT', 'MISSING', 'UNAVAILABLE'].includes(row.availability), 'Invalid public lint tool availability');
+    if (row.availability === 'PRESENT') assert.match(row.sha256 ?? '', /^[a-f0-9]{64}$/u);
+  }
+  assert.equal(pin.identityComplete, Object.values(pin.files).every(row => row.availability !== 'UNAVAILABLE'));
 }
 
 const campaignKind = 'arkts-openclaw-openspec-pairs-v1';
@@ -101,11 +170,15 @@ function plannedCaseIds(plan) {
   return orderedCaseSubset(plan.tasks?.map(row => row.id));
 }
 
-function planWithTaskPins(tasks, repetitions, kind, model = deepseekCodingModel) {
+function planWithTaskPins(tasks, repetitions, kind, model = deepseekCodingModel, protocol, fullWorkflow = false) {
+  assert.equal(typeof fullWorkflow, 'boolean', 'Workflow choice must be explicitly frozen');
+  assert(protocol === undefined || protocol === closedFrozenGradingV2.id, 'Unknown frozen grading protocol');
   assert([deepseekCodingModel, deepseekModel].includes(model), 'Unknown paired campaign model');
   const wall = kind === pilotKind ? pilotWallMs : trialWallMs;
   return {
     kind,
+    ...(protocol ? { gradingProtocol: { ...closedFrozenGradingV2 } } : {}),
+    ...(fullWorkflow ? { workflowProtocol: { ...fullOpenSpecWorkflowV2 } } : {}),
     repetitions,
     model,
     trialWallMs: wall,
@@ -118,12 +191,12 @@ function planWithTaskPins(tasks, repetitions, kind, model = deepseekCodingModel)
   };
 }
 
-export async function createPairedPlan(output, dataset, repetitions, pilotCases, { selectedCases } = {}) {
+export async function createPairedPlan(output, dataset, repetitions, pilotCases, { selectedCases, gradingProtocol: protocol, completeOpenSpecWorkflow = false } = {}) {
   assert(!pilotCases || !selectedCases, 'Choose either an Instrument Test pilot or a benchmark subset');
   const selected = pilotCases ?? selectedCases;
   const kind = pilotCases ? pilotKind : selectedCases ? subsetKind : campaignKind;
   const inputs = await campaignInputs(dataset, selected ? orderedCaseSubset(selected) : cases);
-  const plan = describePlan(inputs, repetitions, kind);
+  const plan = describePlan(inputs, repetitions, kind, undefined, protocol, completeOpenSpecWorkflow);
   const publicRoot = path.join(output, 'public');
   await fs.mkdir(output);
   await fs.mkdir(publicRoot);
@@ -137,7 +210,7 @@ export async function verifyPairedPlan(output, dataset) {
   const planBytes = await fs.readFile(path.join(output, 'plan.json'));
   const plan = JSON.parse(planBytes);
   const inputs = await campaignInputs(dataset, plannedCaseIds(plan));
-  assert.deepEqual(plan, describePlan(inputs, plan.repetitions, plan.kind, plan.model), 'The frozen schedule or dataset changed');
+  assert.deepEqual(plan, describePlan(inputs, plan.repetitions, plan.kind, plan.model, gradingProtocol(plan)?.id, Boolean(workflowProtocol(plan))), 'The frozen schedule or dataset changed');
   for (const { id, publicBytes } of inputs) {
     const publicFile = path.join(output, 'public', `${id}.json`);
     assert((await fs.readFile(publicFile)).equals(publicBytes), `Public input changed: ${id}`);
@@ -157,7 +230,7 @@ export async function verifyPublicPairedPlan(output, expectedSha256) {
     for (const sha of [datasetSha256, publicSha256]) assert.match(sha, /^[a-f0-9]{64}$/u);
     return { id, baseCommit, datasetSha256, publicSha256 };
   });
-  assert.deepEqual(plan, planWithTaskPins(tasks, plan.repetitions, plan.kind, plan.model), 'Public campaign schedule differs from the paired protocol');
+  assert.deepEqual(plan, planWithTaskPins(tasks, plan.repetitions, plan.kind, plan.model, gradingProtocol(plan)?.id, Boolean(workflowProtocol(plan))), 'Public campaign schedule differs from the paired protocol');
   const inputs = await Promise.all(tasks.map(async ({ id, baseCommit, datasetSha256, publicSha256 }) => {
     const publicBytes = await fs.readFile(path.join(output, 'public', `${id}.json`));
     assert.equal(digest(publicBytes), publicSha256, `Public input changed: ${id}`);
@@ -286,6 +359,7 @@ export function validPairedScore(score) {
 
 function matchingScoredArms({ off, on }) {
   return Boolean(validPairedScore(off?.score) && validPairedScore(on?.score) && off.comparisonIdentity && on.comparisonIdentity
+    && off.comparisonIdentity.comparable !== false && on.comparisonIdentity.comparable !== false
     && isDeepStrictEqual(off.comparisonIdentity, on.comparisonIdentity)
     && gradeGroups.every(group => off.score[group].total === on.score[group].total));
 }
@@ -436,11 +510,27 @@ export function pairedCampaignSummary(schedule, observations) {
 }
 
 const slotName = ({ id, repetition, arm }) => `${id}-r${repetition}-${arm}`;
-const trialUnsettled = row => row.execution?.exitCode !== 0 || row.execution.interrupted || !row.execution.outputComplete
-  || row.gradingExecution && (row.gradingExecution.interrupted || !row.gradingExecution.outputComplete)
-  || row.gradingFailure || ['rate-limited', 'framework-error'].includes(row.business);
+const trialUnsettled = (row, protocol) => {
+  if (protocol) {
+    if (row.gradingEligibility?.status !== 'ELIGIBLE') return true;
+    return Boolean(row.gradingExecution && (row.gradingExecution.interrupted || !row.gradingExecution.outputComplete)
+      || row.gradingFailure || ['rate-limited', 'framework-error'].includes(row.business));
+  }
+  return row.execution?.exitCode !== 0 || row.execution.interrupted || !row.execution.outputComplete
+    || row.gradingExecution && (row.gradingExecution.interrupted || !row.gradingExecution.outputComplete)
+    || row.gradingFailure || ['rate-limited', 'framework-error'].includes(row.business);
+};
 
-async function readSettledPrefix(directory, schedule) {
+function assertTrialGradingProtocol(row, protocol) {
+  if (!protocol) return;
+  assert.equal(row.gradingEligibility?.protocolId, protocol.id, 'Trial grading protocol differs from its frozen plan');
+  if (row.score) {
+    assert(validPairedScore(row.score), 'V2 trial score is malformed');
+    assert.equal(row.comparisonIdentity?.gradingProtocolSha256, digest(jsonBytes(protocol)), 'Trial grading protocol pin differs from its frozen plan');
+  }
+}
+
+async function readSettledPrefix(directory, schedule, protocol) {
   const receipts = new Set(await fs.readdir(directory));
   const observations = [];
   for (const [index, trial] of schedule.entries()) {
@@ -451,7 +541,8 @@ async function readSettledPrefix(directory, schedule) {
     assert.deepEqual(await readJson(path.join(directory, started)), trial, `Claim identity changed for ${stem}`);
     const row = await readJson(path.join(directory, result));
     assert.deepEqual({ id: row.id, repetition: row.repetition, arm: row.arm }, trial, `Result identity changed for ${stem}`);
-    assert(!trialUnsettled(row), `Unsettled execution for ${stem}`);
+    assertTrialGradingProtocol(row, protocol);
+    assert(!trialUnsettled(row, protocol), `Unsettled execution for ${stem}`);
     observations.push(row);
   }
   assert(receipts.size === 0 && observations.length % 2 === 0, 'Campaign receipts must be an exact prefix of whole pairs');
@@ -465,6 +556,14 @@ function assertPairLimit(maxPairs, schedule) {
 
 export async function executePairedCampaign({ output, plan, identity, deadline, resume, maxPairs, signal, recheck, dispatch, now = Date.now }) {
   assertPairLimit(maxPairs, plan.schedule);
+  const protocol = gradingProtocol(plan);
+  assert.deepEqual(identity.workflowProtocol, workflowProtocol(plan) ?? undefined, 'Execution workflow differs from the frozen plan');
+  if (protocol) {
+    assert.equal(identity.gradingEvidenceVersion, 2, 'V2 grading requires its own frozen execution identity');
+    assert.deepEqual(identity.gradingProtocol, protocol, 'Execution grading protocol differs from the frozen plan');
+    assert.equal(identity.gradingProtocolSha256, digest(jsonBytes(protocol)), 'Execution grading protocol pin changed');
+  } else assert(identity.gradingEvidenceVersion === undefined || identity.gradingEvidenceVersion === 1,
+    'Legacy plan cannot resume or dispatch under a new grading protocol');
   const root = path.join(output, 'invocations');
   const receipts = path.join(output, 'observations');
   const execution = path.join(output, 'execution.json');
@@ -480,7 +579,7 @@ export async function executePairedCampaign({ output, plan, identity, deadline, 
       assert.equal(prior.planSha256, identity.planSha256, 'Previous receipt belongs to another plan');
       assert(['INSUFFICIENT_PAIR_WINDOW', 'PAIR_LIMIT_REACHED', 'CANCELLED'].includes(prior.status),
         'Resume requires a settled pause or cancellation between whole pairs');
-      observations = await readSettledPrefix(receipts, plan.schedule);
+      observations = await readSettledPrefix(receipts, plan.schedule, protocol);
       assert.deepEqual(observations, prior.observations, 'Prior observations differ from the settled trial receipts');
       if (prior.status === 'PAIR_LIMIT_REACHED') {
         const start = await readJson(path.join(previousInvocation, 'start.json'));
@@ -491,7 +590,8 @@ export async function executePairedCampaign({ output, plan, identity, deadline, 
       }
       if (prior.status === 'CANCELLED') {
         assert(observations.length < plan.schedule.length, 'Cancelled campaign has no unstarted pairs');
-        assert(observations.every(row => row.score === null ? row.businessCompleted === false
+        assert(observations.every(row => protocol ? !trialUnsettled(row, protocol) && (row.score === null || validPairedScore(row.score))
+          : row.score === null ? row.businessCompleted === false
           : row.businessCompleted === true && validPairedScore(row.score)), 'Cancelled campaign lacks a settled business or grade outcome');
       }
     } else {
@@ -516,11 +616,12 @@ export async function executePairedCampaign({ output, plan, identity, deadline, 
           await writeNew(`${slot}.started.json`, trial);
           pendingTrial = trial;
           const row = await dispatch(trial);
+          assertTrialGradingProtocol(row, protocol);
           await recheck();
           await writeNew(`${slot}.result.json`, row);
           observations.push(row);
           pendingTrial = null;
-          if (trialUnsettled(row)) {
+          if (trialUnsettled(row, protocol)) {
             halted = true;
             break;
           }
@@ -539,6 +640,14 @@ export async function executePairedCampaign({ output, plan, identity, deadline, 
     const scope = plan.kind === pilotKind ? 'INSTRUMENT_PILOT' : plan.kind === subsetKind ? 'BENCHMARK_SUBSET' : null;
     const report = { planSha256: identity.planSha256, invocation: number, status, arms: summary,
       comparison: pairedCampaignComparison(plan.schedule, observations), observations,
+      ...(protocol ? { gradingProtocol: protocol, legacy39CreditInherited: false,
+        slotOutcomes: plan.schedule.map(slot => {
+          const row = observations.find(value => value.id === slot.id && value.repetition === slot.repetition && value.arm === slot.arm);
+          return { ...slot, status: !row ? 'UNSTARTED' : row.score ? 'GRADED' : 'ATTEMPTED_UNGRADED',
+            ...(row ? { workflowCompleted: row.businessCompleted ?? null, workflowOutcome: row.workflowOutcome ?? null,
+              gradingEligibility: row.gradingEligibility ?? { status: 'UNAVAILABLE', reason: 'CAMPAIGN_ERROR' },
+              score: row.score, gradingFailure: row.gradingFailure ?? null } : {}) };
+        }) } : {}),
       ...(scope ? { scope, tasks: plan.tasks.map(task => task.id) } : {}) };
     await writeNew(path.join(invocation, 'summary.json'), report);
     await atomicWriteJson(path.join(output, 'summary.json'), report);
@@ -668,8 +777,13 @@ export async function verifyPairedGradeRetry(row, calibrationSha256, readReceipt
     ...(gradingEvidenceSha256 ? { gradingEvidenceSha256 } : {}) }, 'Observation differs from the final grading attempt');
 }
 
-async function runTrial({ trial, input, output, common, workflowIdentity, modelProfile, release, reviewerOptions, calibration, calibrationOptions,
-  toolchainSha256, buildToolchain, gradingExchange, gradeTotals, businessWallMs, campaignDeadline, signal, publicAcceptanceSha256, qualifiedProbe }) {
+export async function runTrial({ trial, input, output, common, workflowIdentity, modelProfile, release, reviewerOptions, calibration, calibrationOptions,
+  toolchainSha256, buildToolchain, gradingExchange, gradeTotals, businessWallMs, campaignDeadline, signal, publicAcceptanceSha256, qualifiedProbe,
+  gradingProtocol: protocol, workflowProtocol: requestedWorkflow, lintToolIdentity }, { command: launchCommand = command, submitGrade: submitGradeJob = submitArktsWorkerJob,
+    readCorrection: correctionEvidence = readArktsCorrectionEvidence } = {}) {
+  const v2 = gradingProtocol({ gradingProtocol: protocol });
+  const fullWorkflow = workflowProtocol({ workflowProtocol: requestedWorkflow });
+  assert([launchCommand, submitGradeJob, correctionEvidence].every(value => typeof value === 'function'), 'Campaign dependencies must be functions');
   const directory = path.join(output, 'trials', trial.id, `r${trial.repetition}`, trial.arm);
   await fs.mkdir(directory, { recursive: true });
   const business = path.join(directory, 'business');
@@ -677,8 +791,9 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
   assert((await fs.readFile(publicFile)).equals(input.publicBytes), `Public input changed: ${trial.id}`);
   const acceptanceDescriptor = qualifiedProbe && await writeArktsQualifiedProbeDescriptor(directory, input.task, digest(input.publicBytes), qualifiedProbe);
   const trialDeadline = Date.now() + businessWallMs;
-  const execution = await command('run-release-e2e.mjs', [
+  const execution = await launchCommand('run-release-e2e.mjs', [
     '--live', ...(trial.arm === 'off' ? ['--rc-off'] : []), '--baseline-local-tests',
+    ...(fullWorkflow ? ['--complete-openspec-workflow'] : []),
     ...flags({ ...common, case: trial.id, output: business, 'public-input': publicFile, 'dataset-sha256': input.datasetDigest,
       'public-input-sha256': digest(input.publicBytes), 'deadline-at': trialDeadline, ...release,
       ...(publicAcceptanceSha256 ? { 'public-acceptance-sha256': publicAcceptanceSha256 } : {}),
@@ -700,19 +815,69 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
     rc: trial.arm === 'off' ? 'NOT_APPLICABLE' : result?.finalStop?.status ?? null,
     providerRequests: result?.modelRequests ?? null, usage: result?.tokenSplit ?? null, elapsedMs: result?.elapsedMs ?? null,
     ...(result && { tokens: pairedBusinessTokens(result) }),
+    ...(v2 || fullWorkflow ? { workflowOutcome: {
+      protocol: result?.workflowProtocol?.id ?? (fullWorkflow ? null : 'proposal-apply-stop-v1'),
+      requestedProtocol: fullWorkflow?.id ?? 'proposal-apply-stop-v1',
+      protocolMarkerStatus: fullWorkflow ? result?.workflowProtocol === undefined ? 'MISSING'
+        : isDeepStrictEqual(result.workflowProtocol, fullWorkflow) ? 'RECORDED_MATCHING_REQUEST' : 'MISMATCHED' : 'LEGACY_SCOPE',
+      completed: result?.businessNatural === true,
+      implementationCompleted: (result?.implementationNatural ?? result?.businessNaturalLegacy ?? result?.businessNatural) === true,
+      originalState: result?.state ?? 'no-result', reason: result?.reason ?? null,
+      lint: result?.requiredChecks?.lint?.status ?? 'NOT_RUN',
+      archive: result?.openSpec?.archive ? { status: result.openSpec.archive.status,
+        complete: result.openSpec.archive.complete === true, reason: result.openSpec.archive.reason ?? null }
+        : { status: fullWorkflow ? 'NOT_OBSERVED' : 'NOT_REQUESTED', complete: null },
+    } } : {}),
+    ...(v2 ? { gradingEligibility: { protocolId: v2.id, status: 'NOT_GRADED' } } : {}),
     score: null };
-  if (execution.interrupted || execution.exitCode !== 0 || !execution.outputComplete || result?.frameworkError || signal.aborted) return row;
-  if (trial.arm === 'on' && result?.state === 'finished' && result.frozen)
-    row.correctionEvidence = await readArktsCorrectionEvidence(business, {
-      includeIncompleteWorkflow: true, expectedResultSha256: row.businessResultSha256,
-    });
-  if (!row.businessCompleted || !hasSettledBusinessWorkflow(row)) return row;
+  if (!v2 && (execution.interrupted || execution.exitCode !== 0 || !execution.outputComplete || result?.frameworkError || signal.aborted)) return row;
+  if (v2) {
+    const reason = signal.aborted ? 'CANCELLED' : !result ? 'BUSINESS_RESULT_MISSING'
+      : execution.interrupted || execution.outputComplete !== true || !Number.isInteger(execution.exitCode) || execution.reason !== 'closed'
+        ? 'BUSINESS_COMMAND_NOT_CLOSED'
+      : !Array.isArray(result.turns) || !result.turns.length || result.turns.some(turn => turn.settled !== true)
+        ? 'BUSINESS_TURNS_UNSETTLED'
+      : trial.arm === 'on' ? result.nativeStopSettled !== true ? 'NATIVE_STOP_UNSETTLED' : !result.frozen ? 'NO_FROZEN_CANDIDATE' : null
+      : result.nativeStopSettled !== null ? 'OFF_STOP_SETTLEMENT_INVALID' : !result.frozen ? 'NO_FROZEN_CANDIDATE' : null;
+    if (reason) return { ...row, gradingEligibility: { protocolId: v2.id, status: 'INELIGIBLE', reason } };
+  }
+  if (trial.arm === 'on' && result?.state === 'finished' && result.frozen) {
+    const readEvidence = () => correctionEvidence(business, { includeIncompleteWorkflow: true, expectedResultSha256: row.businessResultSha256 });
+    if (!v2) row.correctionEvidence = await readEvidence();
+    else try { row.correctionEvidence = await readEvidence(); }
+    catch { row.correctionEvidenceUnavailable = { status: 'UNAVAILABLE', reason: 'CLOSED_METHOD_EVIDENCE_UNAVAILABLE' }; }
+  }
+  let manifest, workflowReceipt;
+  const verifyWorkflowProtocol = () => {
+    assert.deepEqual(result.workflowProtocol, fullWorkflow ?? undefined, 'Business workflow protocol differs from its frozen plan');
+    assert.deepEqual(manifest.workflowProtocol, fullWorkflow ?? undefined, 'Business workflow manifest differs from its frozen plan');
+    assert.deepEqual(workflowReceipt.workflowProtocol, fullWorkflow ?? undefined, 'Business workflow messages differ from its frozen protocol');
+  };
+  if (fullWorkflow && result?.frozen) {
+    manifest = await readJson(path.join(business, 'manifest.json'));
+    workflowReceipt = await readJson(path.join(business, 'workflow-messages.json'));
+    verifyWorkflowProtocol();
+  }
+  if (!v2 && (!row.businessCompleted || !hasSettledBusinessWorkflow(row))) return row;
   const candidate = path.join(business, 'freeze', 'candidate.patch');
+  if (v2) for (const file of [candidate, path.join(business, 'freeze', 'freeze.json'), path.join(business, 'result.json')]) {
+    const info = await fs.lstat(file); assert(info.isFile() && !info.isSymbolicLink(), 'Frozen candidate evidence must be regular files');
+  }
   const patch = await fs.readFile(candidate);
   const patchSha256 = digest(patch);
-  const manifest = await readJson(path.join(business, 'manifest.json'));
-  const workflowReceipt = await readJson(path.join(business, 'workflow-messages.json'));
+  const freezeFile = path.join(business, 'freeze', 'freeze.json');
+  let freezeSha256;
+  if (v2) {
+    const freezeBytes = await fs.readFile(freezeFile); freezeSha256 = digest(freezeBytes);
+    assert.deepEqual(JSON.parse(freezeBytes), result.frozen, 'Frozen manifest differs from the closed result');
+    for (const key of ['commitSha256', 'sessionSha256', 'patchSha256', 'workspacePatchSha256'])
+      assert.match(result.frozen[key] ?? '', /^[a-f0-9]{64}$/u, 'Frozen manifest lacks its complete evidence hashes');
+    for (const key of ['commit', 'preparedHead']) assert.match(result.frozen[key] ?? '', /^[a-f0-9]{40}$/u, 'Frozen manifest lacks its Git identity');
+  }
+  manifest ??= await readJson(path.join(business, 'manifest.json'));
+  workflowReceipt ??= await readJson(path.join(business, 'workflow-messages.json'));
   assert.deepEqual(workflowReceipt.workflow, workflowIdentity, 'Business workflow differs from campaign preflight');
+  if (v2 || fullWorkflow) verifyWorkflowProtocol();
   assert.equal(result.instance?.id, trial.id, 'Business result task differs from its slot');
   assert.equal(result.instance?.datasetDigest, input.datasetDigest, 'Business dataset identity differs from its slot');
   assert.equal(result.rcEnabled, trial.arm === 'on', 'Executed RC arm differs from its slot');
@@ -730,7 +895,8 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
     'Business did not retain its qualified public probe');
   }
   let lintTools;
-  if (manifest.lintRequirement) {
+  if (v2 && manifest.lintRequirement) assertPairedLintToolPin(lintToolIdentity);
+  if (manifest.lintRequirement && !v2) {
     const lint = result.requiredChecks?.lint;
     assert(lint?.status === 'PASS' && lint.success === true && lint.configSha256 === manifest.lintRequirement.configSha256,
       'The final candidate lacks the original project-required lint check');
@@ -738,6 +904,10 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
       assert.match(lint.lint?.[key] ?? '', /^[a-f0-9]{64}$/u, 'The final lint check lacks its tool identity');
       return [key, lint.lint[key]];
     }));
+  }
+  if (v2) {
+    assert.equal(result.frozen.preparedHead, manifest.preparedHead, 'Frozen source base differs from its manifest');
+    assert.equal(result.preparedTree, manifest.preparedTree, 'Prepared source tree differs from its manifest');
   }
   if (common['instrument-config']) assert.equal(manifest.publicInstrumentSha256, toolchainSha256, 'Business test backend differs from the grader');
   assert.equal(result.frozen?.patchSha256, patchSha256, 'Candidate patch changed after freezing');
@@ -750,13 +920,16 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
     'Reviewer provider route differs from the campaign');
   assert.equal(result.providerIdentity.endpointSha256, modelProfile.endpointSha256, 'Business endpoint differs from the campaign profile');
   assert.equal(result.gateway?.hostVersion, openClawVersion, 'Business host differs from the campaign');
-  const comparisonIdentity = { preparedTree: result.preparedTree, publicInputSha256: result.publicInputSha256,
+  const comparisonIdentity = { ...(v2 ? { gradingProtocolSha256: digest(jsonBytes(v2)) } : {}),
+    ...(v2 || fullWorkflow ? { workflowProtocol: fullWorkflow ?? { version: 1, id: 'proposal-apply-stop-v1' } } : {}), preparedTree: result.preparedTree, publicInputSha256: result.publicInputSha256,
     packageSha256: manifest.packageSha256, sourceCommit: manifest.sourceCommit, modelRef: result.providerIdentity.modelRef, endpoint,
     hostVersion: result.gateway?.hostVersion, workflow: workflowIdentity, toolchainSha256,
     ...(publicAcceptanceSha256 ? { publicAcceptanceSha256 } : {}),
-    ...(manifest.lintRequirement ? { lintRequirement: manifest.lintRequirement, lintTools } : {}),
+    ...(manifest.lintRequirement ? { lintRequirement: manifest.lintRequirement, lintTools: v2 ? lintToolIdentity : lintTools,
+      ...(v2 ? { comparable: lintToolIdentity.identityComplete,
+        ...(!lintToolIdentity.identityComplete ? { nonComparableReason: 'PUBLIC_LINT_TOOL_IDENTITY_UNAVAILABLE' } : {}) } : {}) } : {}),
     ...(buildToolchain ? { buildToolchainSha256: buildToolchain.sha256 } : {}) };
-  const evaluated = { ...row, patchSha256, comparisonIdentity };
+  const evaluated = { ...row, patchSha256, comparisonIdentity, ...(v2 ? { freezeSha256, gradingEligibility: { protocolId: v2.id, status: 'ELIGIBLE' } } : {}) };
   if (signal.aborted) return evaluated;
   const transfer = pairedGradeInput({ id: trial.id, baseCommit: input.task.base_commit, datasetSha256: input.datasetDigest },
     patchSha256, calibration.sha256, toolchainSha256, release['source-commit']);
@@ -765,7 +938,7 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
   const saveGradeEvidence = async (outcome, retry, { gradeSha256, coverageSha256 }) => {
     if (!outcome.score) return outcome;
     assert([gradeSha256, coverageSha256].every(hash => /^[a-f0-9]{64}$/u.test(hash ?? '')), 'Scored grade lacks its evaluator evidence hashes');
-    const evidence = jsonBytes({ version: 1, slot: trial, attempt: retry ? 2 : 1, businessResultSha256: row.businessResultSha256,
+    const evidence = jsonBytes({ version: v2 ? 2 : 1, ...(v2 ? { gradingProtocol: v2, freezeSha256 } : {}), slot: trial, attempt: retry ? 2 : 1, businessResultSha256: row.businessResultSha256,
       input: transfer, execution: outcome.gradingExecution, score: outcome.score, gradeSha256, coverageSha256 });
     await fs.writeFile(path.join(directory, 'grading-evidence.json'), evidence, { flag: 'wx' });
     return { ...outcome, gradingEvidenceSha256: digest(evidence) };
@@ -776,6 +949,7 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
       const [freshPatch, freshResult] = await Promise.all([fs.readFile(candidate), fs.readFile(path.join(business, 'result.json'))]);
       assert.equal(digest(freshPatch), patchSha256, 'Candidate patch changed after freezing');
       assert.equal(digest(freshResult), row.businessResultSha256, 'Business result changed after freezing');
+      if (v2) assert.equal(digest(await fs.readFile(freezeFile)), freezeSha256, 'Frozen manifest changed before grading');
       return freshPatch;
     },
     async evaluate({ patch: sealedPatch, deadline, retry }) {
@@ -784,12 +958,12 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
       if (signal.aborted || timeoutMs <= 0) return { gradingExecution: { exitCode: null, interrupted: true, outputComplete: false,
         reason: signal.aborted ? 'cancelled-before-launch' : 'deadline-before-launch' }, score: null };
       if (gradingExchange) {
-        const receipt = await submitArktsWorkerJob(gradingExchange, 'grade', transfer, { timeoutMs, signal,
+        const receipt = await submitGradeJob(gradingExchange, 'grade', transfer, { timeoutMs, signal,
           prepare: job => fs.writeFile(path.join(job, 'candidate.patch'), sealedPatch, { flag: 'wx' }) });
         return saveGradeEvidence(checkWorkerGrade(receipt, transfer, gradeTotals), retry, receipt);
       }
       const grading = path.join(directory, retry ? 'grading-retry' : 'grading');
-      const gradingExecution = await command('calibrate-arkts-bench.mjs', flags({
+      const gradingExecution = await launchCommand('calibrate-arkts-bench.mjs', flags({
         ...calibrationOptions, case: trial.id, candidate, 'candidate-sha256': patchSha256, output: grading,
         'calibration-dir': calibration.root, 'phase-timeout-ms': gradePhaseMs,
       }), timeoutMs, signal);
@@ -819,7 +993,7 @@ async function runTrial({ trial, input, output, common, workflowIdentity, modelP
   return { ...evaluated, ...gradeResult };
 }
 
-const usage = `node scripts/run-arkts-paired-campaign.mjs --plan --dataset=<evaluator task JSON directory> --output=<new campaign directory> [--repetitions=3]
+const usage = `node scripts/run-arkts-paired-campaign.mjs --plan --dataset=<evaluator task JSON directory> --output=<new campaign directory> [--repetitions=3] [--grading-protocol=all-valid-closed-frozen-candidates-v2] [--complete-openspec-workflow]
   [--cases=<benchmark subset with standard trial windows> | --pilot-cases=<subset of task IDs for a 30-minute Instrument Test pilot>]
 node scripts/run-arkts-paired-campaign.mjs --check-environment --tool-root=<Huawei CLT> --java-home=<JBR>
   [--openclaw-profile=<provider profile>] [--reviewer-model=<configured model>]
@@ -871,10 +1045,10 @@ async function checkEnvironment(args) {
 
 async function main() {
   const { values: args } = parseArgs({ options: Object.fromEntries([
-    ...['plan', 'live', 'preflight', 'check-environment', 'resume', 'help', 'public-acceptance', 'native-openspec-approval']
+    ...['plan', 'live', 'preflight', 'check-environment', 'resume', 'help', 'public-acceptance', 'native-openspec-approval', 'complete-openspec-workflow']
       .map(key => [key, { type: 'boolean' }]),
     ...['dataset', 'output', 'repetitions', 'release', 'calibrations', 'deadline-at', 'max-pairs', 'reviewer-model', 'rc-config-overrides', 'plan-sha256',
-      'grade-workspace-root', 'openspec-cli', 'public-test-exchange', 'grading-exchange', 'instrument-config', 'cases', 'pilot-cases',
+      'grading-protocol', 'grade-workspace-root', 'openspec-cli', 'public-test-exchange', 'grading-exchange', 'instrument-config', 'cases', 'pilot-cases',
       'openspec-requirement-inventory', 'openspec-requirement-inventory-sha256',
       ...commonKeys, ...qualificationFlags]
       .map(key => [key, { type: 'string' }]),
@@ -896,6 +1070,8 @@ async function main() {
   assert(!qualify || args['public-acceptance'] && qualificationFlags.every(key =>
     key.endsWith('-sha256') ? /^[a-f0-9]{64}$/u.test(args[key] ?? '') : Boolean(args[key])),
   'Supplemental probes require --public-acceptance and the native qualification report and both manifests with their SHA-256 pins');
+  assert(!args['complete-openspec-workflow'] || args.plan, 'Freeze --complete-openspec-workflow at new planning only');
+  assert(args['grading-protocol'] === undefined || args.plan && args['grading-protocol'] === closedFrozenGradingV2.id, 'Freeze --grading-protocol at new planning only');
   assert(args.plan || args.cases === undefined && args['pilot-cases'] === undefined, 'Case selection is frozen at planning');
   if (args['check-environment']) return checkEnvironment(args);
   assert(args.output, usage);
@@ -903,7 +1079,7 @@ async function main() {
   if (args.plan) {
     assert(dataset, usage);
     const plan = await createPairedPlan(output, dataset, Number(args.repetitions ?? 3), args['pilot-cases']?.split(','),
-      { selectedCases: args.cases?.split(',') });
+      { selectedCases: args.cases?.split(','), gradingProtocol: args['grading-protocol'], completeOpenSpecWorkflow: args['complete-openspec-workflow'] === true });
     const planSha256 = digest(await fs.readFile(path.join(output, 'plan.json')));
     console.log(JSON.stringify({ state: 'PLAN_NO_MODEL', kind: plan.kind, tasks: plan.tasks.length, trials: plan.schedule.length, planSha256, output }));
     return;
@@ -950,6 +1126,7 @@ async function main() {
   };
   const common = { ...Object.fromEntries(commonKeys.filter(key => args[key]).map(key => [key, path.resolve(args[key])])),
     ...(args['openspec-cli'] ? { 'openspec-cli': path.resolve(args['openspec-cli']) } : {}), provider: 'host-profile', model };
+  const lintToolIdentity = gradingProtocol(plan) ? await capturePairedLintTools(common['tool-root']) : undefined;
   const host = await readJson(path.join(common['host-root'], 'package.json'));
   assert(host.name === 'openclaw' && host.version === openClawVersion, `Expected OpenClaw ${openClawVersion}`);
   const workflowPins = await readJson(path.join(sourceRoot, 'docs', 'original-basis-release-inputs.json'));
@@ -1035,6 +1212,7 @@ async function main() {
   }
   if (args.preflight) {
     console.log(JSON.stringify({ state: 'PREFLIGHT_NO_MODEL', planSha256, tasks: plan.tasks.length,
+      ...(lintToolIdentity ? { lintToolIdentity } : {}),
       release: { sourceCommit: release.sourceCommit, packageSha256: release.packageSha256 }, policySha256,
       workflow: workflow.identity, toolchain,
       buildToolchain, modelProfile, publicAcceptance,
@@ -1043,7 +1221,10 @@ async function main() {
       ...(qualifiedPublicAcceptance ? { qualifiedPublicAcceptance } : {}) }));
     return;
   }
-  const identity = { planSha256, common, gradingEvidenceVersion: 1,
+  const protocol = gradingProtocol(plan);
+  const identity = { planSha256, common, gradingEvidenceVersion: protocol ? 2 : 1,
+    ...(workflowProtocol(plan) ? { workflowProtocol: workflowProtocol(plan) } : {}),
+    ...(protocol ? { gradingProtocol: protocol, gradingProtocolSha256: digest(jsonBytes(protocol)), lintToolIdentity } : {}),
     ...(remote ? { gradingExchange, buildToolchain, gradeTotals } : { dataset, gradingWorkspaceRoot }), releaseArgs, reviewerOptions, workflow: workflow.identity,
     providerProfilePin, modelProfile, policySha256, toolchain, cachedBases, calibration, ...(publicAcceptance ? { publicAcceptance } : {}),
     ...(qualifiedPublicAcceptance ? { qualifiedPublicAcceptance } : {}) };
@@ -1054,6 +1235,7 @@ async function main() {
   try {
     const report = await executePairedCampaign({ output, plan, identity, deadline, resume: args.resume, maxPairs, signal: controller.signal,
       async recheck() {
+        if (lintToolIdentity) await recheckPairedLintTools(common['tool-root'], lintToolIdentity);
         await assertFrozenCampaignHarness(sourceRoot, release.sourceCommit);
         assert.equal(digest(await fs.readFile(profilePath)), providerProfilePin, 'Provider profile changed after the first dispatch');
         assert.equal(digest(await fs.readFile(policyPath)), policySha256, 'RC policy changed after the first dispatch');
@@ -1065,7 +1247,7 @@ async function main() {
       dispatch: trial => runTrial({ trial, input: inputById.get(trial.id), output, common, workflowIdentity: workflow.identity, modelProfile, release: releaseArgs, reviewerOptions,
         calibration: calibration[trial.id], calibrationOptions, toolchainSha256: toolchain.sha256, buildToolchain, gradingExchange,
         gradeTotals: gradeTotals?.[trial.id], businessWallMs: plan.trialWallMs, campaignDeadline: deadline, signal: controller.signal,
-        publicAcceptanceSha256: publicAcceptance?.[trial.id], qualifiedProbe: qualified?.checks.get(trial.id) }),
+        publicAcceptanceSha256: publicAcceptance?.[trial.id], qualifiedProbe: qualified?.checks.get(trial.id), gradingProtocol: protocol ?? undefined, workflowProtocol: workflowProtocol(plan) ?? undefined, lintToolIdentity }),
     });
     console.log(JSON.stringify({ invocation: report.invocation, status: report.status, scope: report.scope, arms: report.arms }));
     if (!['COMPLETE', 'PAIR_LIMIT_REACHED'].includes(report.status)) process.exitCode = 1;

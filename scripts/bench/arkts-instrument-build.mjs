@@ -24,7 +24,8 @@ async function hapDigest(file) {
   }
 }
 
-export async function buildArktsInstrumentHaps({ projectRoot, toolRoot, javaHome, appBuildMode, deadline, signal }) {
+export async function buildArktsInstrumentHaps({ projectRoot, toolRoot, javaHome, appBuildMode, deadline, signal, executor = runBoundedProcess }) {
+  if (typeof executor !== 'function') throw new TypeError('ArkTS instrumentation build executor must be a function');
   if (!Number.isFinite(deadline)) throw new Error('An absolute ArkTS instrumentation build deadline is required');
   const root = await fs.realpath(projectRoot), started = Date.now();
   const commands = [['install', null], ['instrument-app', 'default'], ['instrument-test', 'ohosTest']]
@@ -42,7 +43,7 @@ export async function buildArktsInstrumentHaps({ projectRoot, toolRoot, javaHome
     const timeoutMs = Math.ceil(deadline - Date.now());
     if (timeoutMs <= 0) return result({ exitCode: null, interrupted: true, outputComplete: false, reason: 'deadline' });
     let phaseOutput = '';
-    const step = await runBoundedProcess(tool.command, tool.args, { cwd: root, env: tool.env, signal, processGroup: true,
+    const step = await executor(tool.command, tool.args, { cwd: root, env: tool.env, signal, processGroup: true,
       timeoutMs, onOutput(chunk) { phaseOutput += chunk; } });
     phases.push({ phase, ...step });
     output += phaseOutput;

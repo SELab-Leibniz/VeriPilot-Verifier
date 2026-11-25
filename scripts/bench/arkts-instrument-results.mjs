@@ -76,9 +76,10 @@ export function parseArktsInstrumentResults(text, module = 'entry') {
     }
   }
   const observed = [ordinal, counts.FAIL, counts.ERROR, counts.PASS, counts.IGNORED];
+  // Hypium's aggregate code reflects assertion failures; ERROR statuses stay separate.
   const finished = declaredTotal > 0 && ordinal === declaredTotal && !active && runnerFinished && commandFinished
     && summary?.every((value, index) => value === observed[index]) === true
-    && reportCode === (counts.FAIL || counts.ERROR ? -1 : 0);
+    && reportCode === (counts.FAIL ? -1 : 0);
   if (!finished) fault('INCOMPLETE_DEVICE_REPORT', active ? { activeCaseId: active.id } : undefined);
   return { statuses: Object.fromEntries(statuses), errors, finished: finished && errors.length === 0 };
 }

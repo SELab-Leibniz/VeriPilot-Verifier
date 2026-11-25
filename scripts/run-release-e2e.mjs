@@ -17,6 +17,7 @@ import { assertBusinessSessionIdentity } from './bench/session-continuity.mjs';
 import { businessMutationPaths, sealableMutationPaths } from './bench/business-mutations.mjs';
 import { businessCompleted, createBusinessRunTracker, createBusinessTerminalObserver, pairedBusinessWorkflowFailure, retainedBusinessTransportError } from './bench/business-completion.mjs';
 import { compareOpenSpecApplyProgress, installOriginalBasisPolicy, loadOriginalBasisWorkflow, openSpecApplyRecoveryPrompt, openSpecBusinessInput, prepareOpenSpecSession, readOpenSpecCheckpoint, runOpenSpecCli, settleOpenSpecProposal, workflowMessages } from './bench/original-basis-workflow.mjs';
+import { completeOpenSpecWorkflowProtocol, completeReleaseOpenSpecWorkflow } from './bench/release-openspec-archive.mjs';
 import { pinOpenSpecApplyChecklist, settleOpenSpecApplyChecklist } from './bench/openspec-apply-checklist.mjs';
 import { armNativeOpenSpecApply, observeNativeOpenSpecApply, prepareNativeOpenSpecProposal } from './bench/native-openspec-approval.mjs';
 import { bindOpenSpecRequirementInventory, loadOpenSpecRequirementInventory, prepareOpenSpecRequirementInventory,
@@ -52,13 +53,16 @@ const { values: args } = parseArgs({ options: Object.fromEntries([
     'public-acceptance-sha256','public-acceptance-descriptor','public-test-runtime','openspec-requirement-inventory','openspec-requirement-inventory-sha256']
     .map(name => [name, { type: 'string' }]),
   ['offline', { type: 'boolean' }], ['live', { type: 'boolean' }], ['baseline-local-tests', { type: 'boolean' }], ['rc-off', { type: 'boolean' }],
-  ['native-openspec-approval', { type: 'boolean' }],
+  ['native-openspec-approval', { type: 'boolean' }], ['complete-openspec-workflow', { type: 'boolean' }],
 ]) });
 const offline = args.offline === true;
 const model = args.model;
 const paired = Boolean(args['public-input']);
 const rcEnabled = !args['rc-off'];
 const nativeOpenSpecApproval = args['native-openspec-approval'] === true;
+const completeOpenSpecWorkflow = args['complete-openspec-workflow'] === true;
+if (completeOpenSpecWorkflow && (!paired || offline))
+  throw new Error('Complete OpenSpec workflow requires a live paired run.');
 const sha256 = value => /^[a-f0-9]{64}$/u.test(value ?? '');
 const inventoryFile = args['openspec-requirement-inventory'];
 const inventorySha256 = args['openspec-requirement-inventory-sha256'];
@@ -130,6 +134,7 @@ const git = (cwd, ...params) => execFileSync('git', ['-c', 'core.longpaths=true'
 const commit = (cwd, message) => git(cwd, '-c', 'user.name=RC Benchmark', '-c', 'user.email=rc@example.invalid',
   '-c', 'core.hooksPath=nonexistent', 'commit', '--quiet', '--allow-empty', '-m', message);
 let projectRoot, preparedHead, preparedTree, instance, publicInput, publicInputSha256, publicAcceptance, proposalInventory;
+let baselineLocalTests = null;
 const startedAt = Date.now();
 if (offline) {
   await fs.mkdir(outputRoot);
@@ -208,6 +213,7 @@ const proposalReviewInput = proposalInventory && prepareOpenSpecRequirementInven
   publicInputSha256, problemStatement: publicInput.problem_statement, proposalMessage: messages.proposal });
 await write(path.join(outputRoot, 'public-input.json'), publicInput);
 await write(path.join(outputRoot, 'workflow-messages.json'), { flow: 'OpenSpec(solo)', version: spec.version, changeName,
+  ...(completeOpenSpecWorkflow ? { workflowProtocol: completeOpenSpecWorkflowProtocol, archiveDispatch: 'controller-after-approved-apply-and-native-settlement' } : {}),
   workflow: workflow.identity, dispatch: 'OpenSpec(solo) sequential-stage text and workspace prefix, selected by the isolated controller',
   ...(paired ? { proposalValidationRepair: { maxAttempts: 1 } } : {}), ...messages });
 const extraPluginPaths = workflow.plugin ? [workflow.plugin, spec.plugin] : [spec.plugin];
@@ -227,7 +233,6 @@ if (!offline) {
   commit(projectRoot,'Prepare shared ArkTS and OpenSpec environment');
   preparedHead = git(projectRoot,'rev-parse','HEAD').toString().trim();
   preparedTree = git(projectRoot,'rev-parse','HEAD^{tree}').toString().trim();
-  let baselineLocalTests = null;
   if (args['baseline-local-tests']) {
     // The workspace's own original tests, before any model request; never the hidden oracle.
     const { execution, output, raw, freshReport } = await runArktsLocalTest({ projectRoot, toolRoot: args['tool-root'],
@@ -252,7 +257,7 @@ await write(path.join(outputRoot, 'manifest.json'), { instance, projectRoot, pre
   ...(instrument ? { publicInstrumentSha256: args['instrument-toolchain-sha256'] } : {}),
   ...(publicAcceptance ? { publicAcceptanceSha256: publicAcceptance.identitySha256 } : {}),
   ...(lintRequirement ? { lintRequirement } : {}),
-  startedAt, deadline, offline });
+  startedAt, deadline, offline, ...(completeOpenSpecWorkflow ? { workflowProtocol: completeOpenSpecWorkflowProtocol } : {}) });
 let gateway, sessionId, sessionKey, transcriptFile;
 async function findFiles(root, match) {
   const entries = await fs.readdir(root, { withFileTypes: true }).catch(error => { if (error.code === 'ENOENT') return []; throw error; });
@@ -560,13 +565,15 @@ try {
     const requiredLint = lintRequirement && workflowComplete && codeing.settled && nativeStop.nativeStopSettled !== false
       ? await runArktsRequiredLint({ projectRoot, toolRoot: args['tool-root'], javaHome: java.javaHome,
         outputRoot, requirement: lintRequirement, timeoutMs: Math.min(120_000, deadline - Date.now()) }) : null;
-    const businessNatural = workflowComplete && (!lintRequirement || requiredLint?.success === true);
+    const businessNaturalLegacy = workflowComplete && (!lintRequirement || requiredLint?.success === true);
+    let businessNatural = businessNaturalLegacy;
     const pairedCompletedInBudget = paired && businessNatural && nativeStop.nativeStopSettled !== false;
     const stateName = boundary.failure?.includes('RATE_LIMIT') ? 'rate-limited' : frameworkError ? 'framework-error'
       : Date.now() >= deadline && !pairedCompletedInBudget ? 'timed-out' : 'finished';
     const publicAcceptancePin = publicAcceptance && { sha256: publicAcceptance.sha256, testIds: publicAcceptance.testIds,
       ...(publicAcceptance.requirementBindings ? { requirementBindings: publicAcceptance.requirementBindings } : {}) };
     const identity = { instance, projectRoot, sessionId, sessionKey, rcEnabled, publicInputSha256, preparedTree, packageSha256,
+      ...(completeOpenSpecWorkflow ? { workflowProtocol: completeOpenSpecWorkflowProtocol } : {}),
       providerIdentity: gateway.providerIdentity, ...(paired ? { openSpec } : {}),
       ...(proposalInventory ? { openSpecRequirementInventorySha256: inventorySha256 } : {}),
       ...(publicAcceptancePin ? { publicAcceptancePin } : {}),
@@ -659,9 +666,26 @@ try {
         feedback:receipt ? redactEvaluationText(receipt.text) : null,changedAfterFeedback,
         laterRound:next?.result.metadata.roundId??null,laterStatus:next?.result.status??null};
     });
+    // Preserve the original candidate freeze and active-path review evidence.
+    // Only this prospective flag dispatches the trusted post-Apply phase.
+    const workflowV2 = completeOpenSpecWorkflow ? await completeReleaseOpenSpecWorkflow({
+      outputRoot, projectRoot, preparedHead, changeName, sessionId, deadlineAt: deadline,
+      proposalTurn: proposal, applyTurn: codeing, proposalCheckpoint, preArchiveFreeze: frozen,
+      rcEnabled, nativeStop, implementationReady: businessNaturalLegacy, toolRoot: args['tool-root'],
+      javaHome: java.javaHome, baselineLocalTests, publicTestWorker, instrument, publicAcceptance, lintRequirement,
+      readCheckpoint: () => readOpenSpecCheckpoint(spec.options, changeName, { deadlineAt: deadline }),
+      invokeCli: (params, signal) => runOpenSpecCli(spec.options, params, signal),
+      git: (...params) => git(projectRoot, ...params), commit: message => commit(projectRoot, message),
+    }) : {};
+    if (completeOpenSpecWorkflow) {
+      openSpec.archive = workflowV2.archive;
+      businessNatural = workflowV2.businessNatural;
+    }
+    const finalStateName = completeOpenSpecWorkflow && Date.now() >= deadline && !businessNatural ? 'timed-out' : stateName;
+    const finalReason = reason ?? workflowV2.workflowReason ?? null;
     const timings = await readProviderTiming(gateway.root);
     await write(path.join(outputRoot,'result.json'),{
-      ...identity, state:stateName, reason, frameworkError,
+      ...identity, ...workflowV2, state:finalStateName, reason:finalReason, frameworkError,
       elapsedMs:Date.now()-startedAt,businessNatural,turns,documents:docs,documentReviews:evidence.documentReviews,documentFeedback,
       stopReviews:evidence.stopReviews,materialBasis:evidence.materialBasis,evidenceCounts:evidence.counts,finalStop,
       codeChanged:codeChanged(frozen.mutationPaths),documentCost,

@@ -46,7 +46,7 @@ export async function captureArktsInstrumentIdentity({ config, toolRoot, javaHom
   return { ...identity, sha256: digest(JSON.stringify(identity)) };
 }
 
-export async function runArktsInstrumentTests({ projectRoot, toolRoot, javaHome, json5Package, route, expectedDevice, scope, timeoutMs, signal }) {
+export async function runArktsInstrumentTests({ projectRoot, toolRoot, javaHome, json5Package, route, expectedDevice, scope, timeoutMs, signal, buildExecutor }) {
   assert(Number.isSafeInteger(timeoutMs) && timeoutMs > 0, 'Instrument Test requires a positive deadline');
   const startedAt = performance.now(), deadline = Date.now() + timeoutMs;
   const parent = await fs.mkdtemp(path.join(path.dirname(await fs.realpath(projectRoot)), 'rc-it-'));
@@ -57,10 +57,10 @@ export async function runArktsInstrumentTests({ projectRoot, toolRoot, javaHome,
     const parse = createRequire(json5Package)('json5').parse;
     const { bundleName, testModuleName, deviceTypes, runnerSha256, suiteSha256 } = await prepareArktsInstrumentWorkspace({ projectRoot: worktree, parse, scope });
     if (expectedDevice) assertArktsInstrumentDeviceCompatibility(expectedDevice, deviceTypes, route);
-    const built = await buildArktsInstrumentHaps({ projectRoot: worktree, toolRoot, javaHome, appBuildMode: route.appBuildMode, deadline, signal });
+    const built = await buildArktsInstrumentHaps({ projectRoot: worktree, toolRoot, javaHome, appBuildMode: route.appBuildMode, deadline, signal, executor: buildExecutor });
     if (built.haps.length !== 2) {
-      const { code, timedOut, reason } = built.execution;
-      outcome = { execution: { exitCode: code, interrupted: Boolean(timedOut), outputComplete: false, reason,
+      const { code, timedOut, interrupted, reason } = built.execution;
+      outcome = { execution: { exitCode: code, interrupted: Boolean(interrupted || timedOut), outputComplete: false, reason,
         runtime: arktsInstrumentRuntime, compileSucceeded: false, snapshotSha256 }, output: built.output, raw: '', freshReport: false };
     } else {
       await verifyArktsInstrumentWorkspace({ projectRoot: worktree, suiteSha256, runnerSha256 });
