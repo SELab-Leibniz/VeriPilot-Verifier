@@ -8,7 +8,7 @@ import { sharedBasisFixture as createSharedBasisFixture, operation, user } from 
 import { scriptedCoverageReport, scriptedSourceInventory } from './helpers/baseline-coverage-native.mjs';
 import { verifyBaselineCoverageProof, coverageIdentity, validateBaselineAuditReport, validateBaselineSourceInventory, baselineAuditSourceUnits, decodeBaselineAuditView, BASELINE_COVERAGE_INSTRUCTIONS, BASELINE_AUDIT_VIEW_PROTOCOL } from '../lib/runtime-v2/baseline-coverage-audit.mjs';
 import { registerCitation } from '../lib/review-task/evidence-utils.mjs';
-import { sourcePage } from '../lib/review-task/source-tools.mjs';
+import { sourcePage, textBlocks, toolText } from '../lib/review-task/source-tools.mjs';
 import { planGroundTruthDelta, groundTruthPlanDigest, applyGroundTruthDelta, freezeGroundTruth } from '../lib/runtime-v2/ground-truth-ledger.mjs';
 import { ObservationJournal } from '../lib/review-task/observation-journal.mjs';
 import { createBaselineWorker, BASELINE_EXTRACTION_PROTOCOL } from '../lib/review-task/baseline-task.mjs';
@@ -859,18 +859,31 @@ test('proof verification rejects rehashed report, source, candidate and ACK muta
   await verifyBaselineCoverageProof(proof.pointer, { identity: proof.identity, truth: await f.truth() });
 });
 
-test('above6000-byte native text blocks match the exact one-block durable ACK without normalization', async t => {
+const isLongNativeRead = ({ message }) => message?.role === 'toolResult' && message.toolName === 'source_read'
+  && Buffer.byteLength(toolText(message)) > 6000;
+
+test('legacy multiblock native reads still match the exact durable ACK', async t => {
   const f = await sharedBasisFixture(t);
   await fs.writeFile(f.transcript, JSON.stringify({ ...user(), message: { role: 'user',
     content: 'Preserve the requested feature. ' + 'x'.repeat(7000) } }) + '\n');
+  f.state.coverageMutation = async ({ params }) => {
+    const rows = (await fs.readFile(params.sessionFile, 'utf8')).trimEnd().split('\n').map(JSON.parse);
+    const reads = rows.filter(isLongNativeRead);
+    assert(reads.length > 0);
+    for (const { message } of reads) {
+      assert.equal(message.content.length, 1, 'New OpenClaw results should deliver one contiguous text block');
+      message.content = textBlocks(toolText(message));
+    }
+    await fs.writeFile(params.sessionFile, rows.map(row => JSON.stringify(row)).join('\n') + '\n');
+  };
   await f.refresh();
   const proof = (await f.task()).groundTruth.sharedBasis.coverageAudit;
   const bundle = await verifyBaselineCoverageProof(proof.pointer, { truth: await f.truth() });
   const results = bundle.nativeTranscript.split('\n').filter(Boolean).map(JSON.parse)
     .filter(row => row.message?.role === 'toolResult' && row.message.toolName === 'source_read');
-  const multi = results.filter(row => row.message.content.length > 1 && Buffer.byteLength(row.message.content.map(block => block.text).join('')) > 6000);
-  assert(multi.length > 0, 'the production source tool must really emit multiple blocks');
+  const multi = results.filter(isLongNativeRead);
   for (const row of multi) {
+    assert(row.message.content.length > 1);
     assert(row.message.content.every(block => block.type === 'text' && typeof block.text === 'string'));
     const ack = bundle.journalEntries.find(entry => entry.message?.toolCallId === row.message.toolCallId)?.message;
     assert.equal(ack.content.length, 1);
@@ -1050,9 +1063,9 @@ for (const mutation of ['one-byte', 'non-text', 'non-string-text']) test(`multib
   const errors = [];
   f.state.coverageMutation = async ({ params }) => {
     const records = (await fs.readFile(params.sessionFile, 'utf8')).split('\n').filter(Boolean).map(JSON.parse);
-    const row = records.find(row => row.message?.role === 'toolResult' && row.message.toolName === 'source_read'
-      && row.message.content.length > 1 && Buffer.byteLength(row.message.content.map(block => block.text).join('')) > 6000);
-    assert(row, 'mutation requires an actual above6000-byte multiblock result');
+    const row = records.find(isLongNativeRead);
+    assert(row, 'mutation requires an actual above6000-byte read');
+    row.message.content = textBlocks(toolText(row.message));
     if (mutation === 'one-byte') row.message.content[0].text = (row.message.content[0].text[0] === '[' ? '{' : '[') + row.message.content[0].text.slice(1);
     if (mutation === 'non-text') row.message.content.push({ type: 'image', data: 'controlled-non-text-block' });
     if (mutation === 'non-string-text') row.message.content.push({ type: 'text', text: 42 });

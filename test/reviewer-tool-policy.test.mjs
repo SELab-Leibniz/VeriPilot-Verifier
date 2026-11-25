@@ -3,37 +3,42 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { withNativeReviewerTools, withReadOnlyReviewerTools, withPrivateReviewMemoryPolicy } from "../lib/openclaw/native-config.mjs";
+import { withNativeReviewerTools, withReadOnlyReviewerTools, withPrivateReviewerConfig } from "../lib/openclaw/native-config.mjs";
 import { buildArguments } from "../lib/runtime-v2/reviewer.mjs";
 import * as claude from "../lib/hosts/claude.mjs";
 import * as codeagent from "../lib/hosts/codeagent.mjs";
 import { HOST_TOOL_REVIEWER_ROLES, blockReviewerToolCall } from "../lib/reviewer-tools.mjs";
 
-test("private Memory policy overrides only the selected agent and retains explicit source reads", () => {
+test("private reviewer config keeps direct tools and disables only the selected agent's memory", () => {
   const memory = { enabled: true, provider: "local", sources: ["memory"],
     cache: { enabled: true }, sync: { watch: true, onSessionStart: true } };
   for (const agents of [undefined, { defaults: { memorySearch: memory } },
     { defaults: { memorySearch: memory }, list: [{ id: "other", memorySearch: memory }] },
     ...[undefined, true, false].map(enabled => ({ defaults: { memorySearch: memory }, list: [
-      { id: "reviewer", model: "fixture/model", tools: { allow: ["read", "memory_search"] },
+      { id: "reviewer", model: "fixture/model", tools: { allow: ["read", "memory_search"], codeMode: { enabled: true } },
         ...(enabled === undefined ? {} : { memorySearch: { ...memory, enabled } }) },
-      { id: "other", memorySearch: memory },
+      { id: "other", memorySearch: memory, tools: { codeMode: { enabled: true } } },
     ] }))]) {
-    const host = { tools: { allow: ["read", "memory_search", "memory_get"] }, ...(agents ? { agents } : {}) };
+    const host = { tools: { allow: ["read", "memory_search", "memory_get"], toolSearch: { enabled: true, mode: "tools" },
+      codeMode: { enabled: true, timeoutMs: 5000 } },
+      ...(agents ? { agents } : {}) };
     const before = structuredClone(host);
-    const actual = withPrivateReviewMemoryPolicy(host, "reviewer");
+    const actual = withPrivateReviewerConfig(host, "reviewer");
     assert.deepEqual(host, before);
-    assert.deepEqual(actual.tools, before.tools, "ordinary reads of explicitly adopted Memory files remain allowed");
+    assert.deepEqual(actual.tools, { ...before.tools, toolSearch: false, codeMode: { enabled: false, timeoutMs: 5000 } });
     assert.deepEqual(actual.agents.defaults, before.agents?.defaults);
     assert.deepEqual(actual.agents.list.filter(agent => agent.id !== "reviewer"),
       before.agents?.list?.filter(agent => agent.id !== "reviewer") ?? []);
     const original = before.agents?.list?.find(agent => agent.id === "reviewer") ?? { id: "reviewer" };
     assert.deepEqual(actual.agents.list.find(agent => agent.id === "reviewer"), {
-      ...original, memorySearch: { ...original.memorySearch, enabled: false },
+      ...original, tools: { ...original.tools, codeMode: { ...original.tools?.codeMode, enabled: false } },
+      memorySearch: { ...original.memorySearch, enabled: false },
     });
-    assert.deepEqual(withPrivateReviewMemoryPolicy(actual, "reviewer"), actual);
+    assert.deepEqual(withPrivateReviewerConfig(actual, "reviewer"), actual);
   }
-  assert.equal(withPrivateReviewMemoryPolicy().agents.list[0].id, "main");
+  const defaults = withPrivateReviewerConfig();
+  assert.equal(defaults.agents.list[0].id, "main");
+  assert.equal(defaults.tools.toolSearch, false);
 });
 
 test("private grants retain host tools, explicit denies and unrelated agent policies without mutating the host", () => {
@@ -69,7 +74,8 @@ test("read-only private copies disable execution wrappers while preserving host 
     agents: { defaults: { contextTokens: 48000, compaction: { mode: "safeguard" } },
       list: [{ id: "main", tools: { alsoAllow: ["browser"], codeMode: { enabled: true } } }, { id: "other", tools: { allow: ["read"] } }] } };
   const before = structuredClone(host);
-  const actual = withReadOnlyReviewerTools(withNativeReviewerTools(host, "main", ["read", "rc_progress"]), "main");
+  const privateConfig = withPrivateReviewerConfig(host, "main");
+  const actual = withReadOnlyReviewerTools(withNativeReviewerTools(privateConfig, "main", ["read", "rc_progress"]), "main");
   assert.deepEqual(host, before);
   assert.deepEqual(actual.agents.defaults, before.agents.defaults);
   assert.deepEqual(actual.agents.list[1], before.agents.list[1]);
@@ -127,7 +133,8 @@ test("installed MA policy keeps host tools plus private progress and still enfor
   assert.deepEqual(config, before);
   const full = { tools: { profile: "full", codeMode: { enabled: true } },
     agents: { list: [{ id: "main", tools: { alsoAllow: ["host_agent_tool"] } }] } };
-  const readonly = withReadOnlyReviewerTools(withNativeReviewerTools(full, "main", ["read", "rc_progress"]), "main");
+  const privateConfig = withPrivateReviewerConfig(full, "main");
+  const readonly = withReadOnlyReviewerTools(withNativeReviewerTools(privateConfig, "main", ["read", "rc_progress"]), "main");
   assert.deepEqual(available(readonly), ["browser", "host_agent_tool", "mcp__files__read_file", "rc_progress", "read"].sort(),
     "real host filtering must remove writes, edits, patch and execution tools even under the full profile");
 });

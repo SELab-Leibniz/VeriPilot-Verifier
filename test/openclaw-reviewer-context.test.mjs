@@ -70,7 +70,7 @@ test("onboarding, skill, artifact and implementation reviewers leave cumulative 
           assert.match(params.extraSystemPrompt, /A PostToolUse artifact check is not a completion declaration/);
           assert.doesNotMatch(params.extraSystemPrompt, new RegExp(path.resolve("skills/semantic-review/SKILL.md").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
         } else assert.equal(params.skillsSnapshot, undefined);
-        assert.deepEqual(params.config.tools, { ...hostConfig.tools,
+        assert.deepEqual(params.config.tools, { ...hostConfig.tools, toolSearch: false,
           deny: [...new Set([...hostConfig.tools.deny, ...REVIEWER_NATIVE_TOOL_DENY])], codeMode: { enabled: false } });
         const agent = params.config.agents.list.find(agent => agent.id === "main");
         assert.deepEqual(agent.memorySearch, { ...hostConfig.agents.list[0].memorySearch, enabled: false },
@@ -94,7 +94,7 @@ test("onboarding, skill, artifact and implementation reviewers leave cumulative 
       });
       f.input.role = role;
       f.input.pluginRoot = path.resolve(".");
-      f.api.config.tools = { profile: "coding", alsoAllow: ["host-global-tool"], deny: ["write"] };
+      f.api.config.tools = { profile: "coding", alsoAllow: ["host-global-tool"], deny: ["write"], toolSearch: true };
       f.api.config.agents.list = [
         { id: "main", memorySearch: { enabled: true, provider: "local", sync: { watch: true } },
           tools: { alsoAllow: ["host-agent-tool"], deny: ["exec"] } },
@@ -131,6 +131,9 @@ test("native cache identity survives new factories and credential rotation but t
   config.agents.list = [{ id: "main", memorySearch: { enabled: true } }];
   assert.equal(factory.reviewCacheIdentity({ effort: "low" }), identity,
     "host Memory settings do not change the effective private no-Memory policy");
+  config.tools = { toolSearch: { enabled: true, mode: "tools" } };
+  assert.equal(factory.reviewCacheIdentity({ effort: "low" }), identity,
+    "host Tool Search does not change the effective private tool catalog");
   config.models.providers.fixture.apiKey = "rotated-private-key";
   config.models.providers.fixture.headers.Authorization = "Bearer rotated-private-key";
   assert.equal(factory.reviewCacheIdentity({ effort: "low" }), identity);

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { acquireBaselineAgent } from '../lib/openclaw/baseline-agent.mjs';
 import { createNativeTaskSession } from '../lib/openclaw/task-session.mjs';
-import { withPrivateReviewMemoryPolicy } from '../lib/openclaw/native-config.mjs';
+import { withPrivateReviewerConfig } from '../lib/openclaw/native-config.mjs';
 
 test('private baseline policy isolates old-capability context before pooling and survives native repairs', async t => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'rc-private-memory-')));
@@ -14,7 +14,7 @@ test('private baseline policy isolates old-capability context before pooling and
     try { for (const session of sessions) await session.close(); }
     finally { await fs.rm(root, { recursive: true, force: true }); }
   });
-  const host = { agents: { defaults: { memorySearch: { enabled: true } }, list: [
+  const host = { tools: { toolSearch: true }, agents: { defaults: { memorySearch: { enabled: true } }, list: [
     { id: 'reviewer', memorySearch: { enabled: true, sync: { watch: true } }, model: 'fixture/model' },
     { id: 'business', memorySearch: { enabled: true } },
   ] } };
@@ -22,11 +22,12 @@ test('private baseline policy isolates old-capability context before pooling and
   // Seed an otherwise identical no-Memory selection without the new policy tag.
   // A new tag must isolate even a previously disabled but differently governed context.
   const old = await acquireBaselineAgent({ owner: api, projectRoot: root, agentId: 'reviewer',
-    selection: { ...selection, config: withPrivateReviewMemoryPolicy(host, 'reviewer') }, deadlineAt: Date.now() + 20000 });
+    selection: { ...selection, config: withPrivateReviewerConfig(host, 'reviewer') }, deadlineAt: Date.now() + 20000 });
   await old.release();
   const nativeRunner = async params => {
     calls.push(params);
     assert.equal(params.agentId, 'reviewer');
+    assert.equal(params.config.tools.toolSearch, false);
     assert.deepEqual(params.config.agents.list[0].memorySearch, { enabled: false, sync: { watch: true } });
     assert.deepEqual(params.config.agents.defaults, { ...before.agents.defaults,
       models: { 'fixture/model': { params: { maxTokens: 32768 } } } });
