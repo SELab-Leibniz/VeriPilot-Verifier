@@ -17,7 +17,7 @@ const rcScope = { stopClassification: 'TASK_COMPLETE', completionClaim: true };
 const messageText = message => typeof message.content === 'string' ? message.content
   : (message.content ?? []).map(block => block.text ?? '').join('');
 
-function specification(rows, format) {
+export function initialSddText(rows, format) {
   const series = format === 'dense' ? denseText : chineseText;
   return [
     '# 版本化交付工作流的软件设计规范', '按整份 SDD 交付提案、实施、验证和归档。此消息给出完整规范。',
@@ -32,7 +32,7 @@ function specification(rows, format) {
 // Choose the nearest complete row. The three original markers stay intact.
 async function calibrated(target, unit, format, countRaw) {
   async function measure(rows) {
-    const text = specification(rows, format);
+    const text = initialSddText(rows, format);
     const size = unit === 'tokens' ? await countRaw(text) : unit === 'bytes' ? Buffer.byteLength(text) : [...text].length;
     return { text, rows, size };
   }

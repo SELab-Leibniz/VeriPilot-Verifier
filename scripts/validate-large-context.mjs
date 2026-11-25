@@ -17,6 +17,7 @@ import { ensureTask } from '../lib/runtime-v2/task-store.mjs';
 import { STOP_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { businessSnapshot, chineseText, createRepository, denseText, sourceName, sourceText } from './helpers/large-context-fixtures.mjs';
 import { runInitialSdd } from './helpers/initial-sdd-pressure.mjs';
+import { runSingleRequiredFile } from './helpers/single-required-file.mjs';
 
 const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
 const args = process.argv.slice(2);
@@ -29,7 +30,7 @@ if (!arg('--host-root') || !arg('--python') || !arg('--tokenizers'))
 const hostRoot = path.resolve(arg('--host-root'));
 const outputRoot = path.resolve(arg('--output-root', path.join(sourceRoot, '.runtime-correction', 'context-' + randomUUID().slice(0, 8))));
 const selectedCases = arg('--cases')?.split(',');
-const caseNames = new Set(['calibration', 'local-projection', 'initial-sdd-164k', 'review-small', 'review-large', 'review-overflow',
+const caseNames = new Set(['calibration', 'local-projection', 'initial-sdd-164k', 'single-required-file', 'review-small', 'review-large', 'review-overflow',
   'review-wide-context', 'review-page-cap', 'review-dense-overflow', 'business-history', 'business-false-positive', 'business-single-input', 'business-summary-overflow']);
 for (const name of selectedCases ?? []) assert(caseNames.has(name), 'Unknown case: ' + name);
 const enabled = name => !selectedCases || selectedCases.includes(name);
@@ -568,6 +569,9 @@ function verify(results) {
   if (enabled('initial-sdd-164k')) {
     expect('initial-sdd-164k', results.initialSdd?.verified === true, 'Initial SDD study did not finish');
   }
+  if (enabled('single-required-file')) {
+    expect('single-required-file', results.singleRequired?.verified === true, 'Single mandatory file cases did not verify');
+  }
   return failures;
 }
 
@@ -637,6 +641,10 @@ try {
     if (enabled('initial-sdd-164k')) {
       results.initialSdd = await runInitialSdd({ outputRoot, repo: repository.repo, count, model, modelWindow,
         business: spec => businessCase(config, runtime, spec),
+        review: spec => reviewCase(config, runtime, { ...spec, repo: repository.repo }) });
+    }
+    if (enabled('single-required-file')) {
+      results.singleRequired = await runSingleRequiredFile({ outputRoot, repo: repository.repo, count, model, modelWindow, toolResultCap,
         review: spec => reviewCase(config, runtime, { ...spec, repo: repository.repo }) });
     }
   }
