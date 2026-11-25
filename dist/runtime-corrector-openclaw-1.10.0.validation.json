@@ -169,11 +169,11 @@
     "noFailedCancelledOrTimedOutFiles": true
   },
   "currentPackageRealModelEvaluation": {
-    "status": "LIVE_TRIAL_RUNNING_NO_OUTCOME",
+    "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_ORIGINAL_APPLY_ERROR_PRESERVED",
     "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
     "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
     "modelTrialPerformed": true,
-    "finalOutcomeAvailable": false,
+    "finalOutcomeAvailable": true,
     "inheritsPrecedingArchiveEvidence": false,
     "precedingCompletedRun": "evaluationRecords.ordinaryOn25084C252",
     "endToEndMethodTargetMet": false,
@@ -185,7 +185,7 @@
     "modelTrialLaunched": true,
     "preparedPilot": ".runtime-correction/validation/ordinary-on-tool-usability-pilot-qualified-h5lqsvh5",
     "operatorRoot": ".runtime-correction/validation/public-run-7c0286a8997c4d",
-    "actualController": "150e4b/session57609 RUNNING",
+    "actualController": "150e4b/session57609 ->2d1dd6/0 CLOSED",
     "sourceHold": {
       "path": ".runtime-correction/validation/ordinary-on-tool-usability-pilot-qualified-h5lqsvh5/source-hold.json",
       "sha256": "b97adb144b97d2b2f105ffffc1000b11b3563cd797c0de6396d5b9ccd88f230d"
@@ -230,7 +230,7 @@
       "snapshotOnly": true,
       "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
     },
-    "phase": "APPLY_RUNNING",
+    "phase": "CLOSED",
     "proposalOriginalTurn": "CLEAN_OK",
     "proposalReady": {
       "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/proposal-ready.json",
@@ -248,106 +248,99 @@
     "applyAccepted": {
       "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/live/apply-accepted.json",
       "sha256": "fbf3c422b7a1e1806c50b7bb31d1890bec124f4be722f4fb6031531a1d3c66cb"
-    }
-  },
-  "latestCompletedDevelopmentRun": {
-    "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
-    "sourceCommit": "c0681cc548bacba0dc370480cc99f0160eb253f9",
-    "archiveSha256": "c2521de0d77e665823ce1acba71b930f90f6be332e62da995df54d2ae4d02ecb",
-    "modelTrialPerformed": true,
-    "finalOutcomeAvailable": true,
-    "inheritsPrecedingArchiveEvidence": false,
-    "precedingCompletedRun": "evaluationRecords.ordinaryOn56efD5",
-    "qualityGainProven": false,
-    "generalUsefulnessProven": false,
-    "formal13TaskCredit": 0,
-    "matchedPairCredit": 0,
-    "preparedPilot": ".runtime-correction/validation/ordinary-on-guidance-pilot-bound-gwcilby4",
-    "operatorRoot": ".runtime-correction/validation/public-run-25084e3de41945",
-    "actualController": "62c8c3/session53897 ->be6c4c/0 CLOSED",
-    "codingModel": "deepseek-flash",
-    "reviewerModelConfigured": "deepseek-v4-pro",
-    "reviewerRolesConfigured": 7,
-    "sourceHoldSha256": "a8b524c4cd3a775a89e3238c2ea258dc5bd497ba866f77880fbbe46146dff39e",
-    "sourceAcceptanceFrozenBeforeFirstRequest": true,
-    "initialAndLiveDuties": {
-      "initialN": 13,
-      "liveL": 21,
-      "nonExhaustive": true,
-      "additionalDistinctCanonicalIdentities": 8,
-      "newIndependentFeaturesEstablished": false
-    },
-    "publicPreflight": {
-      "pass": 668,
-      "total": 668,
-      "starterUnchanged": 149,
-      "modelsUsedByPreflight": 0
-    },
-    "wallLimitMs": 3600000,
-    "maxRequests": 256,
-    "noEpochRenewal": true,
-    "archiveExecuted": false,
-    "proposalOriginalTurn": "ERROR_PRESERVED",
-    "planFilesReadBeforeOrdinaryApproval": 6,
-    "planSteps": 10,
-    "officialStrictOpenSpecValidation": "1of1PASS",
-    "rootOrdinaryApprovalActual": "cdf93a/0",
-    "rootOrdinaryApprovalSha256": "c017bc9368c215ff474879691414eee7591ed290738f7fa00db11f7a99054844",
-    "observedPlanningIssues": {
-      "readOriginalEofErrors": 14,
-      "findingLocationValidationCode": "DOCUMENT_FINDING_LOCATION_INVALID",
-      "transportErrorSequences": [
-        81,
-        83,
-        84
-      ],
-      "transportOrOriginalTurnUniqueCauseEstablished": false
-    },
-    "observedPriorNavigation": {
-      "queriedItems": 8,
-      "totalAtQuery": 13,
-      "queriedIdsStructurallyReusedInFreshStaging": 8,
-      "semanticCompletenessOrBenefitEstablished": false,
-      "allQueriedIdsRereadAndRestaged": true,
-      "semanticEquivalenceProven": false
     },
     "controllerClosed": true,
-    "applyOriginalTurn": "CLEAN_OK",
-    "officialStepsComplete": 10,
-    "frozenFiles": 169,
+    "applyOriginalTurn": "ERROR_PRESERVED",
+    "officialStepsComplete": 7,
+    "frozenFiles": 168,
+    "freeze": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/final-freeze/freeze.json",
+      "sha256": "7d388f810c040d07446fa6292c149bc031503cf95ec93e4353349c5b21f9a824"
+    },
+    "originalModes": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/original-modes.json",
+      "sha256": "e64c3631410075bc3daa947527c318fd7641ef59bac8914bdfedec9a5807f2c0"
+    },
+    "rootActualTerminal": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-controller-terminal.json",
+      "sha256": "8b7952ea89e5a0ccc96a3823bd2800d184c7fe5331708231fa336e997b6fcf7a"
+    },
+    "rootTerminalMetadataRepair": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-terminal-metadata-repair.json",
+      "sha256": "47efc1888359d6d660a71b6cffed2f4261c7e31b5404f4f7adddf4b767493ca0"
+    },
+    "independentCleanup": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-independent-cleanup.json",
+      "sha256": "872349d4373f34fcd527fdd3e700188b0b62579211e94d799f72ea3564cfa644"
+    },
+    "capture": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/closed-essential-evidence/receipt.json",
+      "sha256": "a3350ec4c38d6b3458837bec19244b751a11421289ef9948673c1892dfbe7ee0"
+    },
+    "captureRootReadback": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/closed-essential-evidence-root-readback.json",
+      "sha256": "a568794941c6db50e7bdc0f4cb1be487a84be9ece018b24e8823c2c99d79a707"
+    },
     "traffic": {
-      "deepseek-flash": 48,
-      "deepseek-v4-pro": 130
+      "deepseek-flash": 38,
+      "deepseek-v4-pro": 83
     },
-    "finalFinishAttempts": 2,
-    "secondFinish": {
+    "planRevision": {
+      "structural": "TASK_PROSE_CHANGED",
+      "assessment": "CONDITIONAL_EXECUTION_ANNOTATION_WITHOUT_OBSERVED_SCOPE_NARROWING",
+      "receipt": {
+        "path": ".runtime-correction/validation/plan-semantics-7c0286-t_y9_vrx/receipt.v2.json",
+        "sha256": "6f728b06b996b3196df9d47000f8386b1c5b751f0746c4dcc1cbf0a996daa77f"
+      }
+    },
+    "archiveExecuted": false,
+    "finiteMethodClassification": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
+    "originalApplyErrorResolved": false,
+    "methodAudit": {
+      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-receipt.json",
+      "sha256": "458db0c59837ccf93cd049e8666e3d887d27db01193a5982c0ddb6294bae042e"
+    },
+    "methodSeal": {
+      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-seal.json",
+      "sha256": "a936d2e0316e32951ece6b41593b8faf295ae130dfa1de0c8431a0a2b6e6cf19"
+    },
+    "finiteMethodTargetScope": "Frozen A-E protocol only; whole clean coding workflow and semantic correctness are not established.",
+    "requirements": {
+      "initialObserved": 9,
+      "committedTables": [
+        9,
+        9,
+        12
+      ],
+      "exactUnion": 16,
+      "lateDistinctIdentities": 7,
+      "independentFeatureCount": false,
+      "discoveryExhaustive": false,
+      "allFullClausesAndAnchorsRetained": true,
+      "finalCurrent": 16,
+      "finalVerdictEach": "NO_CONFIRMED_DEVIATION"
+    },
+    "finalStop": {
+      "hostVerdict": "NO_DEVIATION_FOUND",
       "saved": true,
-      "complete": true
+      "complete": true,
+      "beforeOriginalDeadlines": true,
+      "finishAttempts": 2,
+      "firstFinishPending": 5,
+      "furtherAcknowledgedSourceReads": 12,
+      "sampledSelected": 3,
+      "sampledEligible": 4,
+      "semanticsVerified": false,
+      "archiveExecuted": false
     },
-    "methodAuditStatus": "CLOSED_FINITE_PROTOCOL_SCOPE",
-    "gradeStatus": "EXECUTED_FINITE_CHECKS_ALL_PASS_WITH_LIMITS",
-    "requirementSemanticsVerified": false,
-    "observedToolUsability": {
-      "readOriginalEofErrors": 14,
-      "checklistDisplayedBytes": 64018,
-      "checklistDisplayedJsonValid": false,
-      "readinessGuideDeliveredBeforeFirstFinish": true,
-      "readinessPreviewQueries": 0,
-      "missingCorrectionReasonPathExercised": false,
-      "documentToolErrors": 16,
-      "documentToolErrorFamilies": {
-        "read_original:Invalid text interval": 14,
-        "stage_original_duties:DOCUMENT_ORIGINAL_DUTY_READ_REQUIRED": 1,
-        "remember:DOCUMENT_NOTE_REQUIRES_CURRENT_READS": 1
-      },
-      "sourceScopeAndCauseLimits": "Published audit validates document error families; transport error causality is not established."
-    },
-    "grading": {
+    "codeGrade": {
+      "actual": "2af5f5/session30045 ->40e56f/0 CLOSED",
+      "status": "EXECUTED_FINITE_CHECKS",
       "primary": {
         "pass": 8,
         "total": 8
       },
-      "publicRegression": {
+      "selectedOriginalPublicRegressions": {
         "pass": 668,
         "total": 668
       },
@@ -355,235 +348,276 @@
         "pass": 6,
         "total": 6
       },
-      "actual": "952eb4/session4213 ->6fd2dd/0 CLOSED",
-      "readback": {
-        "path": ".runtime-correction/validation/single-on-c252-postclosure-grade-source-k3plyaaz/actual-result-readback.json",
-        "sha256": "52afcf3132d89f55af4608a098b84a9debf4554f866b075933bfb4dbf852e06f"
-      },
-      "frozenFiles": 169,
-      "containersClosedAndRemoved": 3,
-      "hostHome": "/Users/rshu",
-      "platform": "linux/arm64",
-      "python": "3.13.17",
-      "macNativeEquivalence": false
+      "elapsedMs": 2458,
+      "containers": 3,
+      "allOwnedContainersExitedZeroAndRemoved": true,
+      "platform": "Linux arm64/Python3.13.17 on macOS host",
+      "nativeMacosEquivalence": false,
+      "independentReadback": {
+        "path": ".runtime-correction/validation/single-on-f020-postclosure-grade-held-72e7h3fg/actual-result-readback.json",
+        "sha256": "c821fb8a6e60ffae8906df01833012b3b32b2cae62f4e2bc1ed2832e2e33826b"
+      }
     },
-    "artifactDelta": {
-      "kind": "ROOT_CLOSED_25084_ARTIFACT_DELTA",
-      "setupFiles": 163,
-      "freezeFiles": 169,
-      "productionFiles": 18,
-      "productionFilesUnchanged": 18,
-      "changedSetupFiles": [
-        "tests/test_formatting.py"
-      ],
-      "removedSetupFiles": [],
-      "addedFiles": [
-        "openspec/changes/click-help-shadowing/.openspec.yaml",
-        "openspec/changes/click-help-shadowing/README.md",
-        "openspec/changes/click-help-shadowing/design.md",
-        "openspec/changes/click-help-shadowing/proposal.md",
-        "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
-        "openspec/changes/click-help-shadowing/tasks.md"
-      ],
-      "planFiles": [
-        {
-          "path": "openspec/changes/click-help-shadowing/.openspec.yaml",
-          "bytesEqual": true,
-          "checkboxOnly": false
-        },
-        {
-          "path": "openspec/changes/click-help-shadowing/README.md",
-          "bytesEqual": true,
-          "checkboxOnly": false
-        },
-        {
-          "path": "openspec/changes/click-help-shadowing/design.md",
-          "bytesEqual": true,
-          "checkboxOnly": false
-        },
-        {
-          "path": "openspec/changes/click-help-shadowing/proposal.md",
-          "bytesEqual": true,
-          "checkboxOnly": false
-        },
-        {
-          "path": "openspec/changes/click-help-shadowing/specs/usage-error-help-hint/spec.md",
-          "bytesEqual": true,
-          "checkboxOnly": false
-        },
-        {
-          "path": "openspec/changes/click-help-shadowing/tasks.md",
-          "bytesEqual": false,
-          "checkboxOnly": true
-        }
-      ],
-      "snapshotMetadataExcludedFromPlanFiles": true
+    "toolUsability": {
+      "sameRefEofRecoveryObserved": true,
+      "rejectedReadGrantsAuthority": false,
+      "priorOriginalNavigationReturned": 9,
+      "priorOriginalIdentitiesFreshlyReadAndRestaged": 9,
+      "stopPages": 11,
+      "auxiliaryChunks": 4,
+      "auxiliaryDecodedBytes": 18513,
+      "maximumWireBytes": 8152,
+      "readinessDeliveredBeforeFirstFinish": true,
+      "readinessPreviewQueries": 0,
+      "proofOwnerMismatchDiagnostics": "NOT_EXERCISED",
+      "causalEfficiencyGainEstablished": false
     },
-    "artifactDeltaReceipt": {
-      "path": ".runtime-correction/validation/public-run-25084e3de41945/root-closed-artifact-delta.json",
-      "sha256": "b8616a10a717b6f87b769c577dc3b0a55af9bc1770b805e0a3f5d547b3bc1883"
-    },
-    "transport": {
-      "capture": {
-        "path": ".runtime-correction/validation/public-run-25084e3de41945/closed-essential-evidence/receipt.json",
-        "sha256": "0c9af8bd6e2563e3df2551914888d6784e1a65d378e1f50aa68c1da7b726b8b1"
+    "finiteMethodTargetMet": true,
+    "originalApplyErrorDiagnosis": {
+      "classification": "STOCK_RETAINED_TOOL_FAILURE_WARNING_OBSERVED",
+      "receipt": {
+        "path": ".runtime-correction/validation/apply-error-readback-7c0286-6vn3fo6m/receipt.json",
+        "sha256": "b407994f5a81a4e84ecd4e8c1c97a46492d92dde470742fb9943cdf56174855e"
       },
-      "readback": {
-        "path": ".runtime-correction/validation/postclosure-capture-admission-25084-dbyxqym3/all-file-capture-readback.json",
-        "sha256": "4129937528a91cef71e05459eb5564cb86e31d2d8605f3d0872afbc85ebca5ac"
-      },
-      "files": 262,
-      "bytes": 9250151,
-      "methodAcceptanceGranted": false
-    },
-    "kind": "CLOSED_SINGLE_ON_ORDINARY_GENERAL_GUIDANCE_PROBE",
-    "endToEndMethodTargetMet": true,
-    "fullyVerifiedWorkingCaseEstablished": false,
-    "workflow": {
-      "scope": "Proposal / ordinary approval / Apply / Stop only",
-      "proposalOriginalTurn": "ERROR_PRESERVED",
-      "applyOriginalTurn": "CLEAN_OK",
-      "planFilesReadBeforeOrdinaryApproval": 6,
-      "officialStepsComplete": 10,
-      "officialStrictOpenSpecValidationPassed": true,
-      "archiveExecuted": false,
-      "wholeOpenSpecLifecycleValidated": false,
-      "cleanWholeWorkflow": false
-    },
-    "method": {
-      "initialN": 13,
-      "firstStagedResponse": 8,
-      "completeFirstStagedTable": 13,
-      "liveL": 21,
-      "additionalDistinctCanonicalIds": 8,
-      "eligibleCanonicalPublicationCounts": [
-        13,
-        13,
-        21
-      ],
-      "eligibleCanonicalPublications": 3,
-      "noOpPublications": 1,
-      "liveRevision": 1,
-      "initialCohortId": "b7c59085e3ce9d68c207ab15d4e9a669cf52947b0778043c46adabe86ef43617",
-      "currentLiveId": "1490b945ef1c3ac9e39751d9306cd35808670a59a645783d2ec3be33c90201a0",
-      "firstFinishPending": 9,
-      "postFirstFinishAcknowledgedSourceReads": 7,
-      "finalSavedComplete": true,
-      "protocolCompleted": true,
-      "beforeAllOriginalDeadlines": true,
-      "finalDispositions": {
-        "CURRENT": 17,
-        "SUPERSEDED": 3,
-        "UNVERIFIED": 1
-      },
-      "currentRowVerdicts": {
-        "NO_CONFIRMED_DEVIATION": 17
-      },
-      "formedBindings": 18,
-      "formedBindingCountIsNotDenominator": true,
-      "finalHostStatus": "UNVERIFIED",
-      "finalHostReasonCode": "STOP_KNOWN_ORIGINAL_OBLIGATION_UNVERIFIED",
-      "allDutyDiscoveryOrSemanticCoverageProven": false,
-      "status": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
-      "audit": {
-        "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
-        "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
-      },
-      "seal": {
-        "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-seal.json",
-        "sha256": "c519f89a157974f9cd196dda5eb5306149602284ade16ef1281b04be78b6c92c"
-      },
-      "criteria": {
-        "A_OWN_SUBJECT_AND_BOUNDARY": "SATISFIED_FINITE_PROTOCOL_SCOPE",
-        "B_GENUINE_NORMAL_STAGING": "SATISFIED_FINITE_PROTOCOL_SCOPE",
-        "C_PRE_FIRST_COVERAGE_ORDER": "SATISFIED_FINITE_PROTOCOL_SCOPE",
-        "D_ACTUAL_COMMITTED_PUBLICATION_RETENTION": "SATISFIED_FINITE_PROTOCOL_SCOPE",
-        "E_COMPLETE_CURRENT_STOP_PROTOCOL": "SATISFIED_FINITE_PROTOCOL_SCOPE"
-      },
-      "allFullClausesAndSourceAnchorsReachMandatoryStopBasis": true,
-      "semanticCompletenessProven": false,
-      "originalDiscoveryExhaustive": false,
-      "unresolvedDuty": {
-        "id": "known-original-6cdf50767a202a5e43c2668327132485f23d77d15e4f35fe3ec3909b21d747d2",
-        "canonicalRequirement": "Create the standard change click-help-shadowing with proposal, design, specification and tasks.",
-        "source": {
-          "anchorId": "original-source-33589ea8f771055851eeb02e7d3d5bf29b87e5a7b22fd6408aa021c63dfe1c0b",
-          "kind": "USER_MESSAGE",
-          "ref": "transcript:dcb31543",
-          "sha256": "4af0bea3f5dc3dd43bfe4de94c10e520b01c368ef47e7a245487c21de4161ba3",
-          "byteStart": 2864,
-          "byteEnd": 3512
-        },
-        "sourceCurrent": true,
-        "disposition": "UNVERIFIED",
-        "finalObjectId": null,
-        "finalVerdict": null,
-        "diagnostic": {
-          "code": "REVIEW_ITEM_EVIDENCE_UNAVAILABLE",
-          "message": "Complete basis and actually read SOURCE evidence were not established."
-        },
-        "formedObjectId": "M12:original-e8dc1deec60b84c124052d25",
-        "reviewerProofSubject": {
-          "metricId": "M12",
-          "verificationTarget": "IMPLEMENTATION",
-          "implementationRole": "SUPPORT",
-          "applicabilityKind": "CURRENT_TASK",
-          "applicability": "CURRENT_TASK",
-          "proofOwners": [
-            "SOURCE"
-          ]
-        },
-        "independentSemanticClassificationGranted": false
-      },
-      "frozenAcceptanceSha256": "bec816e44cc85ffb507467ccf3936359458702691bc09b57ffc476bdd6120119",
-      "capacityBusinessFailureUnkeyedBranchesNotClaimedExercised": true
-    },
-    "uptake": {
-      "priorQueries": 1,
-      "priorReturned": 8,
-      "available": 13,
-      "allQueriedIdsRereadAndRestaged": true,
-      "structuralReuseCount": 8,
-      "semanticEquivalenceProven": false,
-      "guideDeliveredBeforeFirstFinish": true,
-      "guideWireBytes": 64018,
-      "guideWireJsonValid": false,
-      "guideUnderstandingProven": false,
-      "readinessQueries": 0,
-      "readinessQueryStatus": "NOT_EXERCISED",
-      "missingReasonFeedbackStatus": "NOT_EXERCISED"
-    },
-    "limits": [
-      "Healthy reused ON-only development case; no matched OFF quality or efficiency estimate.",
-      "All21 retained observations accounted for, but one is UNVERIFIED and original discovery remains nonexhaustive.",
-      "Seventeen current rows say NO_CONFIRMED_DEVIATION; semantic truth is not independently certified.",
-      "Proposal original host error retained; Apply clean, Archive unexecuted.",
-      "Linux grading on this Mac does not establish nativeMac equivalence.",
-      "Current method result belongs only to c068/c252; later WIP fixes inherit no live qualification."
-    ],
-    "proofSubjectDiagnosis": {
-      "status": "ACKNOWLEDGED_ARTIFACT_CITATIONS_DO_NOT_MATCH_FROZEN_SOURCE_SUBJECT",
-      "localization": {
-        "path": ".runtime-correction/validation/unverified-proof-owner-localization-25084-y7sjd4ph/fault-localization.json",
-        "sha256": "db5b1224d31b7310622699726b50d93947fd66c13bce139616e24cc03e5ac14f"
-      },
-      "requiredOwner": [
-        "SOURCE"
-      ],
-      "initialCitedOwners": [
-        "ARTIFACT",
-        "PROCESS"
-      ],
-      "finalCitedOwners": [
-        "ARTIFACT"
-      ],
-      "missingMandatoryBasis": false,
-      "missingObjectIdOrCiteIds": false,
-      "unreadOrStaleMarkdownCitations": false,
-      "frozenSubjectCanChange": false,
-      "automaticReclassificationGranted": false,
-      "existingOutcomeChanged": false
+      "toolExitCode": 2,
+      "toolDiagnostic": "Error: Missing argument 'REQUIRED_ARG'.",
+      "toolNoOutputTimedOut": false,
+      "codingAssistantContinuedAndStoppedNormally": true,
+      "hostErrorPrecededStopMs": 241,
+      "wholeEpochExpiredAtHostError": false,
+      "adHocProbeExpectedFailureIntent": "UNVERIFIED",
+      "exactSdkInternalRecoveryBranch": "UNOBSERVED",
+      "sameFullArgumentsReplayObserved": false,
+      "pluginCauseEstablished": false,
+      "originalStatusPreserved": "ERROR",
+      "cleanEndToEndWorkflowClaimed": false
     }
+  },
+  "latestCompletedDevelopmentRun": {
+    "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_ORIGINAL_APPLY_ERROR_PRESERVED",
+    "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
+    "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
+    "modelTrialPerformed": true,
+    "finalOutcomeAvailable": true,
+    "inheritsPrecedingArchiveEvidence": false,
+    "precedingCompletedRun": "evaluationRecords.ordinaryOn25084C252",
+    "endToEndMethodTargetMet": false,
+    "fullyVerifiedWorkingCaseEstablished": false,
+    "qualityGainProven": false,
+    "generalUsefulnessProven": false,
+    "formal13TaskCredit": 0,
+    "matchedPairCredit": 0,
+    "modelTrialLaunched": true,
+    "preparedPilot": ".runtime-correction/validation/ordinary-on-tool-usability-pilot-qualified-h5lqsvh5",
+    "operatorRoot": ".runtime-correction/validation/public-run-7c0286a8997c4d",
+    "actualController": "150e4b/session57609 ->2d1dd6/0 CLOSED",
+    "sourceHold": {
+      "path": ".runtime-correction/validation/ordinary-on-tool-usability-pilot-qualified-h5lqsvh5/source-hold.json",
+      "sha256": "b97adb144b97d2b2f105ffffc1000b11b3563cd797c0de6396d5b9ccd88f230d"
+    },
+    "rootLiveAdmission": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/live-admission.json",
+      "sha256": "68a04b9e1b4f5bddf996fb97fdc431770f71716f44310d36e7770c6b76818dea"
+    },
+    "sourceAcceptanceFrozenBeforeFirstRequest": true,
+    "codingModel": "deepseek-flash",
+    "reviewerModelConfigured": "deepseek-v4-pro",
+    "reviewerRolesConfigured": 7,
+    "wallLimitMs": 3600000,
+    "maxRequests": 256,
+    "noEpochRenewal": true,
+    "workflowScope": "Proposal -> ordinary public approval -> Apply -> Stop; no Archive",
+    "setup": {
+      "actual": "59cc20/session81815 ->cfd55e/0 CLOSED",
+      "receipt": {
+        "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/setup-receipt.json",
+        "sha256": "78277a8a34b5150b2a243dbb1b7894788febd571f71fe2018256a3a8d048a1b0"
+      }
+    },
+    "publicPreflight": {
+      "actual": "178c31/session11942 ->483034/0 CLOSED",
+      "pass": 668,
+      "total": 668,
+      "starterFilesUnchanged": 149,
+      "bytesAndModesUnchanged": true,
+      "receipt": {
+        "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/public-check-receipt.json",
+        "sha256": "128b382bbc7e6d8793a83490963b1d4ac09b517be5c1c64c39410a55026f8de5"
+      }
+    },
+    "firstObservedWireSnapshot": {
+      "byModel": {
+        "deepseek-flash": 25,
+        "deepseek-v4-pro": 4
+      },
+      "wireAttempts": 29,
+      "admittedRequests": 30,
+      "snapshotOnly": true,
+      "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
+    },
+    "phase": "CLOSED",
+    "proposalOriginalTurn": "CLEAN_OK",
+    "proposalReady": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/proposal-ready.json",
+      "sha256": "deaf2cc6a52a2473f3e83e87be100093d270eb217c0225095fc034d4e5facabd"
+    },
+    "proposalPlanFilesFullyRead": 5,
+    "ordinaryApprovedSteps": 7,
+    "rootOrdinaryApprovalActual": "ca06b4/0",
+    "rootOrdinaryApproval": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/apply-admission.json",
+      "sha256": "cff60828e33487867378b64b8cd7d1babb72bcd8791c525f7bf0c1440b63ebe3"
+    },
+    "officialStrictOpenSpecValidation": "1of1PASS",
+    "applyOriginalRunId": "cd9b0f0c-49dd-407d-9773-0a8a60d9a046",
+    "applyAccepted": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/live/apply-accepted.json",
+      "sha256": "fbf3c422b7a1e1806c50b7bb31d1890bec124f4be722f4fb6031531a1d3c66cb"
+    },
+    "controllerClosed": true,
+    "applyOriginalTurn": "ERROR_PRESERVED",
+    "officialStepsComplete": 7,
+    "frozenFiles": 168,
+    "freeze": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/final-freeze/freeze.json",
+      "sha256": "7d388f810c040d07446fa6292c149bc031503cf95ec93e4353349c5b21f9a824"
+    },
+    "originalModes": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/original-modes.json",
+      "sha256": "e64c3631410075bc3daa947527c318fd7641ef59bac8914bdfedec9a5807f2c0"
+    },
+    "rootActualTerminal": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-controller-terminal.json",
+      "sha256": "8b7952ea89e5a0ccc96a3823bd2800d184c7fe5331708231fa336e997b6fcf7a"
+    },
+    "rootTerminalMetadataRepair": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-terminal-metadata-repair.json",
+      "sha256": "47efc1888359d6d660a71b6cffed2f4261c7e31b5404f4f7adddf4b767493ca0"
+    },
+    "independentCleanup": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-independent-cleanup.json",
+      "sha256": "872349d4373f34fcd527fdd3e700188b0b62579211e94d799f72ea3564cfa644"
+    },
+    "capture": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/closed-essential-evidence/receipt.json",
+      "sha256": "a3350ec4c38d6b3458837bec19244b751a11421289ef9948673c1892dfbe7ee0"
+    },
+    "captureRootReadback": {
+      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/closed-essential-evidence-root-readback.json",
+      "sha256": "a568794941c6db50e7bdc0f4cb1be487a84be9ece018b24e8823c2c99d79a707"
+    },
+    "traffic": {
+      "deepseek-flash": 38,
+      "deepseek-v4-pro": 83
+    },
+    "planRevision": {
+      "structural": "TASK_PROSE_CHANGED",
+      "assessment": "CONDITIONAL_EXECUTION_ANNOTATION_WITHOUT_OBSERVED_SCOPE_NARROWING",
+      "receipt": {
+        "path": ".runtime-correction/validation/plan-semantics-7c0286-t_y9_vrx/receipt.v2.json",
+        "sha256": "6f728b06b996b3196df9d47000f8386b1c5b751f0746c4dcc1cbf0a996daa77f"
+      }
+    },
+    "archiveExecuted": false,
+    "finiteMethodClassification": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
+    "originalApplyErrorResolved": false,
+    "methodAudit": {
+      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-receipt.json",
+      "sha256": "458db0c59837ccf93cd049e8666e3d887d27db01193a5982c0ddb6294bae042e"
+    },
+    "methodSeal": {
+      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-seal.json",
+      "sha256": "a936d2e0316e32951ece6b41593b8faf295ae130dfa1de0c8431a0a2b6e6cf19"
+    },
+    "finiteMethodTargetScope": "Frozen A-E protocol only; whole clean coding workflow and semantic correctness are not established.",
+    "requirements": {
+      "initialObserved": 9,
+      "committedTables": [
+        9,
+        9,
+        12
+      ],
+      "exactUnion": 16,
+      "lateDistinctIdentities": 7,
+      "independentFeatureCount": false,
+      "discoveryExhaustive": false,
+      "allFullClausesAndAnchorsRetained": true,
+      "finalCurrent": 16,
+      "finalVerdictEach": "NO_CONFIRMED_DEVIATION"
+    },
+    "finalStop": {
+      "hostVerdict": "NO_DEVIATION_FOUND",
+      "saved": true,
+      "complete": true,
+      "beforeOriginalDeadlines": true,
+      "finishAttempts": 2,
+      "firstFinishPending": 5,
+      "furtherAcknowledgedSourceReads": 12,
+      "sampledSelected": 3,
+      "sampledEligible": 4,
+      "semanticsVerified": false,
+      "archiveExecuted": false
+    },
+    "codeGrade": {
+      "actual": "2af5f5/session30045 ->40e56f/0 CLOSED",
+      "status": "EXECUTED_FINITE_CHECKS",
+      "primary": {
+        "pass": 8,
+        "total": 8
+      },
+      "selectedOriginalPublicRegressions": {
+        "pass": 668,
+        "total": 668
+      },
+      "exploratory": {
+        "pass": 6,
+        "total": 6
+      },
+      "elapsedMs": 2458,
+      "containers": 3,
+      "allOwnedContainersExitedZeroAndRemoved": true,
+      "platform": "Linux arm64/Python3.13.17 on macOS host",
+      "nativeMacosEquivalence": false,
+      "independentReadback": {
+        "path": ".runtime-correction/validation/single-on-f020-postclosure-grade-held-72e7h3fg/actual-result-readback.json",
+        "sha256": "c821fb8a6e60ffae8906df01833012b3b32b2cae62f4e2bc1ed2832e2e33826b"
+      }
+    },
+    "toolUsability": {
+      "sameRefEofRecoveryObserved": true,
+      "rejectedReadGrantsAuthority": false,
+      "priorOriginalNavigationReturned": 9,
+      "priorOriginalIdentitiesFreshlyReadAndRestaged": 9,
+      "stopPages": 11,
+      "auxiliaryChunks": 4,
+      "auxiliaryDecodedBytes": 18513,
+      "maximumWireBytes": 8152,
+      "readinessDeliveredBeforeFirstFinish": true,
+      "readinessPreviewQueries": 0,
+      "proofOwnerMismatchDiagnostics": "NOT_EXERCISED",
+      "causalEfficiencyGainEstablished": false
+    },
+    "finiteMethodTargetMet": true,
+    "originalApplyErrorDiagnosis": {
+      "classification": "STOCK_RETAINED_TOOL_FAILURE_WARNING_OBSERVED",
+      "receipt": {
+        "path": ".runtime-correction/validation/apply-error-readback-7c0286-6vn3fo6m/receipt.json",
+        "sha256": "b407994f5a81a4e84ecd4e8c1c97a46492d92dde470742fb9943cdf56174855e"
+      },
+      "toolExitCode": 2,
+      "toolDiagnostic": "Error: Missing argument 'REQUIRED_ARG'.",
+      "toolNoOutputTimedOut": false,
+      "codingAssistantContinuedAndStoppedNormally": true,
+      "hostErrorPrecededStopMs": 241,
+      "wholeEpochExpiredAtHostError": false,
+      "adHocProbeExpectedFailureIntent": "UNVERIFIED",
+      "exactSdkInternalRecoveryBranch": "UNOBSERVED",
+      "sameFullArgumentsReplayObserved": false,
+      "pluginCauseEstablished": false,
+      "originalStatusPreserved": "ERROR",
+      "cleanEndToEndWorkflowClaimed": false
+    },
+    "kind": "CLOSED_SINGLE_ON_CURRENT_TOOL_USABILITY_PROBE"
   },
   "precedingCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_ORDINARY_LIVE_LEDGER_PROBE",
@@ -1611,8 +1645,25 @@
     "publicationReceiptPath": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/branch-publication.json"
   },
   "reportCurrentQa": {
-    "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-apply-active-qa/receipt.json",
-    "sha256": "5cb5d586f1d7572659901a50eab300599c10b5d93f679ff69a3fb2fb5f48e160"
+    "status": "PASS",
+    "actual": "cb959f/session2557 ->8258f0/0 CLOSED",
+    "receipt": {
+      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-current-diagnosis-final-qa/receipt.json",
+      "sha256": "5aaf959c5330e1f6cc4a1673111bf497e4143bb5768e2e9ba4943789135b8754"
+    },
+    "htmlSha256": "e1216ac5a23cfdd5e5d841da841b1f16b26a4ca63d6d44060fdd3fb3806199f5",
+    "views": 4,
+    "externalRequests": 0,
+    "errors": 0,
+    "rootViewed": [
+      "walkthrough-en-1200.png",
+      "phone-zh-CN-390.png"
+    ],
+    "precedingRevisionQa": {
+      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-current-method-grade-qa-successor/receipt.json",
+      "actual": "657371/session69696 ->17021f/0 PASS"
+    },
+    "preservedSandboxBrowserStartupFailure": "e3544f/1 no layout observation; allowed successor passed"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -1672,7 +1723,7 @@
     }
   },
   "candidateStatus": {
-    "status": "CANONICAL_ENGINEERING_QUALIFIED_LIVE_TRIAL_RUNNING_NO_OUTCOME",
+    "status": "CANONICAL_ENGINEERING_QUALIFIED_FINITE_MODEL_AUDIT_AND_GRADE_COMPLETE_APPLY_ERROR_PRESERVED",
     "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
     "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
     "modelsUsedForThisArchive": true,
@@ -2068,7 +2119,7 @@
     "artifact": "dist/runtime-corrector-openclaw-1.10.0.tgz",
     "regularMembers": 281,
     "runtimeModules": 213,
-    "status": "QUALIFIED_WITH_LIVE_TRIAL_RUNNING_NO_OUTCOME",
+    "status": "QUALIFIED_CURRENT_TRIAL_FINITE_PROTOCOL_AND_CODE_CHECKS_MET_APPLY_ERROR_PRESERVED",
     "full": {
       "path": ".runtime-correction/validation/ci-fix/post-6efc4dd-natural-y4pw97pk/terminal-receipt.json",
       "sha256": "da10bb41a7db99f1de29ee889f361ebcd626f506cade7f63c2e28e3e9ac0743a"
@@ -2089,7 +2140,7 @@
       "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/joined-qualification.json",
       "sha256": "d3994767e6e0a3f44cf8c0decf8c3e4c78ca70d6fc38f474fce9144d470ad75a"
     },
-    "completedModelWalkthrough": "NONE_FOR_THIS_ARCHIVE",
+    "completedModelWalkthrough": "currentPackageRealModelEvaluation",
     "precedingCompletedModelWalkthrough": "evaluationRecords.ordinaryOn25084C252",
     "currentModelWalkthrough": "currentPackageRealModelEvaluation",
     "noRebuild": true,
@@ -4730,11 +4781,11 @@
     "publicationReady": true
   },
   "reportCurrentWalkthrough": {
-    "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
-    "htmlSha256": "ff57bb146bf073bc89afa6296a0cf4440531c8bfecd876718d683d2a5cf30e94",
-    "modelOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
-    "precedingDeadlineRunReference": "evaluationRecords.ordinaryOn56efD5",
-    "earlierDeadlineFailureMovedToExistingHistory": true,
+    "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_APPLY_ERROR_PRESERVED",
+    "htmlSha256": "e1216ac5a23cfdd5e5d841da841b1f16b26a4ca63d6d44060fdd3fb3806199f5",
+    "modelOutcomeReference": "currentPackageRealModelEvaluation",
+    "precedingCompletedRunReference": "evaluationRecords.ordinaryOn25084C252",
+    "precedingWalkthroughMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
     "externalLinks": 0,
     "formalPairs": 0,
@@ -4743,18 +4794,20 @@
     "wholeOpenSpecLifecycleValidated": false,
     "currentArchiveModelOutcomeInherited": false,
     "gradeReadback": {
-      "path": ".runtime-correction/validation/single-on-c252-postclosure-grade-source-k3plyaaz/actual-result-readback.json",
-      "sha256": "52afcf3132d89f55af4608a098b84a9debf4554f866b075933bfb4dbf852e06f"
+      "path": ".runtime-correction/validation/single-on-f020-postclosure-grade-held-72e7h3fg/actual-result-readback.json",
+      "sha256": "c821fb8a6e60ffae8906df01833012b3b32b2cae62f4e2bc1ed2832e2e33826b"
     },
     "methodAudit": {
-      "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
-      "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
+      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-receipt.json",
+      "sha256": "458db0c59837ccf93cd049e8666e3d887d27db01193a5982c0ddb6294bae042e"
     },
     "methodSeal": {
-      "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-seal.json",
-      "sha256": "c519f89a157974f9cd196dda5eb5306149602284ade16ef1281b04be78b6c92c"
+      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-seal.json",
+      "sha256": "a936d2e0316e32951ece6b41593b8faf295ae130dfa1de0c8431a0a2b6e6cf19"
     },
-    "finalHostStatus": "UNVERIFIED"
+    "finalHostStatus": "NO_DEVIATION_FOUND",
+    "originalApplyTurn": "ERROR_PRESERVED",
+    "fullyVerifiedWorkingCaseEstablished": false
   },
   "latestCompletedGeneralComparison": {
     "status": "ALL_FOUR_CLOSED_FROZEN_GRADED_NO_MEASURED_QUALITY_GAIN",
@@ -6965,6 +7018,10 @@
     {
       "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-live-boot-pass-qa/receipt.json",
       "sha256": "d52fdb8252553d5b423f0c494f8ea98f3b8f062489ea14b53969de6559d738c9"
+    },
+    {
+      "path": ".runtime-correction/validation/promote-f020-general-tooling-m6w2q9nb/report-apply-active-qa/receipt.json",
+      "sha256": "5cb5d586f1d7572659901a50eab300599c10b5d93f679ff69a3fb2fb5f48e160"
     }
   ],
   "previousLedgerPromotionFields": {
@@ -8506,7 +8563,7 @@
     "currentArchiveModelOutcomeInherited": false
   },
   "generalToolUsabilityFollowup": {
-    "status": "CANONICAL_ENGINEERING_QUALIFIED_REAL_MODEL_TRIAL_RUNNING_NO_OUTCOME",
+    "status": "CURRENT_REAL_MODEL_CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_APPLY_ERROR_PRESERVED",
     "scope": [
       "Actionable strict original-source range diagnostics",
       "Lossless byte-bounded Stop checklist transport",
@@ -8744,7 +8801,8 @@
     "freshStock": {
       "path": ".runtime-correction/validation/candidate-tool-usability-stock-seed-held-pqnmmtdp/stock/receipt.json",
       "sha256": "36be0edf9217f63a2b6bb50de943ed3e898b47fdeb9ece73133d14c2ef0c414b"
-    }
+    },
+    "currentModelOutcomeReference": "currentPackageRealModelEvaluation"
   },
   "reportCurrentQaBeforeProofOwnerDiagnosis": {
     "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-method-complete-unverified-qa/receipt.json",
@@ -8877,5 +8935,109 @@
   "reportCurrentQaBeforeCiFixtureFailure": {
     "path": ".runtime-correction/validation/promote-c252-guidance-xqpdnm52/report-proof-owner-native-diagnosis-qa/receipt.json",
     "sha256": "bab7a09536a47d3c34e04c529c29bdc00ab91369ee7f3c8aeb1a6690f22ca7d8"
-  }
+  },
+  "freshPrivatePhoneCalibration": {
+    "status": "ORIGINAL_298_BASE_REFERENCE_CONTROL_VERIFIED_ON_FRESH_PHONE",
+    "actual": "4c83da/session23461 ->ebc5c1/0 CLOSED",
+    "sourceHold": {
+      "path": ".runtime-correction/validation/phone-298-calibration-held-n6k4p2rv/source-hold.json",
+      "sha256": "53d3a7d4ece63fbc162ce5d7bdae2c8dcb5df085347903c3db5745cae8d75b49"
+    },
+    "rootAdmission": {
+      "path": ".runtime-correction/validation/phone-298-calibration-held-n6k4p2rv/root-calibration-admission.json",
+      "sha256": "85d73c184e12d434ef708418c8c9bbdcd75bade9c9e65803595210b421999d6f"
+    },
+    "receipt": {
+      "path": ".runtime-correction/validation/phone-298-calibration-held-n6k4p2rv/run-1/receipt.json",
+      "sha256": "256808fbb82a0830fadebcd477152a976d3a7c7f22e9d42022be34cd07131787"
+    },
+    "outerReceipt": {
+      "path": ".runtime-correction/validation/phone-298-calibration-held-n6k4p2rv/root-outer-receipt.json",
+      "sha256": "a38e577a11322e9c9e1d5d92803b09d42026429950dbaabb307b54dc1343f6ce"
+    },
+    "independentReadback": {
+      "path": ".runtime-correction/validation/phone-298-independent-closed-readback-nz_h46aq/receipt.json",
+      "sha256": "e06a70e9472ef0b60bf1790dc57760acfbe53f4fc92853ccefba5d03d089940f"
+    },
+    "elapsedMs": 62318.487,
+    "base": {
+      "featurePass": 0,
+      "featureTotal": 10,
+      "regressionPass": 288,
+      "regressionTotal": 288
+    },
+    "reference": {
+      "featurePass": 10,
+      "featureTotal": 10,
+      "regressionPass": 288,
+      "regressionTotal": 288
+    },
+    "originalTestTotalEach": 298,
+    "compileApi": 26,
+    "guestApi": 24,
+    "originalApi23Equivalence": false,
+    "provisionalSingleCaseConfig": true,
+    "full13FingerprintMapQualified": false,
+    "formalMatchedPairCredit": 0,
+    "runtimeCorrectorQualityBenefitProven": false,
+    "publicCodingBridgeQualified": false
+  },
+  "pcImageAvailability": {
+    "status": "INSTALLED_API24_ARM_METADATA_AND_LOCAL_IMAGE_BYTES_VERIFIED_NO_NATIVE_EXECUTION",
+    "catalog": {
+      "path": ".runtime-correction/validation/mac2in1-public-catalog-e0ei4m6l/receipt.json",
+      "sha256": "dc6e5a56278ff997cf2ec6a3dae984b728f327d3d62622a6eb1f06dd7e882339"
+    },
+    "installPlan": {
+      "path": ".runtime-correction/validation/mac2in1-api24-install-held-koqfvqyx/install-plan.json",
+      "sha256": "fcdd45312ca96005fb9894c94f46ab10b2abe348a0c78c3ab1369a9f52e566da"
+    },
+    "installed": true,
+    "architectureVerified": false,
+    "original10PcSuitesQualified": false,
+    "newTermsAccepted": false,
+    "architectureMetadata": "arm",
+    "actualInstall": "f7588c/session19345 ->2b9da3/0 CLOSED",
+    "installReceipt": {
+      "path": ".runtime-correction/validation/mac2in1-api24-install-held-koqfvqyx/receipt.json",
+      "sha256": "ddd41b7c51e53fa0c24d1de163d92e2ed0fa1fb29379acc697a5bd4228c6ae23"
+    },
+    "agreementOrAuthenticationAnswers": 0,
+    "native2in1Execution": "NOT_EXERCISED",
+    "independentReadback": {
+      "path": ".runtime-correction/validation/mac2in1-install-independent-hkphw68h/receipt.json",
+      "sha256": "0c4d5fff7631e1eb18f528185feef8ed13154f8fbaf8b2563c026eb29a586840"
+    },
+    "localImageFilesPinned": 15,
+    "localImageBytes": 4752039330,
+    "vendorChecksumsVerified": false
+  },
+  "previousReportWalkthroughBeforeCurrentToolUsabilityClosure": {
+    "status": "CLOSED_INITIAL_AND_LATE_RETAINED_STOP_PROTOCOL_COMPLETE_ONE_UNVERIFIED",
+    "htmlSha256": "ff57bb146bf073bc89afa6296a0cf4440531c8bfecd876718d683d2a5cf30e94",
+    "modelOutcomeReference": "evaluationRecords.ordinaryOn25084C252",
+    "precedingDeadlineRunReference": "evaluationRecords.ordinaryOn56efD5",
+    "earlierDeadlineFailureMovedToExistingHistory": true,
+    "englishAndSimplifiedChineseOneFile": true,
+    "externalLinks": 0,
+    "formalPairs": 0,
+    "plannedPairs": 39,
+    "qualityGainProven": false,
+    "wholeOpenSpecLifecycleValidated": false,
+    "currentArchiveModelOutcomeInherited": false,
+    "gradeReadback": {
+      "path": ".runtime-correction/validation/single-on-c252-postclosure-grade-source-k3plyaaz/actual-result-readback.json",
+      "sha256": "52afcf3132d89f55af4608a098b84a9debf4554f866b075933bfb4dbf852e06f"
+    },
+    "methodAudit": {
+      "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-receipt.json",
+      "sha256": "264ac0d3abfba430213dae4999ebcaeab22b60569d2c1a732a9dbc2ff14dd5c7"
+    },
+    "methodSeal": {
+      "path": ".runtime-correction/validation/method-uptake-audit-25084-ake6tmxf/audit-seal.json",
+      "sha256": "c519f89a157974f9cd196dda5eb5306149602284ade16ef1281b04be78b6c92c"
+    },
+    "finalHostStatus": "UNVERIFIED"
+  },
+  "previousCompletedDevelopmentRunReference": "evaluationRecords.ordinaryOn25084C252"
 }
