@@ -97,7 +97,7 @@ for (const judgement of ['PASS', 'DEVIATION', 'UNVERIFIED']) test(`B12 explicitl
   await fs.writeFile(path.join(directory, 'evaluations', `${evaluationId}.json`),
     JSON.stringify({ metricReport: { metrics: [{ objects: [{ ...object, judgement: 'DEVIATION' }] }] } }));
   const result = await event('Stop');
-  assert.equal(result.stop.status, judgement === 'DEVIATION' ? 'DEVIATION' : 'NO_DEVIATION_FOUND', JSON.stringify(result.stop));
+  assert.equal(result.stop.status, judgement === 'DEVIATION' ? 'DEVIATION' : 'UNVERIFIED', JSON.stringify(result.stop));
   const updated = JSON.parse(await fs.readFile(path.join(directory, 'feedback', `${family.familyId}.json`), 'utf8'));
   assert.equal(updated.status, judgement === 'PASS' ? 'FIXED' : 'OPEN');
   if (judgement === 'UNVERIFIED') assert.equal(updated.lastVerifiedAt, null);
