@@ -188,7 +188,7 @@
     "noFailedCancelledOrTimedOutFiles": true
   },
   "currentPackageRealModelEvaluation": {
-    "status": "CLOSED_INCOMPLETE_REVIEW_REQUEST_BUDGET_EXHAUSTED_GRADE_PENDING",
+    "status": "CLOSED_INCOMPLETE_ORIGINAL37_PASS_SEPARATE_CLI_PROBES_FAIL",
     "sourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
     "archiveSha256": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
     "modelTrialPerformed": true,
@@ -260,7 +260,7 @@
     "currentPackageHistoryInherited": false,
     "workflowFinished": false,
     "workflowOutcomeAvailable": true,
-    "independentCodeGradeStatus": "PENDING_POSTCLOSURE_FREEZE_COMPLETE",
+    "independentCodeGradeStatus": "EXECUTED_FINITE_CHECKS_INDEPENDENT_READBACK_COMPLETE",
     "requestCounts": {
       "deepseek-flash": 23,
       "deepseek-v4-pro": 233,
@@ -298,233 +298,251 @@
       "path": ".runtime-correction/validation/live-review-loop-4f8b-49r8_43c/diagnostic.json",
       "sha256": "5bf7cfccadfb91f8158f15f3349a1a07264e359134c989e5dfd4a03c04ff5d48"
     },
-    "diagnosticLimits": "One owned artifact reviewer repeatedly read unchanged transcript ranges and never finalized; reason for model repetition remains unknown. No claim that navigation caused the loop."
+    "diagnosticLimits": "One owned artifact reviewer repeatedly read unchanged transcript ranges and never finalized; reason for model repetition remains unknown. No claim that navigation caused the loop.",
+    "startingCodeHealthyClaim": false,
+    "originalStarterFilesUnchanged": 3,
+    "finiteMethodTargetMet": false,
+    "semanticReviewCompleted": false,
+    "acceptedRequirementCohortEstablished": false,
+    "reviewerStagedCandidates": 20,
+    "independentCodeGrade": {
+      "original37": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original37/grade.json",
+        "sha256": "0a4b6cf17b8ae202c40dc0d9ccee9d9082fa5fd8d70215a3f37244a29849e2d3"
+      },
+      "original37Terminal": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original37/terminal.json",
+        "sha256": "e35ab4ec88de1fc236262beee2025f534cd8d76ee284ff4673534a3d209b3b7b"
+      },
+      "originalPassed": 37,
+      "originalTotal": 37,
+      "separateProbes": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/separate-cli-probes/probes.json",
+        "sha256": "7fb2006f5c3f17325b41316b02f9c462b1ac3fb76f7a1bdbb6c9369225a11dce"
+      },
+      "separatePassed": 0,
+      "separateTotal": 2,
+      "probeDenominatorKeptSeparate": true,
+      "executionQualified": true,
+      "inputSnapshotAndCopyModesUnchanged": true,
+      "ownedGradeContainersRemoved": 19,
+      "platform": "linux/arm64",
+      "containerPython": "3.13.17",
+      "hostParentPython": "3.12.13",
+      "gradeResultInterpreterFieldsDescribeHostParent": true,
+      "nativeMacEquivalenceEstablished": false,
+      "R8AuthoredTestsAssessed": false,
+      "qualityBenefitProven": false,
+      "runtimeQualification": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/runtime-qualification-2/receipt.json",
+        "sha256": "c70fbcfb01e401ad174667a4dd4b49a6a353ba0ab253cce67e11ff928d009a5c"
+      },
+      "failedRuntimeQualificationPreserved": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/runtime-qualification/receipt.json",
+        "sha256": "009dde53f89a696e2f5107dd5457b92cba39f71137f8342bfef240ba07c1d196"
+      },
+      "originalStarterReadback": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original-starter-readback.json",
+        "sha256": "06e254efea38db11bc46425b543c2d28b85c18d05ba09d44cd6c4f97db7a9440"
+      },
+      "independentReadback": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/currentpostclosure-readback.json",
+        "sha256": "e72ee44835b2d9be085a8f98e277e31b1ef4faf288c3e38b7f475cb000a8439f"
+      },
+      "actualOriginal37": "3f7ef4/session1536 ->0b395a/0 CLOSED",
+      "actualSeparateProbes": "5dcb02/0 CLOSED"
+    },
+    "methodAudit": {
+      "path": ".runtime-correction/validation/closed-method-facts-4f8b-d7r2w8jk/receipt.json",
+      "sha256": "5b850c1fa6e7b8dbf33d0b9aef12e08c83a0cc05b6766e970bee28bfecf1a109"
+    },
+    "methodRootReadback": {
+      "path": ".runtime-correction/validation/closed-method-facts-4f8b-d7r2w8jk/root-readback.json",
+      "sha256": "14a8626b03dd4b8cc62e5ada9171864f834f6be4a56c32440c83eda86e73596d"
+    },
+    "methodLimits": "20 once-staged candidates are not an accepted N/L cohort; no completed semantic review or finish/Stop correction; observer workspace snapshots cover only a subset of actual reviewer activity.",
+    "postclosureEvaluationComplete": true,
+    "fullRequirementCorrectnessCertified": false,
+    "reviewerMethodCompleted": false,
+    "observerScopeLimit": "Workspace-review snapshots missed owned internal-request/document-agent activity; raw owned reviewer traces retained and audited."
   },
   "latestCompletedDevelopmentRun": {
-    "status": "CLOSED_FINITE_METHOD_AND_CODE_CHECKS_MET_ORIGINAL_APPLY_ERROR_PRESERVED",
-    "sourceCommit": "6efc4dda68dd902c185d7c632759971c0800d335",
-    "archiveSha256": "f0209bae06f35d65ee8beafa2cdbc893f363c8f7c0e1ce9acbc1f26197bb9230",
+    "status": "CLOSED_INCOMPLETE_ORIGINAL37_PASS_SEPARATE_CLI_PROBES_FAIL",
+    "sourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
+    "archiveSha256": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
     "modelTrialPerformed": true,
+    "modelTrialLaunched": true,
     "finalOutcomeAvailable": true,
     "inheritsPrecedingArchiveEvidence": false,
-    "precedingCompletedRun": "evaluationRecords.ordinaryOn25084C252",
+    "precedingCompletedRun": "evaluationRecords.ordinaryOn7c0286F020",
     "endToEndMethodTargetMet": false,
     "fullyVerifiedWorkingCaseEstablished": false,
     "qualityGainProven": false,
     "generalUsefulnessProven": false,
     "formal13TaskCredit": 0,
     "matchedPairCredit": 0,
-    "modelTrialLaunched": true,
-    "preparedPilot": ".runtime-correction/validation/ordinary-on-tool-usability-pilot-qualified-h5lqsvh5",
-    "operatorRoot": ".runtime-correction/validation/public-run-7c0286a8997c4d",
-    "actualController": "150e4b/session57609 ->2d1dd6/0 CLOSED",
+    "archiveExecuted": false,
+    "wholeOpenSpecLifecycleValidated": false,
+    "modelTrialCompleted": true,
+    "realModelRequestsObserved": true,
+    "operator": ".runtime-correction/validation/public-run-4f8b71f1accf48",
     "sourceHold": {
-      "path": ".runtime-correction/validation/ordinary-on-tool-usability-pilot-qualified-h5lqsvh5/source-hold.json",
-      "sha256": "b97adb144b97d2b2f105ffffc1000b11b3563cd797c0de6396d5b9ccd88f230d"
+      "path": ".runtime-correction/validation/general-config-fullworkflow-held-4rx7hk_g/source-hold.json",
+      "sha256": "1f49fb4d0de96ff27e0e35f16b9453373db10403b4ac483496820193bcf3b3fe"
     },
-    "rootLiveAdmission": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/live-admission.json",
-      "sha256": "68a04b9e1b4f5bddf996fb97fdc431770f71716f44310d36e7770c6b76818dea"
+    "liveAdmission": {
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/live-admission.json",
+      "sha256": "bd3af540f48f42d0d159b87308bed43c0bcf9a6277890d08d54958ce3c39fd39"
     },
-    "sourceAcceptanceFrozenBeforeFirstRequest": true,
+    "actualLaunch": "099332/session69257 ->946b98/1 CLOSED",
+    "runtimeBuildSourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
+    "evaluatorQualifiedSourceCommit": "f25811349dc89166018025a23655a2acba967578",
+    "checkoutAtLaunch": "09c97ce32f844c462b31a095a4a96985fec99d44",
     "codingModel": "deepseek-flash",
-    "reviewerModelConfigured": "deepseek-v4-pro",
-    "reviewerRolesConfigured": 7,
+    "allSevenReviewerModels": "deepseek-v4-pro",
     "wallLimitMs": 3600000,
     "maxRequests": 256,
-    "noEpochRenewal": true,
-    "workflowScope": "Proposal -> ordinary public approval -> Apply -> Stop; no Archive",
-    "setup": {
-      "actual": "59cc20/session81815 ->cfd55e/0 CLOSED",
-      "receipt": {
-        "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/setup-receipt.json",
-        "sha256": "78277a8a34b5150b2a243dbb1b7894788febd571f71fe2018256a3a8d048a1b0"
-      }
+    "capsSessionFlow": [
+      2,
+      2
+    ],
+    "implementationChallengeMode": "sampled",
+    "strictFourFalse": true,
+    "ordinaryApproval": true,
+    "workflowProtocol": {
+      "version": 2,
+      "id": "openspec-full-lifecycle-v2"
     },
+    "controllerArchiveRequested": true,
+    "modelArchiveTurn": false,
+    "pluginArchiveMigrationQualified": false,
+    "startingCorrectness": "NOT_ESTABLISHED",
+    "publicRequestAndStarterFilesByteExact": true,
+    "publicStarterFiles": 3,
+    "originalPublicRequirements": "R1-R8 configuration resolver inspect/repair task",
     "publicPreflight": {
-      "actual": "178c31/session11942 ->483034/0 CLOSED",
-      "pass": 668,
-      "total": 668,
-      "starterFilesUnchanged": 149,
-      "bytesAndModesUnchanged": true,
-      "receipt": {
-        "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/public-check-receipt.json",
-        "sha256": "128b382bbc7e6d8793a83490963b1d4ac09b517be5c1c64c39410a55026f8de5"
-      }
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/public-check-receipt.json",
+      "sha256": "3066c84731673a1a9dbcdc5608d3d1fb45f93c074b95ca9269dc73bb5a7bc628"
     },
-    "firstObservedWireSnapshot": {
-      "byModel": {
-        "deepseek-flash": 25,
-        "deepseek-v4-pro": 4
-      },
-      "wireAttempts": 29,
-      "admittedRequests": 30,
-      "snapshotOnly": true,
-      "countingScope": "Actual trusted fetch invocations, not confirmed provider billing or native run ownership."
+    "publicPreflightActual": "a6ed75/session37531 ->3f2d98/0 CLOSED",
+    "stockSetup": {
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/setup-receipt.json",
+      "sha256": "c0ce9f19345bbd85567c79902754669d4adcc46d059fbc139e2508526629f321"
     },
-    "phase": "CLOSED",
-    "proposalOriginalTurn": "CLEAN_OK",
-    "proposalReady": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/proposal-ready.json",
-      "sha256": "deaf2cc6a52a2473f3e83e87be100093d270eb217c0225095fc034d4e5facabd"
+    "stockSetupActual": "807b5c/session26536 ->5dbe20/0 CLOSED",
+    "installed281Exact": true,
+    "publicChecksBeforeCoding": 2,
+    "privateCanaryDeniedBeforeRead": true,
+    "archiveHelperImportUnderSameCodingPolicyPassed": true,
+    "noGraderOrPriorMissHintsSupplied": true,
+    "currentPackageHistoryInherited": false,
+    "workflowFinished": false,
+    "workflowOutcomeAvailable": true,
+    "independentCodeGradeStatus": "EXECUTED_FINITE_CHECKS_INDEPENDENT_READBACK_COMPLETE",
+    "requestCounts": {
+      "deepseek-flash": 23,
+      "deepseek-v4-pro": 233,
+      "admitted": 256,
+      "denied": 3,
+      "inFlight": 0
     },
-    "proposalPlanFilesFullyRead": 5,
-    "ordinaryApprovedSteps": 7,
-    "rootOrdinaryApprovalActual": "ca06b4/0",
-    "rootOrdinaryApproval": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/apply-admission.json",
-      "sha256": "cff60828e33487867378b64b8cd7d1babb72bcd8791c525f7bf0c1440b63ebe3"
+    "originalProposalStatus": "ERROR_PRESERVED",
+    "originalApplyStatus": "ERROR_PRESERVED",
+    "finalError": "CHECKLIST_CLOSURE_UNRESOLVED",
+    "implementationTasks": {
+      "total": 21,
+      "checked": 0
     },
-    "officialStrictOpenSpecValidation": "1of1PASS",
-    "applyOriginalRunId": "cd9b0f0c-49dd-407d-9773-0a8a60d9a046",
-    "applyAccepted": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/live/apply-accepted.json",
-      "sha256": "fbf3c422b7a1e1806c50b7bb31d1890bec124f4be722f4fb6031531a1d3c66cb"
+    "knownOwnedCleanup": true,
+    "relayAndGatewayClosed": true,
+    "deliveryFileCount": 23,
+    "closedReceipt": {
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/live-receipt.json",
+      "sha256": "576fa98ef66bf35f8fa2e06dc8168e8fb86401b52d03662a7e2187233eb3cd9f"
     },
-    "controllerClosed": true,
-    "applyOriginalTurn": "ERROR_PRESERVED",
-    "officialStepsComplete": 7,
-    "frozenFiles": 168,
+    "closure": {
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/closure.json",
+      "sha256": "2fcec35ba54e878229f218c3c7dc01c75a8eb192ea7fa9cf250676ca3b73390a"
+    },
     "freeze": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/final-freeze/freeze.json",
-      "sha256": "7d388f810c040d07446fa6292c149bc031503cf95ec93e4353349c5b21f9a824"
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/final-freeze/freeze.json",
+      "sha256": "af3df49478cfa0f2447544bd1e3c2bcc51e570e1bd0913e2ed9cd6eeef95f056"
     },
     "originalModes": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/original-modes.json",
-      "sha256": "e64c3631410075bc3daa947527c318fd7641ef59bac8914bdfedec9a5807f2c0"
+      "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/original-modes.json",
+      "sha256": "6f20176c5b0df922af0e859854c22d8b0b8f7255aa884173c2ef4ea3235c8ac2"
     },
-    "rootActualTerminal": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-controller-terminal.json",
-      "sha256": "8b7952ea89e5a0ccc96a3823bd2800d184c7fe5331708231fa336e997b6fcf7a"
+    "reviewLoopDiagnostic": {
+      "path": ".runtime-correction/validation/live-review-loop-4f8b-49r8_43c/diagnostic.json",
+      "sha256": "5bf7cfccadfb91f8158f15f3349a1a07264e359134c989e5dfd4a03c04ff5d48"
     },
-    "rootTerminalMetadataRepair": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-terminal-metadata-repair.json",
-      "sha256": "47efc1888359d6d660a71b6cffed2f4261c7e31b5404f4f7adddf4b767493ca0"
-    },
-    "independentCleanup": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/root-independent-cleanup.json",
-      "sha256": "872349d4373f34fcd527fdd3e700188b0b62579211e94d799f72ea3564cfa644"
-    },
-    "capture": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/closed-essential-evidence/receipt.json",
-      "sha256": "a3350ec4c38d6b3458837bec19244b751a11421289ef9948673c1892dfbe7ee0"
-    },
-    "captureRootReadback": {
-      "path": ".runtime-correction/validation/public-run-7c0286a8997c4d/closed-essential-evidence-root-readback.json",
-      "sha256": "a568794941c6db50e7bdc0f4cb1be487a84be9ece018b24e8823c2c99d79a707"
-    },
-    "traffic": {
-      "deepseek-flash": 38,
-      "deepseek-v4-pro": 83
-    },
-    "planRevision": {
-      "structural": "TASK_PROSE_CHANGED",
-      "assessment": "CONDITIONAL_EXECUTION_ANNOTATION_WITHOUT_OBSERVED_SCOPE_NARROWING",
-      "receipt": {
-        "path": ".runtime-correction/validation/plan-semantics-7c0286-t_y9_vrx/receipt.v2.json",
-        "sha256": "6f728b06b996b3196df9d47000f8386b1c5b751f0746c4dcc1cbf0a996daa77f"
-      }
-    },
-    "archiveExecuted": false,
-    "finiteMethodClassification": "EXERCISED_INITIAL_AND_LATE_RETAINED_STOP_COMPLETE",
-    "originalApplyErrorResolved": false,
-    "methodAudit": {
-      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-receipt.json",
-      "sha256": "458db0c59837ccf93cd049e8666e3d887d27db01193a5982c0ddb6294bae042e"
-    },
-    "methodSeal": {
-      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-seal.json",
-      "sha256": "a936d2e0316e32951ece6b41593b8faf295ae130dfa1de0c8431a0a2b6e6cf19"
-    },
-    "finiteMethodTargetScope": "Frozen A-E protocol only; whole clean coding workflow and semantic correctness are not established.",
-    "requirements": {
-      "initialObserved": 9,
-      "committedTables": [
-        9,
-        9,
-        12
-      ],
-      "exactUnion": 16,
-      "lateDistinctIdentities": 7,
-      "independentFeatureCount": false,
-      "discoveryExhaustive": false,
-      "allFullClausesAndAnchorsRetained": true,
-      "finalCurrent": 16,
-      "finalVerdictEach": "NO_CONFIRMED_DEVIATION"
-    },
-    "finalStop": {
-      "hostVerdict": "NO_DEVIATION_FOUND",
-      "saved": true,
-      "complete": true,
-      "beforeOriginalDeadlines": true,
-      "finishAttempts": 2,
-      "firstFinishPending": 5,
-      "furtherAcknowledgedSourceReads": 12,
-      "sampledSelected": 3,
-      "sampledEligible": 4,
-      "semanticsVerified": false,
-      "archiveExecuted": false
-    },
-    "codeGrade": {
-      "actual": "2af5f5/session30045 ->40e56f/0 CLOSED",
-      "status": "EXECUTED_FINITE_CHECKS",
-      "primary": {
-        "pass": 8,
-        "total": 8
+    "diagnosticLimits": "One owned artifact reviewer repeatedly read unchanged transcript ranges and never finalized; reason for model repetition remains unknown. No claim that navigation caused the loop.",
+    "startingCodeHealthyClaim": false,
+    "originalStarterFilesUnchanged": 3,
+    "finiteMethodTargetMet": false,
+    "semanticReviewCompleted": false,
+    "acceptedRequirementCohortEstablished": false,
+    "reviewerStagedCandidates": 20,
+    "independentCodeGrade": {
+      "original37": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original37/grade.json",
+        "sha256": "0a4b6cf17b8ae202c40dc0d9ccee9d9082fa5fd8d70215a3f37244a29849e2d3"
       },
-      "selectedOriginalPublicRegressions": {
-        "pass": 668,
-        "total": 668
+      "original37Terminal": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original37/terminal.json",
+        "sha256": "e35ab4ec88de1fc236262beee2025f534cd8d76ee284ff4673534a3d209b3b7b"
       },
-      "exploratory": {
-        "pass": 6,
-        "total": 6
+      "originalPassed": 37,
+      "originalTotal": 37,
+      "separateProbes": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/separate-cli-probes/probes.json",
+        "sha256": "7fb2006f5c3f17325b41316b02f9c462b1ac3fb76f7a1bdbb6c9369225a11dce"
       },
-      "elapsedMs": 2458,
-      "containers": 3,
-      "allOwnedContainersExitedZeroAndRemoved": true,
-      "platform": "Linux arm64/Python3.13.17 on macOS host",
-      "nativeMacosEquivalence": false,
+      "separatePassed": 0,
+      "separateTotal": 2,
+      "probeDenominatorKeptSeparate": true,
+      "executionQualified": true,
+      "inputSnapshotAndCopyModesUnchanged": true,
+      "ownedGradeContainersRemoved": 19,
+      "platform": "linux/arm64",
+      "containerPython": "3.13.17",
+      "hostParentPython": "3.12.13",
+      "gradeResultInterpreterFieldsDescribeHostParent": true,
+      "nativeMacEquivalenceEstablished": false,
+      "R8AuthoredTestsAssessed": false,
+      "qualityBenefitProven": false,
+      "runtimeQualification": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/runtime-qualification-2/receipt.json",
+        "sha256": "c70fbcfb01e401ad174667a4dd4b49a6a353ba0ab253cce67e11ff928d009a5c"
+      },
+      "failedRuntimeQualificationPreserved": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/runtime-qualification/receipt.json",
+        "sha256": "009dde53f89a696e2f5107dd5457b92cba39f71137f8342bfef240ba07c1d196"
+      },
+      "originalStarterReadback": {
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original-starter-readback.json",
+        "sha256": "06e254efea38db11bc46425b543c2d28b85c18d05ba09d44cd6c4f97db7a9440"
+      },
       "independentReadback": {
-        "path": ".runtime-correction/validation/single-on-f020-postclosure-grade-held-72e7h3fg/actual-result-readback.json",
-        "sha256": "c821fb8a6e60ffae8906df01833012b3b32b2cae62f4e2bc1ed2832e2e33826b"
-      }
-    },
-    "toolUsability": {
-      "sameRefEofRecoveryObserved": true,
-      "rejectedReadGrantsAuthority": false,
-      "priorOriginalNavigationReturned": 9,
-      "priorOriginalIdentitiesFreshlyReadAndRestaged": 9,
-      "stopPages": 11,
-      "auxiliaryChunks": 4,
-      "auxiliaryDecodedBytes": 18513,
-      "maximumWireBytes": 8152,
-      "readinessDeliveredBeforeFirstFinish": true,
-      "readinessPreviewQueries": 0,
-      "proofOwnerMismatchDiagnostics": "NOT_EXERCISED",
-      "causalEfficiencyGainEstablished": false
-    },
-    "finiteMethodTargetMet": true,
-    "originalApplyErrorDiagnosis": {
-      "classification": "STOCK_RETAINED_TOOL_FAILURE_WARNING_OBSERVED",
-      "receipt": {
-        "path": ".runtime-correction/validation/apply-error-readback-7c0286-6vn3fo6m/receipt.json",
-        "sha256": "b407994f5a81a4e84ecd4e8c1c97a46492d92dde470742fb9943cdf56174855e"
+        "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/currentpostclosure-readback.json",
+        "sha256": "e72ee44835b2d9be085a8f98e277e31b1ef4faf288c3e38b7f475cb000a8439f"
       },
-      "toolExitCode": 2,
-      "toolDiagnostic": "Error: Missing argument 'REQUIRED_ARG'.",
-      "toolNoOutputTimedOut": false,
-      "codingAssistantContinuedAndStoppedNormally": true,
-      "hostErrorPrecededStopMs": 241,
-      "wholeEpochExpiredAtHostError": false,
-      "adHocProbeExpectedFailureIntent": "UNVERIFIED",
-      "exactSdkInternalRecoveryBranch": "UNOBSERVED",
-      "sameFullArgumentsReplayObserved": false,
-      "pluginCauseEstablished": false,
-      "originalStatusPreserved": "ERROR",
-      "cleanEndToEndWorkflowClaimed": false
+      "actualOriginal37": "3f7ef4/session1536 ->0b395a/0 CLOSED",
+      "actualSeparateProbes": "5dcb02/0 CLOSED"
     },
-    "kind": "CLOSED_SINGLE_ON_CURRENT_TOOL_USABILITY_PROBE"
+    "methodAudit": {
+      "path": ".runtime-correction/validation/closed-method-facts-4f8b-d7r2w8jk/receipt.json",
+      "sha256": "5b850c1fa6e7b8dbf33d0b9aef12e08c83a0cc05b6766e970bee28bfecf1a109"
+    },
+    "methodRootReadback": {
+      "path": ".runtime-correction/validation/closed-method-facts-4f8b-d7r2w8jk/root-readback.json",
+      "sha256": "14a8626b03dd4b8cc62e5ada9171864f834f6be4a56c32440c83eda86e73596d"
+    },
+    "methodLimits": "20 once-staged candidates are not an accepted N/L cohort; no completed semantic review or finish/Stop correction; observer workspace snapshots cover only a subset of actual reviewer activity.",
+    "postclosureEvaluationComplete": true,
+    "fullRequirementCorrectnessCertified": false,
+    "reviewerMethodCompleted": false,
+    "observerScopeLimit": "Workspace-review snapshots missed owned internal-request/document-agent activity; raw owned reviewer traces retained and audited."
   },
   "precedingCompletedDevelopmentRun": {
     "kind": "CLOSED_SINGLE_ON_ORDINARY_LIVE_LEDGER_PROBE",
@@ -1558,12 +1576,12 @@
   "reportCurrentQa": {
     "status": "PASS",
     "report": ".runtime-correction/runtime-corrector-progress.html",
-    "htmlSha256": "7aa1d5dfa49c5120aded45d013c2fc4f25e65e4980d8462effc227bf561203d5",
+    "htmlSha256": "858b275c4202eff53c46de12d562454a163737daa31a4a995584d2a465c28768",
     "receipt": {
-      "path": ".runtime-correction/validation/root-closed-trial-progress-xvye3skl/report-qa/receipt.json",
-      "sha256": "41541ec9b58ee6b2e38ecb5c15e5c0bd54c4eb353e009ba2dfd740397ffe288e"
+      "path": ".runtime-correction/validation/root-closed-trial-grade-report-sb4xvpf5/report-qa/receipt.json",
+      "sha256": "04ca01f14684769830cf6bee702d2dd1e19f6c6d434b1d9a6164c0612080c6e7"
     },
-    "actual": "9b1274/session25498 ->91bbd8/0 CLOSED",
+    "actual": "cf4d1b/session64372 ->ee69fc/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1580,7 +1598,7 @@
     "browserErrors": 0,
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
-    "visualReadback": "walkthrough-en-1200 inspected; closed current failure separated from preceding fully evaluated result; no overflow"
+    "visualReadback": "walkthrough-en-1200 inspected; current37pass/separate2fail and unchangedcode clearly separated from preceding graded result; no overflow"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -1977,10 +1995,10 @@
       "path": ".runtime-correction/validation/candidate-frozen-stage-six-stock-held-c0dibqee/independent-own-ci-join.json",
       "sha256": "86d196e0442e5927146121430865033c9b60148d5b658537ef4e923a971e25dc"
     },
-    "completedModelWalkthrough": "evaluationRecords.ordinaryOn7c0286F020",
-    "latestCompletedModelWalkthrough": "evaluationRecords.ordinaryOn7c0286F020",
+    "completedModelWalkthrough": "evaluationRecords.ordinaryOn4f8b71f13dc",
+    "latestCompletedModelWalkthrough": "evaluationRecords.ordinaryOn4f8b71f13dc",
     "currentModelWalkthrough": "currentPackageRealModelEvaluation",
-    "precedingCompletedModelWalkthrough": "evaluationRecords.ordinaryOn25084C252",
+    "precedingCompletedModelWalkthrough": "evaluationRecords.ordinaryOn7c0286F020",
     "noRebuild": true,
     "qualityBenefitEstablished": false,
     "modelTrialPerformed": true,
@@ -4638,10 +4656,10 @@
     "publicationReady": true
   },
   "reportCurrentWalkthrough": {
-    "status": "CURRENT_PACKAGE_TRIAL_CLOSED_INCOMPLETE_GRADE_PENDING_PRECEDING_FULLY_EVALUATED_RESULT_RETAINED",
-    "htmlSha256": "7aa1d5dfa49c5120aded45d013c2fc4f25e65e4980d8462effc227bf561203d5",
-    "modelOutcomeReference": "evaluationRecords.ordinaryOn7c0286F020",
-    "precedingCompletedRunReference": "evaluationRecords.ordinaryOn25084C252",
+    "status": "CURRENT_PACKAGE_TRIAL_CLOSED_INCOMPLETE_GRADED37PASS_SEPARATE2FAIL",
+    "htmlSha256": "858b275c4202eff53c46de12d562454a163737daa31a4a995584d2a465c28768",
+    "modelOutcomeReference": "evaluationRecords.ordinaryOn4f8b71f13dc",
+    "precedingCompletedRunReference": "evaluationRecords.ordinaryOn7c0286F020",
     "precedingWalkthroughMovedToExistingHistory": true,
     "englishAndSimplifiedChineseOneFile": true,
     "externalLinks": 0,
@@ -4650,23 +4668,40 @@
     "qualityGainProven": false,
     "wholeOpenSpecLifecycleValidated": false,
     "currentArchiveModelOutcomeInherited": false,
-    "gradeReadback": {
-      "path": ".runtime-correction/validation/single-on-f020-postclosure-grade-held-72e7h3fg/actual-result-readback.json",
-      "sha256": "c821fb8a6e60ffae8906df01833012b3b32b2cae62f4e2bc1ed2832e2e33826b"
-    },
-    "methodAudit": {
-      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-receipt.json",
-      "sha256": "458db0c59837ccf93cd049e8666e3d887d27db01193a5982c0ddb6294bae042e"
-    },
-    "methodSeal": {
-      "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-seal.json",
-      "sha256": "a936d2e0316e32951ece6b41593b8faf295ae130dfa1de0c8431a0a2b6e6cf19"
-    },
-    "finalHostStatus": "NO_DEVIATION_FOUND",
     "originalApplyTurn": "ERROR_PRESERVED",
     "fullyVerifiedWorkingCaseEstablished": false,
     "activeModelTrialReference": "currentPackageRealModelEvaluation",
-    "precedingFullyEvaluatedOutcomeReference": "evaluationRecords.ordinaryOn7c0286F020"
+    "precedingFullyEvaluatedOutcomeReference": "evaluationRecords.ordinaryOn7c0286F020",
+    "precedingGradedWalkthrough": {
+      "modelOutcomeReference": "evaluationRecords.ordinaryOn7c0286F020",
+      "precedingCompletedRunReference": "evaluationRecords.ordinaryOn25084C252",
+      "gradeReadback": {
+        "path": ".runtime-correction/validation/single-on-f020-postclosure-grade-held-72e7h3fg/actual-result-readback.json",
+        "sha256": "c821fb8a6e60ffae8906df01833012b3b32b2cae62f4e2bc1ed2832e2e33826b"
+      },
+      "methodAudit": {
+        "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-receipt.json",
+        "sha256": "458db0c59837ccf93cd049e8666e3d887d27db01193a5982c0ddb6294bae042e"
+      },
+      "methodSeal": {
+        "path": ".runtime-correction/validation/method-uptake-audit-7c0286-held-n3wjdehw/audit-seal.json",
+        "sha256": "a936d2e0316e32951ece6b41593b8faf295ae130dfa1de0c8431a0a2b6e6cf19"
+      },
+      "finalHostStatus": "NO_DEVIATION_FOUND",
+      "originalApplyTurn": "ERROR_PRESERVED"
+    },
+    "gradeReadback": {
+      "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/currentpostclosure-readback.json",
+      "sha256": "e72ee44835b2d9be085a8f98e277e31b1ef4faf288c3e38b7f475cb000a8439f"
+    },
+    "methodAudit": {
+      "path": ".runtime-correction/validation/closed-method-facts-4f8b-d7r2w8jk/receipt.json",
+      "sha256": "5b850c1fa6e7b8dbf33d0b9aef12e08c83a0cc05b6766e970bee28bfecf1a109"
+    },
+    "originalProposalTurn": "ERROR_PRESERVED",
+    "finalRuntimeReviewCompleted": false,
+    "finalStopObserved": false,
+    "archiveExecuted": false
   },
   "latestCompletedGeneralComparison": {
     "status": "ALL_FOUR_CLOSED_FROZEN_GRADED_NO_MEASURED_QUALITY_GAIN",
@@ -8658,6 +8693,185 @@
         "originalStatusPreserved": "ERROR",
         "cleanEndToEndWorkflowClaimed": false
       }
+    },
+    "ordinaryOn4f8b71f13dc": {
+      "kind": "GENERAL_PURPOSE_CLOSED_MODEL_TRIAL_EVALUATION",
+      "status": "CLOSED_INCOMPLETE_ORIGINAL37_PASS_SEPARATE_CLI_PROBES_FAIL",
+      "sourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
+      "archiveSha256": "13dcda5dec4ad883e0d9ba0fab34765ef0f4dd4952bd288e13bd069eae729d36",
+      "modelTrialPerformed": true,
+      "modelTrialLaunched": true,
+      "finalOutcomeAvailable": true,
+      "inheritsPrecedingArchiveEvidence": false,
+      "precedingCompletedRun": "evaluationRecords.ordinaryOn7c0286F020",
+      "endToEndMethodTargetMet": false,
+      "fullyVerifiedWorkingCaseEstablished": false,
+      "qualityGainProven": false,
+      "generalUsefulnessProven": false,
+      "formal13TaskCredit": 0,
+      "matchedPairCredit": 0,
+      "archiveExecuted": false,
+      "wholeOpenSpecLifecycleValidated": false,
+      "modelTrialCompleted": true,
+      "realModelRequestsObserved": true,
+      "operator": ".runtime-correction/validation/public-run-4f8b71f1accf48",
+      "sourceHold": {
+        "path": ".runtime-correction/validation/general-config-fullworkflow-held-4rx7hk_g/source-hold.json",
+        "sha256": "1f49fb4d0de96ff27e0e35f16b9453373db10403b4ac483496820193bcf3b3fe"
+      },
+      "liveAdmission": {
+        "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/live-admission.json",
+        "sha256": "bd3af540f48f42d0d159b87308bed43c0bcf9a6277890d08d54958ce3c39fd39"
+      },
+      "actualLaunch": "099332/session69257 ->946b98/1 CLOSED",
+      "runtimeBuildSourceCommit": "be6dcb223f434afabc34f32a3643ac3251705572",
+      "evaluatorQualifiedSourceCommit": "f25811349dc89166018025a23655a2acba967578",
+      "checkoutAtLaunch": "09c97ce32f844c462b31a095a4a96985fec99d44",
+      "codingModel": "deepseek-flash",
+      "allSevenReviewerModels": "deepseek-v4-pro",
+      "wallLimitMs": 3600000,
+      "maxRequests": 256,
+      "capsSessionFlow": [
+        2,
+        2
+      ],
+      "implementationChallengeMode": "sampled",
+      "strictFourFalse": true,
+      "ordinaryApproval": true,
+      "workflowProtocol": {
+        "version": 2,
+        "id": "openspec-full-lifecycle-v2"
+      },
+      "controllerArchiveRequested": true,
+      "modelArchiveTurn": false,
+      "pluginArchiveMigrationQualified": false,
+      "startingCorrectness": "NOT_ESTABLISHED",
+      "publicRequestAndStarterFilesByteExact": true,
+      "publicStarterFiles": 3,
+      "originalPublicRequirements": "R1-R8 configuration resolver inspect/repair task",
+      "publicPreflight": {
+        "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/public-check-receipt.json",
+        "sha256": "3066c84731673a1a9dbcdc5608d3d1fb45f93c074b95ca9269dc73bb5a7bc628"
+      },
+      "publicPreflightActual": "a6ed75/session37531 ->3f2d98/0 CLOSED",
+      "stockSetup": {
+        "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/setup-receipt.json",
+        "sha256": "c0ce9f19345bbd85567c79902754669d4adcc46d059fbc139e2508526629f321"
+      },
+      "stockSetupActual": "807b5c/session26536 ->5dbe20/0 CLOSED",
+      "installed281Exact": true,
+      "publicChecksBeforeCoding": 2,
+      "privateCanaryDeniedBeforeRead": true,
+      "archiveHelperImportUnderSameCodingPolicyPassed": true,
+      "noGraderOrPriorMissHintsSupplied": true,
+      "currentPackageHistoryInherited": false,
+      "workflowFinished": false,
+      "workflowOutcomeAvailable": true,
+      "independentCodeGradeStatus": "EXECUTED_FINITE_CHECKS_INDEPENDENT_READBACK_COMPLETE",
+      "requestCounts": {
+        "deepseek-flash": 23,
+        "deepseek-v4-pro": 233,
+        "admitted": 256,
+        "denied": 3,
+        "inFlight": 0
+      },
+      "originalProposalStatus": "ERROR_PRESERVED",
+      "originalApplyStatus": "ERROR_PRESERVED",
+      "finalError": "CHECKLIST_CLOSURE_UNRESOLVED",
+      "implementationTasks": {
+        "total": 21,
+        "checked": 0
+      },
+      "knownOwnedCleanup": true,
+      "relayAndGatewayClosed": true,
+      "deliveryFileCount": 23,
+      "closedReceipt": {
+        "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/live-receipt.json",
+        "sha256": "576fa98ef66bf35f8fa2e06dc8168e8fb86401b52d03662a7e2187233eb3cd9f"
+      },
+      "closure": {
+        "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/closure.json",
+        "sha256": "2fcec35ba54e878229f218c3c7dc01c75a8eb192ea7fa9cf250676ca3b73390a"
+      },
+      "freeze": {
+        "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/final-freeze/freeze.json",
+        "sha256": "af3df49478cfa0f2447544bd1e3c2bcc51e570e1bd0913e2ed9cd6eeef95f056"
+      },
+      "originalModes": {
+        "path": ".runtime-correction/validation/public-run-4f8b71f1accf48/original-modes.json",
+        "sha256": "6f20176c5b0df922af0e859854c22d8b0b8f7255aa884173c2ef4ea3235c8ac2"
+      },
+      "reviewLoopDiagnostic": {
+        "path": ".runtime-correction/validation/live-review-loop-4f8b-49r8_43c/diagnostic.json",
+        "sha256": "5bf7cfccadfb91f8158f15f3349a1a07264e359134c989e5dfd4a03c04ff5d48"
+      },
+      "diagnosticLimits": "One owned artifact reviewer repeatedly read unchanged transcript ranges and never finalized; reason for model repetition remains unknown. No claim that navigation caused the loop.",
+      "startingCodeHealthyClaim": false,
+      "originalStarterFilesUnchanged": 3,
+      "finiteMethodTargetMet": false,
+      "semanticReviewCompleted": false,
+      "acceptedRequirementCohortEstablished": false,
+      "reviewerStagedCandidates": 20,
+      "independentCodeGrade": {
+        "original37": {
+          "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original37/grade.json",
+          "sha256": "0a4b6cf17b8ae202c40dc0d9ccee9d9082fa5fd8d70215a3f37244a29849e2d3"
+        },
+        "original37Terminal": {
+          "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original37/terminal.json",
+          "sha256": "e35ab4ec88de1fc236262beee2025f534cd8d76ee284ff4673534a3d209b3b7b"
+        },
+        "originalPassed": 37,
+        "originalTotal": 37,
+        "separateProbes": {
+          "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/separate-cli-probes/probes.json",
+          "sha256": "7fb2006f5c3f17325b41316b02f9c462b1ac3fb76f7a1bdbb6c9369225a11dce"
+        },
+        "separatePassed": 0,
+        "separateTotal": 2,
+        "probeDenominatorKeptSeparate": true,
+        "executionQualified": true,
+        "inputSnapshotAndCopyModesUnchanged": true,
+        "ownedGradeContainersRemoved": 19,
+        "platform": "linux/arm64",
+        "containerPython": "3.13.17",
+        "hostParentPython": "3.12.13",
+        "gradeResultInterpreterFieldsDescribeHostParent": true,
+        "nativeMacEquivalenceEstablished": false,
+        "R8AuthoredTestsAssessed": false,
+        "qualityBenefitProven": false,
+        "runtimeQualification": {
+          "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/runtime-qualification-2/receipt.json",
+          "sha256": "c70fbcfb01e401ad174667a4dd4b49a6a353ba0ab253cce67e11ff928d009a5c"
+        },
+        "failedRuntimeQualificationPreserved": {
+          "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/runtime-qualification/receipt.json",
+          "sha256": "009dde53f89a696e2f5107dd5457b92cba39f71137f8342bfef240ba07c1d196"
+        },
+        "originalStarterReadback": {
+          "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/run-1/original-starter-readback.json",
+          "sha256": "06e254efea38db11bc46425b543c2d28b85c18d05ba09d44cd6c4f97db7a9440"
+        },
+        "independentReadback": {
+          "path": ".runtime-correction/validation/config37-postclosure-grader-held-i_i6j5wr/currentpostclosure-readback.json",
+          "sha256": "e72ee44835b2d9be085a8f98e277e31b1ef4faf288c3e38b7f475cb000a8439f"
+        },
+        "actualOriginal37": "3f7ef4/session1536 ->0b395a/0 CLOSED",
+        "actualSeparateProbes": "5dcb02/0 CLOSED"
+      },
+      "methodAudit": {
+        "path": ".runtime-correction/validation/closed-method-facts-4f8b-d7r2w8jk/receipt.json",
+        "sha256": "5b850c1fa6e7b8dbf33d0b9aef12e08c83a0cc05b6766e970bee28bfecf1a109"
+      },
+      "methodRootReadback": {
+        "path": ".runtime-correction/validation/closed-method-facts-4f8b-d7r2w8jk/root-readback.json",
+        "sha256": "14a8626b03dd4b8cc62e5ada9171864f834f6be4a56c32440c83eda86e73596d"
+      },
+      "methodLimits": "20 once-staged candidates are not an accepted N/L cohort; no completed semantic review or finish/Stop correction; observer workspace snapshots cover only a subset of actual reviewer activity.",
+      "postclosureEvaluationComplete": true,
+      "fullRequirementCorrectnessCertified": false,
+      "reviewerMethodCompleted": false,
+      "observerScopeLimit": "Workspace-review snapshots missed owned internal-request/document-agent activity; raw owned reviewer traces retained and audited."
     }
   },
   "previousDistributionPlacementCi": {
@@ -9288,7 +9502,7 @@
     },
     "finalHostStatus": "UNVERIFIED"
   },
-  "previousCompletedDevelopmentRunReference": "evaluationRecords.ordinaryOn25084C252",
+  "previousCompletedDevelopmentRunReference": "evaluationRecords.ordinaryOn7c0286F020",
   "frozenStageNavigationFollowup": {
     "status": "PACKAGED_WITH_OWN_SUCCESSOR_SOURCE_CI_NO_NEW_MODEL_RESULT",
     "sourceCommit": "85f87184cbd9da5074bc6824ccd27bd305ef1e21",
@@ -9956,5 +10170,49 @@
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
     "visualReadback": "walkthrough-en-1200 inspected; currentlivecase separatelylabeledfromprecedingcompletedresult; nooverflow"
+  },
+  "reportCurrentQaBeforeCurrentGrade": {
+    "status": "PASS",
+    "report": ".runtime-correction/runtime-corrector-progress.html",
+    "htmlSha256": "7aa1d5dfa49c5120aded45d013c2fc4f25e65e4980d8462effc227bf561203d5",
+    "receipt": {
+      "path": ".runtime-correction/validation/root-closed-trial-progress-xvye3skl/report-qa/receipt.json",
+      "sha256": "41541ec9b58ee6b2e38ecb5c15e5c0bd54c4eb353e009ba2dfd740397ffe288e"
+    },
+    "actual": "9b1274/session25498 ->91bbd8/0 CLOSED",
+    "views": 4,
+    "languages": [
+      "en",
+      "zh-CN"
+    ],
+    "widths": [
+      1200,
+      390
+    ],
+    "sections": 6,
+    "collapsedHistories": 3,
+    "internalLinks": 7,
+    "externalRequests": 0,
+    "browserErrors": 0,
+    "rawHtmlNoExternalUrlDateOrHash": true,
+    "humanizerApplied": true,
+    "visualReadback": "walkthrough-en-1200 inspected; closed current failure separated from preceding fully evaluated result; no overflow"
+  },
+  "prospectiveReviewerReliabilityFollowup": {
+    "status": "TRANSCRIPT_BOUNDS_FOCUSED_QUALIFIED_NEW_SOURCE_CI_PENDING_GUARD_PRIVATE_INTEGRATION",
+    "navigationIntegration": {
+      "path": ".runtime-correction/validation/root-transcript-bounds-integration-64uxrmcp/integration.json",
+      "sha256": "38e91ce3bae716919bd2e4cb3ed60dbba795b6d7710dddb6e76d4e43cbf84037"
+    },
+    "navigationPeer": {
+      "path": ".runtime-correction/validation/review-transcript-bounds-private-exhexut_/peer-retention-source.json",
+      "sha256": "8c531105ca40369da9720171fcab7e8d26ea05ba82b11187e8e5761d615431f8"
+    },
+    "rootFocusedNode24": "6e97d8/0 13/13PASS",
+    "rootFocusedNode18": "fa26fe/0 13/13PASS",
+    "newRuntimeSourceOwnCiQualified": false,
+    "newRuntimePackageReleased": false,
+    "newModelResult": false,
+    "caseSpecificPluginLogicAdded": false
   }
 }
