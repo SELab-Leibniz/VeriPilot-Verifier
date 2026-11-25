@@ -179,6 +179,7 @@
           </ul>
         </figure>
         <p>The plugin reviews configured document writes and handles OpenClaw’s Stop event. Its private reviewer has read-only access to the workspace; OpenClaw performs the edits. The evaluation configures <code>deepseek-flash</code> for coding and <code>deepseek-v4-pro</code> for review.</p>
+        <p>The current evaluation harness runs Proposal, approval, Apply and Stop. It has no verified Archive phase. A direct OpenSpec control showed that a zero exit can still archive incomplete work or leave a change unarchived, so a future Archive phase must check task completion, document movement and merged specifications explicitly.</p>
         <p>The installable package reads each project’s requirements and verification settings. Benchmark cases, task-specific checks and grading logic stay in the evaluation workspace. The benchmark freezes code before Archive so it can grade the delivered patch independently.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -204,6 +205,7 @@
         </figure>
         <p>插件审查配置范围内的文档写入，并处理 OpenClaw 的 Stop 事件。私有审查器以只读方式检查工作区，代码改动由 OpenClaw 执行。当前评估配置 <code>deepseek-flash</code> 编码，配置 <code>deepseek-v4-pro</code> 审查。</p>
         <p>可安装插件读取当前项目的需求和验证配置。基准任务、任务专用检查和评分逻辑保留在评估工作区。基准测试在 Archive 前冻结代码，独立评估最终交付的补丁。</p>
+        <p>当前评估脚本只执行 Proposal、批准、Apply 和 Stop，尚无经核验的 Archive 阶段。直接运行 OpenSpec 的对照表明，退出码为零仍可能归档未完成任务，或根本没有完成归档。因此后续归档阶段须明确检查任务完成、文档迁移及规范合并结果。</p>
       </div>
     </section>
     <section id="decisions" aria-labelledby="decisions-title decisions-title-zh">
@@ -291,7 +293,7 @@
     <section id="expected" aria-labelledby="expected-title expected-title-zh">
       <div class="language-panel" data-report-copy lang="en">
         <h2 id="expected-title">Latest walkthrough: review completed, Apply error remains</h2>
-        <p class="callout">The current plugin retained all 16 observed requirement records and completed its final review within the original deadline. Independent code checks passed. OpenClaw reported an Apply error before that review began, so this is still an incomplete end-to-end result. Neither the review verdict nor the passing tests establish a quality benefit.</p>
+        <p class="callout">The latest completed trial on the preceding package retained all 16 observed requirement records and completed its final review within the original deadline. Independent code checks passed. OpenClaw reported an Apply error before that review began, so this is still an incomplete end-to-end result. Neither the review verdict nor the passing tests establish a quality benefit.</p>
         <p class="intro">This reused healthy CLI task asks for a usable help hint when another option shadows a help name. The starting production code already met the request. On macOS, Flash handled coding and Pro was configured for all seven review roles. The run used ordinary approval, one hour and 256 requests, without a prepared inventory, sealed approval or injected defect.</p>
         <div class="table" role="region" aria-label="Current closed model walkthrough" tabindex="0"><table class="evidence" data-latest-duty-walkthrough>
           <thead><tr><th scope="col">Stage</th><th scope="col">Observed result</th><th scope="col">Limit</th></tr></thead>
@@ -305,12 +307,12 @@
         </table></div>
         <h3>Tool use observed in this run</h3>
         <p>One read went past the end of an original source. The new diagnostic supplied the valid range, and the reviewer successfully retried the same reference. The rejected read supplied no evidence authority. The final review retrieved every original and known requirement through complete pages; four detail chunks reassembled without loss, and every response stayed within the tool-output limit.</p>
-        <p>The readiness instruction arrived before the first finish, but the reviewer never queried its preview. Evidence-owner mismatch diagnostics were not exercised. Guards also rejected an attempt to replace a frozen staging table. A source patch now explains how to retrieve the existing table and attach fresh evidence for additional duties. It passed 49 focused checks on each tested Node version; package and model validation are pending.</p>
+        <p>The readiness instruction arrived before the first finish, but the reviewer never queried its preview. Evidence-owner mismatch diagnostics were not exercised. Guards also rejected an attempt to replace a frozen staging table. The updated package now explains how to retrieve that table and attach fresh evidence for additional duties. The change passed 49 focused checks on each tested Node version, full source CI and package installation checks. Its effect on model behavior remains untested.</p>
         <p>The Apply warning is traced to a command that exited with a missing required argument. OpenClaw retained that tool failure after the actor continued and ended normally. It occurred before Stop, and the evidence does not support a review timeout or establish that the plugin caused it. The original error status remains recorded. This run recorded 38 Flash and 83 Pro requests. It is an ON-only development probe with no matched OFF arm, no measured efficiency gain and no formal benchmark credit. The tested scope ends at Stop; Archive remains untested.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
         <h2 id="expected-title-zh">最新走查：审查已完成，Apply 错误仍保留</h2>
-        <p class="callout">当前插件保留了观察到的全部 16 条需求记录，并在原定时限内完成最终审查。独立代码检查全部通过。但 OpenClaw 在最终审查开始前报告了 Apply 错误，因此仍不能认定端到端流程已正常完成。审查结论和测试通过均不能证明质量收益。</p>
+        <p class="callout">前一版安装包的最新已完成试验保留了观察到的全部 16 条需求记录，并在原定时限内完成最终审查。独立代码检查全部通过。但 OpenClaw 在最终审查开始前报告了 Apply 错误，因此仍不能认定端到端流程已正常完成。审查结论和测试通过均不能证明质量收益。</p>
         <p class="intro">本轮重复走查一项健康命令行任务：帮助选项名称被其他选项占用时，仍应给出可用提示。起始业务代码已经符合请求。运行在 macOS 上，编码使用 Flash，七类审查均配置为 Pro。保持普通批准、一小时及 256 次请求上限，没有预先准备需求清单、封存审批或注入缺陷。</p>
         <div class="table" role="region" aria-label="当前已关闭模型运行走查" tabindex="0"><table class="evidence" data-latest-duty-walkthrough>
           <thead><tr><th scope="col">阶段</th><th scope="col">观察结果</th><th scope="col">限制</th></tr></thead>
@@ -324,7 +326,7 @@
         </table></div>
         <h3>本轮工具使用情况</h3>
         <p>一次原始来源读取越过文件末尾。新诊断给出有效范围，审查器随后用同一引用成功重试；被拒绝的读取没有获得证据效力。最终审查通过完整续页取得了全部原始及已知需求，四段详情可无损重组，每次回复均保持在工具输出上限内。</p>
-        <p>首次提交前已送达证据就绪指引，但审查器没有查询预览。本轮未触发证据归属不匹配诊断。系统还拒绝了一次替换已冻结暂存清单的尝试。源码补丁现已说明如何取回现有清单，以及为额外义务附上新鲜证据。两个受测 Node 版本上各通过 49 项专项检查，安装包及模型验证仍待完成。</p>
+        <p>首次提交前已送达证据就绪指引，但审查器没有查询预览。本轮未触发证据归属不匹配诊断。系统还拒绝了一次替换已冻结暂存清单的尝试。更新后的安装包现已说明如何取回该清单，以及为额外义务附上新鲜证据。两个受测 Node 版本上各通过 49 项专项检查，全部源码 CI 及安装检查也已通过，对模型行为的影响仍未测试。</p>
         <p>Apply 警告已追溯到一条因缺少必需参数而退出的命令。编码模型随后继续并正常结束，OpenClaw 仍保留该工具失败状态。错误发生在 Stop 之前，现有证据不支持审查超时的解释，也未证明由插件引起。原始错误状态继续保留。本轮记录到 Flash 38 次、Pro 83 次请求，属于没有匹配 OFF 组的开发走查，未测得效率收益，也不增加正式基准配对。受测范围结束于 Stop，Archive 仍未测试。</p>
       </div>
     </section>
@@ -336,9 +338,10 @@
         <p>The formal filter depends on workflow completion, an outcome the corrector may change. An optional candidate-evidence reader now keeps every listed run visible, including unstarted, missing and partial results, alongside workflow status. It verified the earlier pair’s retained grades while preserving their different eligibility. It reads existing grades; automatically grading every valid frozen benchmark candidate is still planned. The formal definition and 39-pair plan remain unchanged.</p>
         <dl id="status" class="metrics">
           <div><dt>Formal matched pairs</dt><dd>0 / 39</dd><dd class="caption">13 tasks × 3 paired repetitions</dd></div>
-          <div><dt>Previously qualified phone tasks</dt><dd>3 / 3</dd><dd class="caption">Historical controls; fresh public route unqualified</dd></div>
-          <div><dt>PC tasks qualified</dt><dd>0 / 10</dd><dd class="caption">Historical failures; fresh qualification pending</dd></div>
+          <div><dt>Phone reference controls passed</dt><dd>3 / 3</dd><dd class="caption">Fresh adapted route; whole-run final check failed</dd></div>
+          <div><dt>PC reference controls qualified</dt><dd>0 / 10</dd><dd class="caption">All ten attempted; runtime failures unresolved</dd></div>
         </dl>
+        <p>The fresh 13-task reference calibration completed all task commands. Three phone controls passed; ten PC controls did not qualify. A final emulator-profile parser check failed, so the whole environment remains unqualified. These controls test the evaluator and establish no correction benefit.</p>
         <p>The latest completed benchmark ON-only diagnostic scored 8/10 feature tests and 288/288 regressions. The preceding graded pair had the same score in both arms, with identical individual outcomes. Neither establishes a measured repair benefit or adds a formal matched comparison. Reliable detection and repair of missed production paths still need evaluation on tasks held out from development. A task may fail its independent grade while providing useful mechanism evidence; a score change alone cannot establish that correction helped.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -348,9 +351,10 @@
         <p>正式比较以工作流完成为前提，而纠偏器本身可能改变这一结果。现已加入可选的候选证据读取器，把清单中的每次运行及其工作流状态一并保留，包括未启动、缺失和结果不完整的情况。它已核验先前一对运行保存的评分，同时保留两组原有的不同资格。读取器使用已有评分；自动评估每个有效冻结基准补丁仍属后续工作。现有正式定义和 39 配对计划保持不变。</p>
         <dl id="status-zh" class="metrics">
           <div><dt>正式匹配配对</dt><dd>0 / 39</dd><dd class="caption">13 个任务 × 每项 3 对重复运行</dd></div>
-          <div><dt>此前通过预检的手机任务</dt><dd>3 / 3</dd><dd class="caption">历史对照；全新公开路线尚未就绪</dd></div>
-          <div><dt>已取得环境资格的 PC 任务</dt><dd>0 / 10</dd><dd class="caption">历史结果待复核，新检查尚未完成</dd></div>
+          <div><dt>手机参考对照通过</dt><dd>3 / 3</dd><dd class="caption">全新适配路线；整轮最终检查失败</dd></div>
+          <div><dt>PC 参考对照取得资格</dt><dd>0 / 10</dd><dd class="caption">十项均已尝试；运行错误尚待解决</dd></div>
         </dl>
+        <p>全新 13 项任务参考校准已执行全部任务命令，三项手机对照通过，十项 PC 对照未取得资格。最终模拟器配置解析检查失败，整套环境仍未取得资格。这些对照用于检查评估器，不能证明纠偏收益。</p>
         <p>最近一次已完成的基准 ON 单组诊断中，功能测试通过 8/10，回归测试通过 288/288。此前已评分的配对中，两组分数相同，逐项结果也完全一致。这些结果均未测得修复收益，也没有增加正式匹配比较。纠偏器能否可靠发现并修复遗漏的实际运行路径，仍需用未参与开发调优的任务评估。任务即使未通过独立评分，也可能提供有用的机制证据；仅凭分数变化，不能认定纠偏有效。</p>
       </div>
       <details class="evidence-group">
@@ -1157,20 +1161,20 @@
         <h3>Current method experiment</h3>
         <p>An experimental review method adds a short counterexample review for selected requirements. The reviewer states an allowed condition and required outcome, follows the current code, then tries to refute a concrete route to the wrong outcome. It records whether the proposed counterexample was refuted, supported or left unresolved. The host checks source bindings and protocol order; it cannot verify the reviewer’s reasoning. The method is optional and covers only the selected requirements.</p>
         <p data-live-ledger-status="en">The latest trial retained an exact union of 16 observed requirement identities, with every full clause and anchor carried into the final review. All were accounted for within the original deadline. The model found no confirmed deviation; sampled review remains partial and does not certify complete discovery or semantic correctness.</p>
-        <p data-current-campaign="en">The current package’s range guidance produced a successful same-reference retry after one rejected read. Its bounded pages delivered complete checklist and detail content. This is observed tool recovery on one case; it establishes no causal efficiency gain. Readiness-preview queries were zero, and evidence-owner mismatch diagnostics were not exercised.</p>
+        <p data-current-campaign="en">In the latest completed model trial, range guidance produced a successful same-reference retry after one rejected read. Bounded pages delivered the complete retained checklist and details. This is observed recovery on one task, without a matched efficiency comparison. Readiness-preview queries were zero, and evidence-owner mismatch diagnostics were not exercised.</p>
         <p data-active-walkthrough="en">The fresh macOS run is closed and its 168 delivery files are frozen. Proposal ended cleanly, all five plan files were read before ordinary approval, and all seven Apply steps were marked complete. The original Apply host error remains separate from the completed Stop and passing code checks. A conditional execution note changed the task file; independent review found no observed scope narrowing.</p>
         <p data-late-duty-work="en">The current plugin keeps the initial evaluation cohort fixed and retains later source-validated discoveries in a separate ledger. Two errors are fixed: a completed review’s business verdict could discard valid observations, and a valid final-only row could cause the whole table to be rejected. All 65 focused checks pass on Node 24 and Node 18, and in the working tree. Invalid staging IDs remain rejected. The earlier 403-file run missed both errors; the corrected source has now passed full CI. Item, byte and correction limits are unchanged. The earlier six-duty live result remains a result for the preceding plugin.</p>
-        <p data-candidate-package="en">The published package passed builds for all three hosts, 17 artifact checks on each tested Node version and six fresh stock OpenClaw checks. Installed bytes and execute bits match the tested archive, including all source runtime bindings. The current model walkthrough’s finite method audit and code checks are complete, with its Apply error unresolved. General usefulness and quality benefit remain unproved.</p>
+        <p data-candidate-package="en">The updated installable plugin passed builds for all three hosts, 17 artifact checks on each tested Node version and six stock OpenClaw commands. Independent readback matched all 281 installed files to the archive. The only runtime change explains how to use an already-frozen requirement list without replacing it or dropping its obligations. The new package has not had a model trial; the completed walkthrough above used its predecessor.</p>
 
-        <p data-ci-current="en">The source used for the installed package passed all nine CI jobs. The newer frozen-list patch passed all 408 files on macOS and Linux, plus all three Node 18 jobs. Windows completed its 408 files, with two Skill review-repair checks failing after recording no scripted review responses. The new source is therefore at eight of nine passing test jobs. The cause is under investigation. A follow-up adds failure-stage diagnostics while keeping the assertions and time limits. The installed package remains unchanged.</p>
-        <p data-package-successor="en">The first stock attempt stopped before any OpenClaw command because its copied configuration named an older workspace. A fresh profile corrected that path and passed the six stock commands using the same archive. Those results join the seven earlier passing build and artifact stages; the original failed attempt remains recorded.</p>
+        <p data-ci-current="en">The updated source passed all nine CI test jobs, covering all 408 files on each operating system, plus the Node 18 checks. Two Windows Skill review-repair checks failed in the preceding run. The follow-up retained their assertions and limits and added bounded failure diagnostics. They passed in the new run; the earlier failure’s cause remains unknown.</p>
+        <p data-package-successor="en">The first package-verification attempt failed when its sandbox blocked a read of a pinned source file. Its six passing build stages were retained. A separate trusted read-only verifier and six stock installation commands then passed on the exact same archive. The original failure remains recorded; these are engineering checks, with no new model or quality result.</p>
         <p data-pilot-current="en">Before coding, the current trial verified 149 unchanged starter files and passed all 668 public checks. It recorded 38 Flash and 83 Pro requests within the original one-hour/256-request limit. After owned cleanup and freeze, independent code checks passed 8/8, 668/668 and 6/6. This unpaired development case adds no formal benchmark pair; Archive was not run.</p>
         <h3>Benchmark execution route</h3>
-        <p data-fresh-calibration="en">A fresh private phone completed the original 298-test Sudoku calibration in about 62 seconds, including startup and known cleanup. Baseline passed 0/10 feature checks and 288/288 regressions; reference passed 10/10 and 288/288. Independent replay verified every original test identity and found no missing, extra or ambiguous result. This uses API 26 builds and an API 24 phone; equivalence to the original API 23 environment is unproven. The control covers one case and its frozen configuration. The public-coding/private-grading bridge and the remaining task routes still need validation; it adds no formal pair.</p>
-        <p data-pc-image-route="en">On this Mac, a fresh ARM64 2-in-1 emulator booted and reported API 24 and device type 2in1. The startup-and-cleanup control closed in about 34 seconds, with all captured streams final and known owned resources cleared. Independent readback confirmed the identity, output and cleanup records. The ordinary stop command’s two-second closure check remains unverified; overall cleanup completed. The ten original PC task suites still need calibration. This control adds no formal pair.</p>
-        <p data-full-map-status="en">The full 13-task configuration is now prepared from the original project manifests. It requires both a phone and a genuine 2-in-1 target. The earlier single-case calibration cannot qualify this larger configuration. Host build isolation and the guest network boundary still need executed controls before privately grading model-generated code.</p>
+        <p data-fresh-calibration="en">The latest trusted calibration attempted all 13 original tasks on a fresh phone and a fresh ARM64 2-in-1 emulator. It closed in about nine minutes with final captured streams and known owned resources cleared. The three phone tasks passed the saved starting-code and reference-solution controls; all ten PC tasks remained unqualified. These are evaluator controls, with no model-generated candidate or runtime-correction comparison.</p>
+        <p data-pc-image-route="en">All ten PC tasks compiled in both starting and reference versions. Five reported every expected test identity but retained regression errors; one also had ten regression failures in both versions. The other five reported “App died” before any test identity. A separate aggregate-result parser mismatch affected five phases. Its correction would leave the real failures intact. The underlying runtime causes are still unknown.</p>
+        <p data-full-map-status="en">The final integrity check rejected the normal [General] section in emulator-generated hardware configuration, leaving the original full-run status UNAVAILABLE. A separate post-closure audit verified all 176 pinned input files and 30 image files unchanged, and checked 925 operational conditions. It preserves the failed check and the three-versus-ten task results. The full 13-task environment remains unqualified.</p>
         <p>The public build preflight completed dependency installation and both app/test builds, producing two unsigned app packages with all 118 prepared inputs unchanged. A stock-host control completed the tool-and-broker path using a local stub, rejected invalid arguments and blocked another session’s call despite cached tool metadata. </p>
-        <p data-native-current="en">An earlier fresh phone passed the boot-and-cleanup control, with all command streams final and known owned resources cleared. The newer private 298-test calibration above also completed. The public phone route still needs a verified coding-to-grading bridge and guest network boundary. Earlier startup failures remain recorded; one successful control does not establish their cause. These evaluation tools stay outside the plugin.</p>
+        <p data-native-current="en">The adapted route uses API 26 builds and API 24 devices; equivalence to the original API 23 environment remains unproven. Host isolation primitives passed controlled checks, but the protected build-to-grading bridge and guest network boundary still need execution evidence before privately grading model-generated native code. These tools stay outside the general-purpose plugin.</p>
         <p>The isolated evaluator passed 25 controlled qualification groups and a separate boundary check in a Linux container on this Mac. The earlier four configuration-resolver deliveries were graded with its original 37 checks in the qualified Linux container on this Mac. The extra two CLI probes remain separate. This does not establish native-macOS equivalence, complete semantic coverage or public-test quality.</p>
       </div>
       <div class="language-panel" data-report-copy lang="zh-CN">
@@ -1183,20 +1187,20 @@
         <h3>当前的方法试验</h3>
         <p>当前实验性的审查方法，为选中的需求增加简短的反例审查。审查器先写明允许的条件及必需结果，再沿当前代码检查一条可能产生错误结果的具体路径，并尝试推翻这个反例。记录区分反例已被推翻、已有支持或仍未解决。宿主检查源码关联和协议顺序，无法验证推理本身。该方法可选，只覆盖被选中的需求。</p>
         <p data-live-ledger-status="zh-CN">最近一轮保留了按确切身份合并的 16 条已知需求，全部完整条款和来源锚点均进入最终审查，并在原定时限内完成核算。模型未确认偏离；抽样审查仍不完整，不能认证需求发现穷尽或语义正确。</p>
-        <p data-current-campaign="zh-CN">当前安装包的一次读取被拒绝后，新范围指引帮助审查器用同一引用成功重试。有界续页完整送达清单和详情。这是在一个案例中观察到的工具恢复，不能证明效率收益的因果关系。证据就绪预览查询为零，证据归属不匹配诊断未被触发。</p>
+        <p data-current-campaign="zh-CN">最近一次已完成的模型试验中，范围指引帮助审查器在读取被拒后，用同一引用成功重试；有界续页交付了完整的已保留清单及详情。这是在一个任务上观察到的恢复，没有匹配的效率比较。证据就绪预览的查询次数为零，证据归属不匹配诊断也未触发。</p>
         <p data-active-walkthrough="zh-CN">新的 macOS 运行已关闭，168 份交付文件已冻结。Proposal 正常结束，全部五份方案文件均经阅读后获得普通批准，Apply 七项步骤全部标记完成。原始 Apply 宿主错误与 Stop 完成及代码检查通过分别记录。任务文件增加一项条件执行说明，独立复核未发现范围缩减。</p>
         <p data-late-duty-work="zh-CN">当前插件固定初始评估集合，并用独立台账保留后续发现且来源已校验的需求。两处错误已修正：已完成审查的业务结论可能丢弃有效观察；有效但尚无暂存编号的最终需求，可能导致整张表被拒绝。Node 24、Node 18 及当前工作区上的 65 项专项检查全部通过，无效暂存编号仍被拒绝。此前完整 403 份文件测试没有发现这两处错误；修正后的源码现已通过完整 CI。条目、字节及纠偏额度上限保持不变。此前六项义务的实际运行结果仍归属于前一版插件。</p>
-        <p data-candidate-package="zh-CN">已发布安装包通过三个宿主的构建、两个受测 Node 版本上各 17 项包检查，以及六项新的原版 OpenClaw 检查。安装文件的字节及执行位与受测安装包一致，全部源码运行时绑定也匹配。当前模型走查的有限方法审计及代码检查已完成，Apply 错误仍待解决。通用实用性及质量收益仍未证明。</p>
+        <p data-candidate-package="zh-CN">更新后的可安装插件已通过三个宿主的构建、两个受测 Node 版本上各 17 项包检查，以及六项原版 OpenClaw 命令检查。独立复核确认 281 份安装文件与归档一致。唯一的运行时代码改动说明如何使用已冻结的需求清单，同时保留原有义务并继续拒绝替换清单。新安装包尚未进行模型试验；上方已完成的走查使用前一版安装包。</p>
 
-        <p data-ci-current="zh-CN">当前安装包所用源码通过了全部九项 CI 任务。更新的冻结清单补丁在 macOS 和 Linux 上通过全部 408 份测试文件，三项 Node 18 任务也已通过。Windows 完成了 408 份文件，其中两项 Skill 审查修复检查失败，记录到的脚本审查回复为零。因此新源码为九项测试任务中的八项通过，原因仍在核查。后续补丁补充失败阶段诊断，断言及时间限制保持原样，当前安装包未更新。</p>
-        <p data-package-successor="zh-CN">首次原版宿主检查因复制配置指向旧工作区，在执行任何 OpenClaw 命令前停止。新建配置修正路径后，使用同一份安装包完成六项宿主检查。这些结果与此前通过的七项构建及包检查分别保留并共同提供资格证据；原始失败记录继续保留。</p>
+        <p data-ci-current="zh-CN">更新后的源码已通过全部九项 CI 测试任务，各操作系统的 408 份测试文件及 Node 18 检查均已完成。前一轮有两项 Windows Skill 审查修复检查失败。后续修改保留原断言与时限，增加有界失败诊断，两项检查随后通过。此前失败的原因仍未确定。</p>
+        <p data-package-successor="zh-CN">首次包核验因沙箱阻止读取一份已固定的源码文件而失败，其六个已通过的构建阶段继续保留。随后，独立的可信只读核验器与六项原版安装命令在同一份归档上通过。原始失败仍保留；这些工程检查没有产生新的模型或质量结果。</p>
         <p data-pilot-current="zh-CN">当前试验编码前已核对 149 份起始文件不变，并通过全部 668 项公开检查。原定一小时、256 次请求上限内记录到 Flash 38 次、Pro 83 次请求。所属资源清理并冻结后，独立代码检查通过 8/8、668/668 和 6/6。这项未配对开发案例不增加正式基准配对，没有执行 Archive。</p>
         <h3>基准执行路线</h3>
-        <p data-fresh-calibration="zh-CN">一台全新私有手机完成了 Sudoku 原始 298 项测试的校准，包括启动及已知所属资源清理，用时约 62 秒。起始版本功能检查通过 0/10、回归检查通过 288/288；参考解为 10/10 和 288/288。独立重放核验了全部原始测试身份，没有缺失、额外或歧义结果。当前使用 API 26 编译及 API 24 手机，尚未证明与原 API 23 环境等价。该对照只覆盖一个案例及其固定配置，公开编码与私有评分的衔接、其余任务路线仍需验证，不增加正式配对。</p>
-        <p data-pc-image-route="zh-CN">这台 Mac 上的全新 ARM64 2-in-1 模拟器已启动，来宾报告 API 24 和 2in1 设备类型。启动及清理对照用时约 34 秒，全部捕获流结束，已知所属资源已清理；独立复核已核对设备身份、输出及清理记录。普通停止命令的两秒关闭检查仍待验证，整体清理已完成。十项原始 PC 任务测试仍需校准，本次对照不增加正式配对。</p>
-        <p data-full-map-status="zh-CN">完整的 13 项任务配置已依据原始项目清单准备，需要同时具备手机和真实 2-in-1 目标。此前单案例校准不能使这份更大的配置取得资格。对模型生成代码进行私有评分之前，宿主构建隔离及来宾网络边界仍需通过实际对照验证。</p>
+        <p data-fresh-calibration="zh-CN">最新可信校准在全新手机和 ARM64 2-in-1 模拟器上实际尝试了全部 13 项原始任务，约九分钟后关闭，捕获流均已结束，已知所属资源已清理。三项手机任务通过了保存的起始版本与参考解对照，十项 PC 任务均未取得资格。这是评估环境的对照，没有使用模型生成候选，也没有进行运行时纠偏比较。</p>
+        <p data-pc-image-route="zh-CN">十项 PC 任务的起始版本与参考解均编译通过。其中五项报告了全部预期测试身份，但仍有回归错误；其中一项的两个版本还各有十项回归失败。另外五项在报告任何测试身份前就出现“App died”。独立的汇总结果解析器不匹配影响了五个阶段，修正解析器不会消除真实失败。底层运行时原因仍未确定。</p>
+        <p data-full-map-status="zh-CN">最终完整性检查拒绝了模拟器生成的硬件配置中的正常 [General] 分节，原始整轮状态因此保留为 UNAVAILABLE。关闭后的独立审计确认 176 份固定输入和 30 份镜像文件均未改变，并核验了 925 项运行条件。该审计保留失败检查及“三项通过、十项未取得资格”的结果，完整 13 项任务环境仍未取得资格。</p>
         <p>公开构建预检已完成依赖安装及应用、测试构建，生成两个未签名应用包，全部 118 项准备输入保持不变。原版宿主对照用本地桩完成工具到受保护代理的调用，拒绝无效参数，并在另一会话看到缓存工具描述时仍阻止了它的实际调用。</p>
-        <p data-native-current="zh-CN">此前一台全新手机通过启动及清理对照，全部命令输出流结束，已知所属资源已清理。上文更新的私有 298 项校准也已完成。公开手机路线仍需验证编码与评分衔接，以及来宾网络边界。此前启动失败继续保留，一次成功对照不能确定它们的原因。这些评估工具留在插件之外。</p>
+        <p data-native-current="zh-CN">当前适配路线使用 API 26 编译和 API 24 设备，尚未证明与原 API 23 环境等价。宿主隔离基础能力已通过受控检查；对模型生成的原生代码进行私有评分前，受保护的构建与评分衔接及来宾网络边界仍需实际验证。这些工具保留在通用插件之外。</p>
         <p>隔离评分器已在这台 Mac 的 Linux 容器中通过 25 组受控资格检查，以及一项独立边界检查。此前四份配置解析交付已在这台 Mac 的合格 Linux 容器中完成原定 37 项评分，另两项 CLI 探针单独保留。这不能证明原生 macOS 等价、语义完整覆盖或公开测试质量。</p>
       </div>
     </section>
