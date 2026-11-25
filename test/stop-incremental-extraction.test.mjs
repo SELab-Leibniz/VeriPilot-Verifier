@@ -9,6 +9,38 @@ import { STOP_REVIEW_SCHEMA } from '../lib/runtime-v2/reviewer.mjs';
 import { loadReviewCheckpoint } from '../lib/review-task/history-memory.mjs';
 import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 
+test('a long multi-line user message keeps one original and stable late-clause coordinates', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-user-original-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }));
+  const notes = Array.from({ length: 601 }, (_, i) => '往年记录 ' + i + ' 这段背景只用于解释词汇。'.repeat(4));
+  const clause = 'The upload handler must refuse a missing signature.';
+  const text = [...notes, clause].join('\n');
+  const snapshot = { entries: [{ type: 'user', uuid: 'latest', message: { content: text } }] };
+  const originals = await loadStopOriginalRequirements({ projectRoot: root, snapshot, referenceTier: true });
+  const task = await ensureTask({ projectRoot: root, sessionId: 'whole-user-original' });
+  const input = { projectRoot: root, taskId: task.taskId, role: 'stop-reviewer', schema: STOP_REVIEW_SCHEMA,
+    reviewer: { timeoutMs: 30000 }, evidence: { snapshot, originalRequirements: originals, groundTruth: { version: 0, claims: [] } },
+    request: { reviewScope: { kind: 'workspace-stop' }, workflowStages: [], hook: { last_assistant_message: 'Done.' },
+      population: { metrics: {}, reviewPolicy: { deviationOnly: true, metrics: { M16: true } } } } };
+  const parsed = result => JSON.parse(result.content[0].text);
+  const handle = await scriptedWorkspaceReview(input, { script: async ({ task, call, read }) => {
+    const user = task.basisFiles.filter(f => path.basename(f).startsWith('user-original-'));
+    assert.equal(user.length, 1);
+    assert.deepEqual(await fs.readFile(user[0]), Buffer.from(text));
+    for (const file of task.basisFiles) await read(file);
+    const start = Buffer.byteLength(notes.join('\n') + '\n');
+    await call('append_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+      text: clause, path: user[0], lineStart: 602, lineEnd: 602, byteStart: start, byteEnd: Buffer.byteLength(text) }] });
+    await call('seal_original_checklist', {});
+    const page = parsed(await call('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true }));
+    assert.equal(page.items[0].originalSource.start, 602);
+    assert.equal(page.items[0].originalSource.byteStart, start);
+    await call('finish_stop_review', { summary: 'Checked the late clause.' });
+  } });
+  t.after(() => handle.close());
+  assert.equal(handle.reviewCompleted, true);
+});
+
 test('a single long annex line can be read and committed in more than 256 independent original positions', async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-single-review-'));
   t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }));
