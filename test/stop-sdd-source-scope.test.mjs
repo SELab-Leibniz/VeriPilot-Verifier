@@ -24,6 +24,18 @@ const snapshot = text => ({ entries: [{ type: 'user', uuid: 'request', message: 
 const manifest = (root, text, extra = {}) => loadStopOriginalRequirements({ projectRoot: root, snapshot: snapshot(text),
   referenceTier: true, ...extra });
 
+test('dense unbroken prose and unclosed markup preserve a trailing normative path and its line', { timeout: 10000 }, async t => {
+  const text = '约'.repeat(128000) + ' follow contract.md';
+  const body = ['# SDD', 'Required ' + '['.repeat(64000) + ' tail.md', 'Mandatory ' + '《'.repeat(64000) + ' extra.md'].join('\n');
+  const root = await project(t, { 'contract.md': body, 'tail.md': 'Use zero.', 'extra.md': 'Keep the receipt.' });
+  const basis = await manifest(root, text);
+  assert.equal(basis.userMessages[0].sha256, sha256(text));
+  assert.deepEqual(basis.referencedFiles.map(entry => entry.path), ['contract.md']);
+  assert.deepEqual(basis.acceptanceSources.map(entry => [entry.path, entry.declaredBy.line, entry.sha256]), [
+    ['contract.md', 1, sha256(body)], ['tail.md', 2, sha256('Use zero.')], ['extra.md', 3, sha256('Keep the receipt.')],
+  ]);
+});
+
 test('whole SDD adopts normative relative Markdown references, separates examples and closes a cycle', async t => {
   const root = await project(t, {
     'docs/main.md': ['# SDD', '## 规范性附录', '- [附件甲](sub/a%20b.md#rule)', '### 资料性示例', '- [old](example.md)',
