@@ -249,6 +249,16 @@ test('large process navigation stays bounded and existing directory continuation
     const { classification, items, total, pending, nextOffset } = await api.submit('review_checklist', pageArgs);
     const compact = await api.submit('review_checklist', { ...pageArgs, includeNavigation: false });
     assert.deepEqual(compact, { classification, items, total, pending, nextOffset });
+    const shared = await api.submit('review_checklist', { ...pageArgs, includeNavigation: false, compact: true });
+    assert(shared.itemDefaults || shared.originalSourceDefaults || shared.objectIdEqualsTaskId);
+    assert.equal(shared.total, total);
+    assert.equal(shared.nextOffset, nextOffset);
+    assert.equal(shared.pending, pending);
+    assert.deepEqual(shared.items.map(item => ({
+      ...shared.itemDefaults, ...item,
+      ...(item.originalSource ? { originalSource: { ...shared.originalSourceDefaults, ...item.originalSource } } : {}),
+      ...(shared.objectIdEqualsTaskId ? { objectId: item.taskId } : {}),
+    })), items);
     const restored = await api.submit('review_checklist', { ...pageArgs, includeNavigation: true });
     assert.deepEqual(restored.processFilesContinuation, continuation);
     let offset = 0; const hits = [];
