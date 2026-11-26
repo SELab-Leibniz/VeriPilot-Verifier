@@ -1,0 +1,2499 @@
+{
+  "candidate": "16ba3b02266ed9c78c98548b90c3ef0e76393bcf",
+  "batch": {
+    "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/unified-evaluator/batches/deliver-v3-20261126/settled.json",
+    "sha256": "9d07bca4f33476673f9d8e8cabf92c08178883688881866b97831ce970bfe1b3"
+  },
+  "mechanism": [
+    {
+      "scenario": "required-annex",
+      "variant": "correct",
+      "id": "t-3daeffc3989fa87634",
+      "attemptId": "abe53bcb-6339-49ff-9693-b8f4f46ca9eb",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 2
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/abe53bcb-6339-49ff-9693-b8f4f46ca9eb/public-stop.json",
+          "sha256": "ee7d77e3becf188bd5c6dcd136a717efcea76ebc9e51fd2557d0185275175414"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/abe53bcb-6339-49ff-9693-b8f4f46ca9eb/public-report.json",
+          "sha256": "5b122056f5430eb137d939fc1c4ee3f724369ac3407dcf0539bd501ee9cb8b4e"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 38643,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3daeffc3989fa87634/claim.json",
+          "sha256": "592e420d86b95b9e2fe65f7fd0883a3696f253e648fffc10f95e4546a282284e"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3daeffc3989fa87634/settled.json",
+          "sha256": "06338d3ca6a158e77e9c9cd389151f420186d95d87da1109d87e9d007c9c93ee"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/abe53bcb-6339-49ff-9693-b8f4f46ca9eb/score.json",
+          "sha256": "7bafc8cd8356a9104490524d19269d6b20dcfbf2991026ba3c5f60ffd6810355"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/abe53bcb-6339-49ff-9693-b8f4f46ca9eb/result.json",
+        "sha256": "5281934003e4acaa3c8808cee530450adff00f169d9ef68cf5d6c2d30b5a1332"
+      }
+    },
+    {
+      "scenario": "long-line",
+      "variant": "missing",
+      "id": "t-3d89a0524144a149d5",
+      "attemptId": "5587b48e-2034-4fd1-9762-540663dc4038",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "REVIEWER_RUN_FAILED",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/5587b48e-2034-4fd1-9762-540663dc4038/public-stop.json",
+          "sha256": "c6f4efb93751c73996e9b2025fba81995e5af73cf27e700cbe079ac2c637cd0b"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/5587b48e-2034-4fd1-9762-540663dc4038/public-report.json",
+          "sha256": "e90da049227aed9ec1396f327576c2817e7623555030130cac3d593af6d99db3"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 36888,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3d89a0524144a149d5/claim.json",
+          "sha256": "b96430644865f69fbc6caba5b9f39c411fdcbf12df18f5e63f33820ce2562cf5"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3d89a0524144a149d5/settled.json",
+          "sha256": "f52ee13cfd906635e89b8d80bb666df895ce9f45800590229227d991a5f5cc5e"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/5587b48e-2034-4fd1-9762-540663dc4038/score.json",
+          "sha256": "5aa1d2ffca160667cb9f3dbfa97344c36b690f411a89aacbadd13e404149902e"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/5587b48e-2034-4fd1-9762-540663dc4038/result.json",
+        "sha256": "4252d39eeaa02c3ec1c9d47b88882e6cd4c7abb2ded529db389ed7fd7c0abd0c"
+      }
+    },
+    {
+      "scenario": "mandatory-164k",
+      "variant": "defect",
+      "id": "t-80d63072cbd8613ec7",
+      "attemptId": "6c679fba-66f2-44fe-a6ef-519be21e1428",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 10
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/6c679fba-66f2-44fe-a6ef-519be21e1428/public-stop.json",
+          "sha256": "6b386ebec2ad703e38ef2af59ce51a0c7b7f130517d270fdc12ec2e90f545db5"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/6c679fba-66f2-44fe-a6ef-519be21e1428/public-report.json",
+          "sha256": "972c105e6201888dde95c623f235641e060785295daed993db5ac0d51217f94d"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 35328,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-80d63072cbd8613ec7/claim.json",
+          "sha256": "13744667803ae25676f5356c4059ed775aa4d80afb78ac94b48f04537c53bd4f"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-80d63072cbd8613ec7/settled.json",
+          "sha256": "6454c668cc6c785f952e2b5905dbd5eaea255fd3c77c56ff3f53df08223ac1fe"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/6c679fba-66f2-44fe-a6ef-519be21e1428/score.json",
+          "sha256": "b95c7aebb35c875f69fda2b0aab8655830080a0ac87bc2623fee16d64ef69dbf"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/6c679fba-66f2-44fe-a6ef-519be21e1428/result.json",
+        "sha256": "75c757f46868f564b0c244fb56731965ddc3fd6cc771f14aac5783fdf1eff0c2"
+      }
+    },
+    {
+      "scenario": "large-repo",
+      "variant": "correct",
+      "id": "t-a1f797e3603404b23b",
+      "attemptId": "ab22eaef-d2b4-4187-980e-95c851e105a9",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ab22eaef-d2b4-4187-980e-95c851e105a9/public-stop.json",
+          "sha256": "abde3c0ad17fedd28299808f343c92b4893ebd9b9382f0a1f36bf25e4a351f84"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ab22eaef-d2b4-4187-980e-95c851e105a9/public-report.json",
+          "sha256": "ce06578ff888b5d5f0147215d239364105c615f9f2d2ca494e68e75f9884367f"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 6478,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-a1f797e3603404b23b/claim.json",
+          "sha256": "138ba0a72796bd436bcb3ebc44043cc5c36f00a6496f4bf6a8248a07fd4649c3"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-a1f797e3603404b23b/settled.json",
+          "sha256": "adba5aa9b90eca83e6f002300e86ae3e869b664d7412383a6d52282228b5f381"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/ab22eaef-d2b4-4187-980e-95c851e105a9/score.json",
+          "sha256": "2e21e171e88400e6feeb29ab70fe90026e6775df3f6cceba30246ed23153c5ec"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ab22eaef-d2b4-4187-980e-95c851e105a9/result.json",
+        "sha256": "5b3fbd2d94c38abbab0a557c8fe85215e7f6fab27ac29c8066015ff70b5ce4ea"
+      }
+    },
+    {
+      "scenario": "cross-stage",
+      "variant": "missing",
+      "id": "t-6548debc9ebf2d832b",
+      "attemptId": "8b73c618-b6a3-4fcd-b387-b59ce0e9629f",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 2,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/8b73c618-b6a3-4fcd-b387-b59ce0e9629f/public-stop.json",
+          "sha256": "cdc07662f5154540e883fbb199eccc66ac8ee65bc8c9a84367243dc7ca405155"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/8b73c618-b6a3-4fcd-b387-b59ce0e9629f/public-report.json",
+          "sha256": "ff35069d8a74ef645a85164f833e25a791db353b87a0ede36e0a45286d37d540"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 36079,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-6548debc9ebf2d832b/claim.json",
+          "sha256": "1b0cfa9a1e9b98737b77930acbc2f84ad9bc0d7027a2ee5a620036a8cf1db936"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-6548debc9ebf2d832b/settled.json",
+          "sha256": "d2fd4b611c0ff90923ee302c35654bf91a0614bb9183ef4c3f2ec56e4dde574f"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/8b73c618-b6a3-4fcd-b387-b59ce0e9629f/score.json",
+          "sha256": "ef90d6e0ff12aef3872e95454c6238b760262f13d0314a53ec8185a2bd5be096"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/8b73c618-b6a3-4fcd-b387-b59ce0e9629f/result.json",
+        "sha256": "825e0638d793662240e7eb61a0b1ae37e5086ff84ecf0b3b83431912bfe58136"
+      }
+    },
+    {
+      "scenario": "large-repo",
+      "variant": "defect",
+      "id": "t-3dab4e453183f79c82",
+      "attemptId": "c45852e8-5169-443f-8400-2e9b2fe0da6f",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "block",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 1,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c45852e8-5169-443f-8400-2e9b2fe0da6f/public-stop.json",
+          "sha256": "6d79d3d60bad6f7956502ce5fd1dc36e0cd7375005ff78202cf02073fa5dd56c"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c45852e8-5169-443f-8400-2e9b2fe0da6f/public-report.json",
+          "sha256": "212df6c69881f4d27552b0d533f9e9451053ba5b99c150ab966bdd203a41e180"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 6901,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3dab4e453183f79c82/claim.json",
+          "sha256": "e37dfe91453ea5e07b8e87109001f6f7340c48d518cb288fefae36f0b1071479"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3dab4e453183f79c82/settled.json",
+          "sha256": "3167329d90709019f5dd2847657f526047c19ab3f089257418658e5e7b92f1f3"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/c45852e8-5169-443f-8400-2e9b2fe0da6f/score.json",
+          "sha256": "1cce76bbbb872d95dc763842e6da85ec98a662329334363ba759fc59cd003ae4"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c45852e8-5169-443f-8400-2e9b2fe0da6f/result.json",
+        "sha256": "19751800ece0a71d1c6d8e9f75d29e4190f14dd75cc30fe2ad5cbf18fec7fd9a"
+      }
+    },
+    {
+      "scenario": "dense-material",
+      "variant": "missing",
+      "id": "t-646076497d355f03bf",
+      "attemptId": "ff6fd289-57d3-4b09-b4a4-ac4bcd17531b",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 11
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ff6fd289-57d3-4b09-b4a4-ac4bcd17531b/public-stop.json",
+          "sha256": "7c85d5aeb13300491fd6fccd0f3ca77fb6a0f16e90821d256c017343f15564f3"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ff6fd289-57d3-4b09-b4a4-ac4bcd17531b/public-report.json",
+          "sha256": "82cff12500974e2a83400884e80cee435d8fcf77a40831387ddadc4b4cb84e02"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 43628,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-646076497d355f03bf/claim.json",
+          "sha256": "a7d962c7849a797179ccbb63ba073f188234ed7ac3133e236ef5148ac15aace1"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-646076497d355f03bf/settled.json",
+          "sha256": "566b5b086400749cc5670a6034c90fe28fce3b12b322f618cc0f82b71df3d86c"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/ff6fd289-57d3-4b09-b4a4-ac4bcd17531b/score.json",
+          "sha256": "7aacd318d417ae001b9ef95a5bf9bbd7800e17a997e6e23d4bfd8faba6b2c030"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ff6fd289-57d3-4b09-b4a4-ac4bcd17531b/result.json",
+        "sha256": "1c34e71ed1864a435ed3f3c043442bc6b050ea0c02b768658027263b8e6c003d"
+      }
+    },
+    {
+      "scenario": "compact-exhausted",
+      "variant": "correct",
+      "id": "t-8d8cdca4e64ccf2349",
+      "attemptId": "9181da60-60b7-4e4a-920c-c297484cf5fd",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 34
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/9181da60-60b7-4e4a-920c-c297484cf5fd/public-stop.json",
+          "sha256": "50b93dd05a0216aed5780ea4d6b2986e8fed085272d52057d215bfac952ae867"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/9181da60-60b7-4e4a-920c-c297484cf5fd/public-report.json",
+          "sha256": "b85988dcf14b475757c3c450c84edb6c1ddab9b03d91f4366cb5a0d5eeb7771e"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 33309,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-8d8cdca4e64ccf2349/claim.json",
+          "sha256": "cc76ac367f9c7307c0b81480fbfc1a3bf3c1e6a7d7b2e733346b72f8f1d68e02"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-8d8cdca4e64ccf2349/settled.json",
+          "sha256": "ac7fbef0f38572f198b5370bb10e27a4a27e380cdd3b287dd92f4cbd3bf8a18e"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/9181da60-60b7-4e4a-920c-c297484cf5fd/score.json",
+          "sha256": "478442174f640a3912ffdfaae832a72c82ffd9b708174595ebdfdc9729fdf22a"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/9181da60-60b7-4e4a-920c-c297484cf5fd/result.json",
+        "sha256": "6c0cf939090a0724e4b8ce3ec5ba8a7dce978dd6d9886e82e797fab55cbc0ac0"
+      }
+    },
+    {
+      "scenario": "unnumbered",
+      "variant": "missing",
+      "id": "t-e5a0dc63a394dcbab9",
+      "attemptId": "c45c31cd-cbe0-44b3-8f41-e7324f2d3479",
+      "closed": true,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 1,
+          "unreviewedScope": 0
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c45c31cd-cbe0-44b3-8f41-e7324f2d3479/public-stop.json",
+          "sha256": "a8f4080afa9d18a2cbe19bf7ed2bc28365519100b483f77a6ff7fbe0ea637c7a"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c45c31cd-cbe0-44b3-8f41-e7324f2d3479/public-report.json",
+          "sha256": "f88c82fc40f4367684be1f8495fe3977a9ccf9303b593f297397c97fb2d9d85f"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 4083,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": null,
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-e5a0dc63a394dcbab9/claim.json",
+          "sha256": "65aab0d72ca5446b10b50442d3def8992efb8caa6b5d88f7f03fe40ca9e8a5f1"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-e5a0dc63a394dcbab9/settled.json",
+          "sha256": "1adcd49b77b520d94d1686a722baa2f566f5e9f062fad97dc2151a4dce5d4fed"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/c45c31cd-cbe0-44b3-8f41-e7324f2d3479/score.json",
+          "sha256": "fa7d9401235a6e6568a9c0dfd31107461e8072eda32b66f721d619fb96ba1dbd"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c45c31cd-cbe0-44b3-8f41-e7324f2d3479/result.json",
+        "sha256": "6ada12af1c61fc0053c34397bb98104de8f0f2949f1261eef0e7d50518c36862"
+      }
+    },
+    {
+      "scenario": "cross-stage",
+      "variant": "correct",
+      "id": "t-bfa76c3174a7d07042",
+      "attemptId": "fa07f3e4-5c0f-4e25-8c75-99f6454a0e0b",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 292
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/fa07f3e4-5c0f-4e25-8c75-99f6454a0e0b/public-stop.json",
+          "sha256": "83ecb37d73f66ad4cb1ab872368bcb156440cf1cd6423f03be079ec98c8fb00b"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/fa07f3e4-5c0f-4e25-8c75-99f6454a0e0b/public-report.json",
+          "sha256": "78d9b58e476f2acfe07eff371acdf95d49dba27b545742ca20a5b01f1eeed871"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 27737,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-bfa76c3174a7d07042/claim.json",
+          "sha256": "73acabbac6dc86293ecdeaa89919cd6bc1e93b97d59e8f48e936990eb5b56315"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-bfa76c3174a7d07042/settled.json",
+          "sha256": "f4ff868c2f58877f3ff587cd915a1dae078c726dff9982a079cde72c8f690bb5"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/fa07f3e4-5c0f-4e25-8c75-99f6454a0e0b/score.json",
+          "sha256": "4cca251c10bc08ca0cb429661c843bccd0779bb0794af63007c3fffcfee64921"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/fa07f3e4-5c0f-4e25-8c75-99f6454a0e0b/result.json",
+        "sha256": "afb72537f80896675177c5fd202a2acb1502c7a55954bbb372c90861bc8fd47d"
+      }
+    },
+    {
+      "scenario": "mandatory-164k",
+      "variant": "correct",
+      "id": "t-72e97ce90f09ae84a0",
+      "attemptId": "0891fb24-e610-4c31-8103-b18b3fdfbc28",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 10
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0891fb24-e610-4c31-8103-b18b3fdfbc28/public-stop.json",
+          "sha256": "8bdd4032bbcd32434bbfafd5896ce038f8e7f9cbeb9fe1531e13fb3100a187c4"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0891fb24-e610-4c31-8103-b18b3fdfbc28/public-report.json",
+          "sha256": "6dd0127ce07c21d514e82d637677397112cc99c731991dd34206d0fb9e8c9dfa"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 27500,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-72e97ce90f09ae84a0/claim.json",
+          "sha256": "791806e6833aec341ef4f3a1bf2eaf84e36a84418e035054cbb00d2edc17cbb6"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-72e97ce90f09ae84a0/settled.json",
+          "sha256": "1bad41e2df22d059eb2c3e247c41fa518eb979ada1c7420c6d1413d4f039b494"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/0891fb24-e610-4c31-8103-b18b3fdfbc28/score.json",
+          "sha256": "cb51df2dfe62902bcfa477c71afae80ab550a209fa2d0ae545a45e09830274ac"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0891fb24-e610-4c31-8103-b18b3fdfbc28/result.json",
+        "sha256": "e15b49e9de6a6a7fda77a728eee3c65cd8d39825d2f98ce72a09dc19ecaf251e"
+      }
+    },
+    {
+      "scenario": "unnumbered",
+      "variant": "defect",
+      "id": "t-6b70510dbf437ec41f",
+      "attemptId": "6b9d6593-3160-488e-99f9-8409171461e5",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "block",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 1,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/6b9d6593-3160-488e-99f9-8409171461e5/public-stop.json",
+          "sha256": "54d3fd3036f025ade2ab2bbf706af92472068a00bc67670fe976005242c759ad"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/6b9d6593-3160-488e-99f9-8409171461e5/public-report.json",
+          "sha256": "8118a5a2dda08b463ad6e77a6b63049e0d9e04ad8dc4f0e9074ceef714f4593b"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 6838,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-6b70510dbf437ec41f/claim.json",
+          "sha256": "89e87ac97b5d257b377d80300857b2ac87a5c6e820ba748f31109212cc4e1560"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-6b70510dbf437ec41f/settled.json",
+          "sha256": "60332f0ca00353602fab7449e982a6f79e91449e41124136b73ccc6f661af1be"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/6b9d6593-3160-488e-99f9-8409171461e5/score.json",
+          "sha256": "8b6705fbdcf98e1a1d4c7146ab20dc0a2b86d329875a9aedc45245deecb45c3e"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/6b9d6593-3160-488e-99f9-8409171461e5/result.json",
+        "sha256": "20a1ebfc11d014f8ecc0abff6c0f5a855c32d7f451828067865fa97a106052c7"
+      }
+    },
+    {
+      "scenario": "unnumbered",
+      "variant": "correct",
+      "id": "t-6a38d0c0a79f46f914",
+      "attemptId": "89b3bf80-d33f-4e3b-a574-a5e7e3cc71d6",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/89b3bf80-d33f-4e3b-a574-a5e7e3cc71d6/public-stop.json",
+          "sha256": "c7bc9ec15603d31b06597c4957230431fcee36325a41cd93baf040698d70dea0"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/89b3bf80-d33f-4e3b-a574-a5e7e3cc71d6/public-report.json",
+          "sha256": "51e6590eed8eb5954c3750fe316e124b1ceacd927508cd3c3f7ede505a6bb94c"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 6643,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-6a38d0c0a79f46f914/claim.json",
+          "sha256": "26b4c0d312dc23c7757f60f740986e0283238704183fe7f2ae36ebe0584592f9"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-6a38d0c0a79f46f914/settled.json",
+          "sha256": "108360041b8fd037da89d25a144d253622dc5b5908642fb956dda7acb4cd8433"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/89b3bf80-d33f-4e3b-a574-a5e7e3cc71d6/score.json",
+          "sha256": "39b43fa7662eff815adeed9049d5e0fa2fcffafa4cd0edd2fa99ddfbf9b824f8"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/89b3bf80-d33f-4e3b-a574-a5e7e3cc71d6/result.json",
+        "sha256": "b84cdc89cd895b4143eb589c8242e892ac8805c1c8be817ebd640b04c243502e"
+      }
+    },
+    {
+      "scenario": "small",
+      "variant": "missing",
+      "id": "t-7071182116d4962c0e",
+      "attemptId": "1fac0ffc-fd5f-4762-b40c-f9eaddd08640",
+      "closed": true,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 1,
+          "unreviewedScope": 0
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/1fac0ffc-fd5f-4762-b40c-f9eaddd08640/public-stop.json",
+          "sha256": "32139330bc79fe0791b7201f28dc36ac674384280d98feea34dedc8881eeea52"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/1fac0ffc-fd5f-4762-b40c-f9eaddd08640/public-report.json",
+          "sha256": "2a1e277b42ee325cccfca314f23ac436a6c3f8c2ce88649e8771ef2bbb1a8d99"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 6280,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": null,
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-7071182116d4962c0e/claim.json",
+          "sha256": "b02eaefdafb0edc32ac95208edc0ec9466598820027d90c093c9c6dbedba4588"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-7071182116d4962c0e/settled.json",
+          "sha256": "5bb7651191a357278f2100fac79a003ae79f10da9e077938a03cc18eac0c2f81"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/1fac0ffc-fd5f-4762-b40c-f9eaddd08640/score.json",
+          "sha256": "a33315a7917084fd2d33899cf7bba3ea7f42454e9a2b7ff697e9138a72a32a6f"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/1fac0ffc-fd5f-4762-b40c-f9eaddd08640/result.json",
+        "sha256": "eaa9f4b0a0889475e3ab3cf2bbd346a9c40a2bf4c687c202c19952285c3fe42c"
+      }
+    },
+    {
+      "scenario": "dense-material",
+      "variant": "defect",
+      "id": "t-42b1782734512652e6",
+      "attemptId": "08c2ce99-9aca-4154-acac-d7c4347cd467",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 11
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/08c2ce99-9aca-4154-acac-d7c4347cd467/public-stop.json",
+          "sha256": "44991739f71c05ddeecf9ed916b7dc1d5f0d7fd53708101b8a14ffdf96ecd747"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/08c2ce99-9aca-4154-acac-d7c4347cd467/public-report.json",
+          "sha256": "68436332c1ff6d7fa1ef4b085b71d441df7c89dd4ac9ab4d301cc1cd7ad663ff"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 45974,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-42b1782734512652e6/claim.json",
+          "sha256": "78e26f329ea061e3662b21a87eefb517a2545f4a73f9c09ab9e242251607eb32"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-42b1782734512652e6/settled.json",
+          "sha256": "e61ce991461754a424038eab1aab11c55f9dafb8230b4f982512604215f08760"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/08c2ce99-9aca-4154-acac-d7c4347cd467/score.json",
+          "sha256": "0eba0e6e4ee4763185cffe97059f5718fc7b432917b3e11980705b7c26ff7b48"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/08c2ce99-9aca-4154-acac-d7c4347cd467/result.json",
+        "sha256": "9fe85db8859933276989aaaa080c63229a3a1b4d2eacab6d730068f0f7d39a2f"
+      }
+    },
+    {
+      "scenario": "long-line",
+      "variant": "defect",
+      "id": "t-55c9d21d6431eaee04",
+      "attemptId": "d9c183c1-87f8-4221-b635-bf110905690b",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "REVIEWER_RUN_FAILED",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/d9c183c1-87f8-4221-b635-bf110905690b/public-stop.json",
+          "sha256": "5f6caa6e9a83de069f846ea9f2f783c22a7537251cc005c4e357e5ef914b8ed4"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/d9c183c1-87f8-4221-b635-bf110905690b/public-report.json",
+          "sha256": "29937f527918a1f2e02d39462d45d96419880f3a072ebcf7516c0556105d1600"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 37049,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-55c9d21d6431eaee04/claim.json",
+          "sha256": "a81c5c731050fccfe79a46f2db220b0da5467962c6eb331d782e459a5399eaff"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-55c9d21d6431eaee04/settled.json",
+          "sha256": "8b2cd3a7efca2af8607062458503ae0a87527a20618967d07c1a42687badcea5"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/d9c183c1-87f8-4221-b635-bf110905690b/score.json",
+          "sha256": "af956b3b4a22b18af51598b23fd28804e7d1ab6869f8d5b2a689ec4d44bb60e1"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/d9c183c1-87f8-4221-b635-bf110905690b/result.json",
+        "sha256": "96af999d17e372b2ddc40199146ec80b01f9c3669f4444ccd23f9fd5976d566f"
+      }
+    },
+    {
+      "scenario": "cross-stage",
+      "variant": "defect",
+      "id": "t-2993578dbd30891ddf",
+      "attemptId": "ed0270d0-3cda-4be1-9adb-e80ee87413be",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 292
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ed0270d0-3cda-4be1-9adb-e80ee87413be/public-stop.json",
+          "sha256": "80e363772acc08005ca96bbb194fef3f4d956de204360f7e058235eb0490298f"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ed0270d0-3cda-4be1-9adb-e80ee87413be/public-report.json",
+          "sha256": "242ac30c06d2d230d80af92348b16100797a404cc304a474eec65d4dc36620a2"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 30541,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-2993578dbd30891ddf/claim.json",
+          "sha256": "caaca90982f9513d0bdf2248040265f288ffd825d989287810c91abb54de887c"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-2993578dbd30891ddf/settled.json",
+          "sha256": "c6bbb550f7a83cb1c7d364d50fa71bc25d98731aa23fd7bbf0daaf9cc0d90b36"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/ed0270d0-3cda-4be1-9adb-e80ee87413be/score.json",
+          "sha256": "1d4e02034f1cbf2f7566506656481edeec7ff895132ae6ce5b50ec9ddd1d90ca"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/ed0270d0-3cda-4be1-9adb-e80ee87413be/result.json",
+        "sha256": "f3178fdcb5fcae815bf7cc4a29055ea985a647ad20a4c1c5015b062eee682674"
+      }
+    },
+    {
+      "scenario": "mandatory-164k",
+      "variant": "missing",
+      "id": "t-94fb2acbaa4a0247dd",
+      "attemptId": "417421e8-0d8e-450a-b1d1-95692dbf05e9",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 10
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/417421e8-0d8e-450a-b1d1-95692dbf05e9/public-stop.json",
+          "sha256": "abbb3b55d0843bd8d9ad4fbfa1913e6eec2ac60e66d792e53f1f08eb68ad7198"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/417421e8-0d8e-450a-b1d1-95692dbf05e9/public-report.json",
+          "sha256": "20a70fecdab3e3eade1ac902fe3341031eac0158b2f33b38d5e10ef25ddf1536"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 31332,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-94fb2acbaa4a0247dd/claim.json",
+          "sha256": "202381806e82aab8155723843ab4beb91f4b075a783a66e93cbe3510c7ea09ff"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-94fb2acbaa4a0247dd/settled.json",
+          "sha256": "7d5c93257e30f6e86037c6ec1829a3daa10caa9f29abf26f5943547648964302"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/417421e8-0d8e-450a-b1d1-95692dbf05e9/score.json",
+          "sha256": "37aa5813cb88c52a43f89c6cf4a8b3c21bd7d6fe75ba7dd7169c911bf6201f52"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/417421e8-0d8e-450a-b1d1-95692dbf05e9/result.json",
+        "sha256": "09c4043cc3d458784503aba26a1d474515d703fcb8134d3e9e06eb0c40d16147"
+      }
+    },
+    {
+      "scenario": "compact-exhausted",
+      "variant": "defect",
+      "id": "t-dce1ce84a260498055",
+      "attemptId": "75844a0a-9b9f-4a81-9e88-cba48b42afd8",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 34
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/75844a0a-9b9f-4a81-9e88-cba48b42afd8/public-stop.json",
+          "sha256": "fe71edce495e64c1bd7fbdf383ae90a5faa3e23f0ccc217b94300f7ff1795aa1"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/75844a0a-9b9f-4a81-9e88-cba48b42afd8/public-report.json",
+          "sha256": "c43b72d022fb36e18f07f0af23759bfc90f21727cf859bd015a22592776e5c21"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 32522,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-dce1ce84a260498055/claim.json",
+          "sha256": "af21fb0d36957db1d4c3d1c79a267d9e8ede8b8f0d0b7170af8d7c55589143b4"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-dce1ce84a260498055/settled.json",
+          "sha256": "2ea4da2d9bb607a23f294aa482969f4272309590b30b131cc3a181de12fb412d"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/75844a0a-9b9f-4a81-9e88-cba48b42afd8/score.json",
+          "sha256": "2c7db43d812ba6aefd12596f7a35369df9a5623f80cfa636d3e429aa45c65ebf"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/75844a0a-9b9f-4a81-9e88-cba48b42afd8/result.json",
+        "sha256": "3f55e93cb2fe3c6dc204edd1ee976d1c7e5d7da1bc34ef42a8748342cc03d846"
+      }
+    },
+    {
+      "scenario": "large-repo",
+      "variant": "missing",
+      "id": "t-8c53af623ad78e77b9",
+      "attemptId": "c88acda8-c8cf-40c8-a59c-bc02edec0925",
+      "closed": true,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 1,
+          "unreviewedScope": 0
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c88acda8-c8cf-40c8-a59c-bc02edec0925/public-stop.json",
+          "sha256": "d1a59fa1fbdf454b04c70095aafea05678d21f826115d490cecd2c2ff8c01378"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c88acda8-c8cf-40c8-a59c-bc02edec0925/public-report.json",
+          "sha256": "30a587ab5125675e289e8d23bde839d9ebaa5dede4bc42ee9a8a9e8a798b1200"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 6216,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": null,
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-8c53af623ad78e77b9/claim.json",
+          "sha256": "757e917d21d1000a318cb3d544b36dbda50dd5ae7e540be3dbb457e564f799af"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-8c53af623ad78e77b9/settled.json",
+          "sha256": "979ded566fd0e4a9c3a1a3655db000e377f969f6db7b6c0722ab38ca3de601b9"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/c88acda8-c8cf-40c8-a59c-bc02edec0925/score.json",
+          "sha256": "5c1a8180ab569d03a987888ae95b0370dc1e8e7e7cb736f03ba3ad4ca0276431"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/c88acda8-c8cf-40c8-a59c-bc02edec0925/result.json",
+        "sha256": "b17aa68c43ddbafbad425dd0ff2ba57f803635777ad52472dc3c4af83481493a"
+      }
+    },
+    {
+      "scenario": "inline-164k",
+      "variant": "missing",
+      "id": "t-40ddf6b53139d6be56",
+      "attemptId": "99b2422c-f8db-46c0-acb2-bd5edc6a0cd3",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 10
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/99b2422c-f8db-46c0-acb2-bd5edc6a0cd3/public-stop.json",
+          "sha256": "9e323a4f1dcd1f8e0114e3348c1d214ab9c9feb1bab3db6f8bb5c54bd0ff819e"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/99b2422c-f8db-46c0-acb2-bd5edc6a0cd3/public-report.json",
+          "sha256": "cc8ed939f3ced0230d27d6a98493748610d7144dad24b50be532d8b02fbc838a"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 34840,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-40ddf6b53139d6be56/claim.json",
+          "sha256": "a705820b72604acf01a9b1b80acf4e213379ebee34dddfbea5fcc66c618657e8"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-40ddf6b53139d6be56/settled.json",
+          "sha256": "43ca9f49e72cc76834ed1c42f8d6bde9d680113c784464bf62bb6053441e313b"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/99b2422c-f8db-46c0-acb2-bd5edc6a0cd3/score.json",
+          "sha256": "ad95e22a2eee02425f1f35b9ef4297509d0baa8f3de86b2d700a37d5d977b1f2"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/99b2422c-f8db-46c0-acb2-bd5edc6a0cd3/result.json",
+        "sha256": "59cdf1418aebd4e0f3892a03b5f1d011e993ea33c3059427d33a9a813d846732"
+      }
+    },
+    {
+      "scenario": "compact-exhausted",
+      "variant": "missing",
+      "id": "t-3f072cdecbbcc1316b",
+      "attemptId": "7085b9b9-96a9-4039-9cfa-6ad04298038d",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 34
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/7085b9b9-96a9-4039-9cfa-6ad04298038d/public-stop.json",
+          "sha256": "70107d83945b39b3c99b8c7021c2e222548ca654fcae654a832046ddb8d4eec7"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/7085b9b9-96a9-4039-9cfa-6ad04298038d/public-report.json",
+          "sha256": "219bf31a4bfb080691e8dacdd65b07beafbe027d44f9e38b5e7267e48ce160a1"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 35302,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3f072cdecbbcc1316b/claim.json",
+          "sha256": "1cf4b42cce557d58e4baaef75b8ead1d0f68da84b442946c12db57a2bb4f7610"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-3f072cdecbbcc1316b/settled.json",
+          "sha256": "3949a88c80b02460c1e80442c5cdd85d4a276e7a06138f32a80374098146a897"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/7085b9b9-96a9-4039-9cfa-6ad04298038d/score.json",
+          "sha256": "2df9624183288ce28a3886191c3e18d0bc2d8ba3bee491b503bf02eabe1de24c"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/7085b9b9-96a9-4039-9cfa-6ad04298038d/result.json",
+        "sha256": "0b52455df05da5143db5a430f2df0d4bea6dc500a7466dd8b4220b32267bf056"
+      }
+    },
+    {
+      "scenario": "small",
+      "variant": "defect",
+      "id": "t-9614dfb9b76b4403f1",
+      "attemptId": "0cc398fd-3888-4836-b8c9-490c0790365f",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "block",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 1,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0cc398fd-3888-4836-b8c9-490c0790365f/public-stop.json",
+          "sha256": "bb7ff9fb1f3fa309cd56b0edc766b6d4008c7e27540745235870da07868618bc"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0cc398fd-3888-4836-b8c9-490c0790365f/public-report.json",
+          "sha256": "eb5c8061270e5f849bbe170dc9c2408bdbdaf9a7d971d0e4d0bd706999215fde"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 7056,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-9614dfb9b76b4403f1/claim.json",
+          "sha256": "3caddc87585ce3855a249d00eb1d4f6e156b54b3c5195b560222ef0a93180816"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-9614dfb9b76b4403f1/settled.json",
+          "sha256": "decab1d9cee343c1d8932a78150cc4e85d47ac40824049e020a15f76912448d2"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/0cc398fd-3888-4836-b8c9-490c0790365f/score.json",
+          "sha256": "d6c290b400085ebca957f32b6475e09e51d047b99672ecaf10ce2e7ba2075afb"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0cc398fd-3888-4836-b8c9-490c0790365f/result.json",
+        "sha256": "e55f2308ea5bb114d154a505b3f69a491a561b5491fa93dbea09444074da3be0"
+      }
+    },
+    {
+      "scenario": "required-annex",
+      "variant": "missing",
+      "id": "t-d2fb5500144c0783e6",
+      "attemptId": "74f0bcc8-1eb8-49be-9004-edc4d0f8a690",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 1,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/74f0bcc8-1eb8-49be-9004-edc4d0f8a690/public-stop.json",
+          "sha256": "5205c0d5e93b0609b9ea11d64b8e62d77c1c82b01e4d221ee060a8f8de1d5264"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/74f0bcc8-1eb8-49be-9004-edc4d0f8a690/public-report.json",
+          "sha256": "09eef8aa3350a1c1506d50ae041e72f7ff35e84c06ed38f9c77e94281301fcda"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 36508,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-d2fb5500144c0783e6/claim.json",
+          "sha256": "9eefcf5e94d4039405567e4d1549352707a878a1a3c039fae4d378d976dfc325"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-d2fb5500144c0783e6/settled.json",
+          "sha256": "44db9e5585a0f2dc8800c8a6c984ad68984692a08e02b3ea763ca47519e76ccc"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/74f0bcc8-1eb8-49be-9004-edc4d0f8a690/score.json",
+          "sha256": "e0d4fa76a3ff94004c10244289fe7830717f524f943ca5a4cdf948bed8669262"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/74f0bcc8-1eb8-49be-9004-edc4d0f8a690/result.json",
+        "sha256": "9fd11f72d96be3bb440916785aee2ab585e4201927c604aded6036134d637511"
+      }
+    },
+    {
+      "scenario": "inline-164k",
+      "variant": "defect",
+      "id": "t-1549a3909122d901a8",
+      "attemptId": "e15eb1c4-6beb-4a5e-bbff-5d42f962af2d",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 10
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/e15eb1c4-6beb-4a5e-bbff-5d42f962af2d/public-stop.json",
+          "sha256": "bdf26f8dc0d00e7092e060d4d4d5c1f7fe0c2ea204cb2c65e3ec5a9348f00aef"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/e15eb1c4-6beb-4a5e-bbff-5d42f962af2d/public-report.json",
+          "sha256": "64a9d8a95bad5260a74e96c46c48078d03e2d699e82d41bc3915998c7290926c"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 35659,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-1549a3909122d901a8/claim.json",
+          "sha256": "50de790485d385c4539d67125ab22a0617dd332ae5bb7634e07d16e11b0e75d4"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-1549a3909122d901a8/settled.json",
+          "sha256": "6d95c0c43a194dddba37b3f84954879af05f36cde206bc20826783c67027c95e"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/e15eb1c4-6beb-4a5e-bbff-5d42f962af2d/score.json",
+          "sha256": "a3078b35374082b607638e2d3ce09738dd53f9fa6a4c89f481d48211764963ee"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/e15eb1c4-6beb-4a5e-bbff-5d42f962af2d/result.json",
+        "sha256": "1441658bd9d37dbd403177be632ad1696ca3a96870da611d64a43eb7944f0484"
+      }
+    },
+    {
+      "scenario": "small",
+      "variant": "correct",
+      "id": "t-baadd03a5b271c531f",
+      "attemptId": "7a0f167e-01b8-4393-a831-779b311d5217",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/7a0f167e-01b8-4393-a831-779b311d5217/public-stop.json",
+          "sha256": "a57bd5a34d2a13713d7fd3f6e2e1e8fa8807fb8e4b9c919683a889b7185a4816"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/7a0f167e-01b8-4393-a831-779b311d5217/public-report.json",
+          "sha256": "3fe0333cbf89ecc7e107429fd38f7afc4bcf085a7ebb86da337971f32e9c01a2"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 6405,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-baadd03a5b271c531f/claim.json",
+          "sha256": "7208279c36caade01dc2e059fe5d928d75e48a6f1f35ee03d6bb8db5e53d20f9"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-baadd03a5b271c531f/settled.json",
+          "sha256": "1040ecda0c1133ed26b40fec94fa59a79c8662d161f3c0df0218a1f440c03104"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/7a0f167e-01b8-4393-a831-779b311d5217/score.json",
+          "sha256": "a0c2f6b749756c4ef90aad84009d3059b1f8e153d952fe9c3914c81245fd559d"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/7a0f167e-01b8-4393-a831-779b311d5217/result.json",
+        "sha256": "c829c8dc59a2867eed38ab1f5f70a7629f322f7cf957113b59aec7da0789c079"
+      }
+    },
+    {
+      "scenario": "long-line",
+      "variant": "correct",
+      "id": "t-618d61516940f12146",
+      "attemptId": "4231e67a-d050-43fe-9b2a-45cdeb8ac8b9",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "REVIEWER_RUN_FAILED",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 1
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/4231e67a-d050-43fe-9b2a-45cdeb8ac8b9/public-stop.json",
+          "sha256": "48179b7f5a12cebf5bd42a346f5023516e9f93e2a35c9eb53fbb3e5b9b2440c9"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/4231e67a-d050-43fe-9b2a-45cdeb8ac8b9/public-report.json",
+          "sha256": "c961da0dc43a9b790a156a468527c74439727adcadfd883afdf2987948c44178"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 36146,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-618d61516940f12146/claim.json",
+          "sha256": "654bfa0bf25991e6e4aad68cf141bbff3de56e36cca956726c5607ad809929ba"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-618d61516940f12146/settled.json",
+          "sha256": "e0b751bdc43df7c1f23966324dc60208dfa79e36dce80884a0038aabb0a2f5d4"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/4231e67a-d050-43fe-9b2a-45cdeb8ac8b9/score.json",
+          "sha256": "85b30d26910b0756cb00982a90f3117077a2de2b20d84a00494b49d494dd73ac"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/4231e67a-d050-43fe-9b2a-45cdeb8ac8b9/result.json",
+        "sha256": "f84c35a5cbe269d0200dac108ec6e005c6442c300a3f6b10647e173e290ff37f"
+      }
+    },
+    {
+      "scenario": "dense-material",
+      "variant": "correct",
+      "id": "t-d616909a8292161786",
+      "attemptId": "1a52894c-e932-4af8-a96f-8bb525a6162f",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 11
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/1a52894c-e932-4af8-a96f-8bb525a6162f/public-stop.json",
+          "sha256": "bf1ae52dded5f9f50af4a011527df21db1aed622c7c97d385490beb6ed7c04a1"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/1a52894c-e932-4af8-a96f-8bb525a6162f/public-report.json",
+          "sha256": "ce08bee17a2b2f65b25f8fa6c4641cbe095080a355dc835118456bd0aa099473"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 43535,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-d616909a8292161786/claim.json",
+          "sha256": "12b3b7f0295a36f79392d71a8631cd4da83df4a4f949090b25ccdcd1a610f571"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-d616909a8292161786/settled.json",
+          "sha256": "f6292eb561387638c3687bb24329db677636fbd8c8438f0418dd03e5df750dee"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/1a52894c-e932-4af8-a96f-8bb525a6162f/score.json",
+          "sha256": "97ff99c6199f2460a757b37a2a77116a963b7903c77730237685de6afec785e9"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/1a52894c-e932-4af8-a96f-8bb525a6162f/result.json",
+        "sha256": "4cbd1fe87b433f44561cfc0a47a4185de8b6fdd54cae2233d70de96e124a6a9d"
+      }
+    },
+    {
+      "scenario": "inline-164k",
+      "variant": "correct",
+      "id": "t-7ccd823b23da47543b",
+      "attemptId": "0404012d-afb5-4e41-9c17-673a4e6e250c",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "STOP_REVIEW_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 0,
+          "missingEvidence": 0,
+          "unreviewedScope": 10
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0404012d-afb5-4e41-9c17-673a4e6e250c/public-stop.json",
+          "sha256": "6c6771a6cd4538664b03578ebb671c5f3cb9ebfc650a472230c60f3b2586d99a"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0404012d-afb5-4e41-9c17-673a4e6e250c/public-report.json",
+          "sha256": "ee07cfd9f3fcf6130a7e77d7ec4b2b6e96793fa87ac9543710e794f6e334c644"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 36104,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-7ccd823b23da47543b/claim.json",
+          "sha256": "a2571f12621dbbad6860b5f12841f50b3afb1ab4b07a632b17eee0dc6689e3e8"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-7ccd823b23da47543b/settled.json",
+          "sha256": "1bd29de895f7e489e8220f2251e81911f688fd53d3b55622a99985512d17c4c7"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/0404012d-afb5-4e41-9c17-673a4e6e250c/score.json",
+          "sha256": "90330ee1d285f4b8b0572c39951a4e63e738b6fcea302ec3437d84bc1bc6f790"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/0404012d-afb5-4e41-9c17-673a4e6e250c/result.json",
+        "sha256": "3dd459c17a1cc7dd13c43e8d4273060473b448dd0b94c4c5bff201be4c888c77"
+      }
+    },
+    {
+      "scenario": "required-annex",
+      "variant": "defect",
+      "id": "t-d0dfadf1e80cc42da5",
+      "attemptId": "21ef10b8-e313-4d26-a6fd-101055c5c73b",
+      "closed": false,
+      "veto": [],
+      "publication": {
+        "status": "UNVERIFIED",
+        "decision": "block",
+        "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+        "sections": {
+          "confirmedDeviations": 1,
+          "missingEvidence": 0,
+          "unreviewedScope": 2
+        },
+        "evidence": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/21ef10b8-e313-4d26-a6fd-101055c5c73b/public-stop.json",
+          "sha256": "2993dab4febdac1015e279148238816f3bd591224013d38738982a7fe1fe7b1d"
+        },
+        "publicReport": {
+          "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/21ef10b8-e313-4d26-a6fd-101055c5c73b/public-report.json",
+          "sha256": "bca385846122aafcb5d5f81502964f3a0092f2470ee98b624593bd8579717f5c"
+        }
+      },
+      "deadlineMs": 1200000,
+      "stopElapsedMs": 38802,
+      "recordType": "MECHANISM_OBSERVATION",
+      "exitCode": 0,
+      "failureLevel": "RC_PARTIAL",
+      "billing": "OFFLINE_SIMULATED",
+      "realRequests": 0,
+      "evidence": {
+        "claim": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-d0dfadf1e80cc42da5/claim.json",
+          "sha256": "27d8f6f2fb10e7a03a73edb1d5f1af8e00de700e008f1ebea013b6b8535c8a64"
+        },
+        "settled": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/ledger/mechanism/1/t-d0dfadf1e80cc42da5/settled.json",
+          "sha256": "9a6c117b53f0da538d1ef40ebc9cd4f5c6afe76a984ec7b54c2e2163bfc1e298"
+        },
+        "grade": {
+          "path": "runs/versions/deliver-v3-20261126-delivery-mechanism/grades/mechanism/21ef10b8-e313-4d26-a6fd-101055c5c73b/score.json",
+          "sha256": "1b6f6da6b494e356b5cc49b409d583b3e69525c3c29c0df2238a8ef0a14d0786"
+        }
+      },
+      "result": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/versions/deliver-v3-20261126-delivery-mechanism/artifacts/21ef10b8-e313-4d26-a6fd-101055c5c73b/result.json",
+        "sha256": "68ae9c90ff1d476bcfcebdba8856bfe2e0d3667cce6d1c5ee7dcb7f41481da72"
+      }
+    }
+  ],
+  "real": [
+    {
+      "candidate": "delivery-real",
+      "id": "t-bfa76c3174a7d07042",
+      "scenario": "cross-stage",
+      "variant": "correct",
+      "stopCount": 1,
+      "status": "UNVERIFIED",
+      "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+      "recordType": "SEMANTIC_SCORE",
+      "veto": [],
+      "failureLevel": "RC_PARTIAL",
+      "runtimePolicy": {
+        "stopCorrection": {
+          "metrics": {
+            "M01": false,
+            "M02": false,
+            "M03": false,
+            "M04": false,
+            "M05": false,
+            "M06": false,
+            "M07": false,
+            "M08": true,
+            "M09": true,
+            "M10": false,
+            "M11": false,
+            "M12": true,
+            "M13": true,
+            "M14": false,
+            "M15": true,
+            "M16": true
+          },
+          "fileQualityReviewEnabled": false,
+          "deviationOnly": true,
+          "originalRequirementsBasis": true,
+          "enabled": true,
+          "waitMode": "until_pass",
+          "maxCorrectionsPerSession": 3,
+          "maxCorrectionsPerFlow": 3,
+          "maxReviewSteps": 200,
+          "maxRepairSteps": 2000,
+          "assessmentTimeoutMs": 1200000,
+          "feedbackReserveMs": 180000,
+          "reviewGroupSize": 3,
+          "migrationWarnings": []
+        },
+        "stopReviewer": {
+          "model": "custom/deepseek-v4.1-flash",
+          "effort": "low",
+          "maxOutputTokens": 32768,
+          "timeoutMs": 1200000,
+          "formatRepairAttempts": null,
+          "maxSteps": null,
+          "maxAttempts": null,
+          "maxBudgetUsd": null,
+          "session": "fork",
+          "sessionExplicit": false,
+          "provider": null
+        }
+      },
+      "elapsedMs": 158726,
+      "usage": {
+        "inputTokens": 966041,
+        "outputTokens": 17320,
+        "totalTokens": 983361,
+        "cacheReadTokens": 910848,
+        "cacheWriteTokens": null,
+        "uncachedInputTokens": 55193,
+        "peakInputTokens": 69918,
+        "fixtureOrReal": "real",
+        "providerRequests": 20,
+        "requestsWithUsage": 20,
+        "complete": true,
+        "partialTotals": {
+          "inputTokens": 966041,
+          "outputTokens": 17320,
+          "totalTokens": 983361,
+          "cacheReadTokens": 910848,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": 55193,
+          "peakInputTokens": 69918
+        },
+        "compactionRequests": 0,
+        "blockedBeforeDispatch": [],
+        "fee": {
+          "amount": null,
+          "reason": "Provider invoice unavailable; raw usage is retained."
+        },
+        "everySuccessfulRequestPinned": true,
+        "responseModels": [
+          "deepseek-v4-1-flash-261017"
+        ],
+        "failures": []
+      },
+      "evidence": {
+        "result.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\51ce8943-36f3-4882-b6eb-92115d0d7a9a\\result.json",
+          "sha256": "d60296a2fc450e1d568d71df5064dc0c21373a9bf48fb5cac1a25cbb31999225"
+        },
+        "evidence-index.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\51ce8943-36f3-4882-b6eb-92115d0d7a9a\\evidence-index.json",
+          "sha256": "5d51a9db48045895c8a28c636e67c093252f48e34da839c5400e71fdf991de92"
+        },
+        "public-stop.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\51ce8943-36f3-4882-b6eb-92115d0d7a9a\\public-stop.json",
+          "sha256": "d418ff8d23a8e0b2f9ef79e94fef1898b0f00525e884cdeb14e9c092da258db8"
+        },
+        "public-report.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\51ce8943-36f3-4882-b6eb-92115d0d7a9a\\public-report.json",
+          "sha256": "c610df9b1635e6bd97b107715460a4d7c80fbba0ca4386833027937e4ff54dfd"
+        }
+      },
+      "grade": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-bfa76c3174a7d07042\\structural-grade.json",
+        "sha256": "b063c6cdb7631d523cca4c31f2866558c22c7147353a6d79ae4ed674cb3e9b22"
+      },
+      "settlement": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-bfa76c3174a7d07042\\settled.json",
+        "sha256": "8a496627b68f92214e6725a711158003a4030c538a030b439bf7addf6a7e2229"
+      },
+      "job": 3,
+      "kind": "frozen_real"
+    },
+    {
+      "candidate": "delivery-real",
+      "id": "t-1549a3909122d901a8",
+      "scenario": "inline-164k",
+      "variant": "defect",
+      "stopCount": 1,
+      "status": "UNVERIFIED",
+      "reason": "REVIEWER_RUN_FAILED",
+      "recordType": "SEMANTIC_SCORE",
+      "veto": [],
+      "failureLevel": "RC_PARTIAL",
+      "runtimePolicy": {
+        "stopCorrection": {
+          "metrics": {
+            "M01": false,
+            "M02": false,
+            "M03": false,
+            "M04": false,
+            "M05": false,
+            "M06": false,
+            "M07": false,
+            "M08": true,
+            "M09": true,
+            "M10": false,
+            "M11": false,
+            "M12": true,
+            "M13": true,
+            "M14": false,
+            "M15": true,
+            "M16": true
+          },
+          "fileQualityReviewEnabled": false,
+          "deviationOnly": true,
+          "originalRequirementsBasis": true,
+          "enabled": true,
+          "waitMode": "until_pass",
+          "maxCorrectionsPerSession": 3,
+          "maxCorrectionsPerFlow": 3,
+          "maxReviewSteps": 200,
+          "maxRepairSteps": 2000,
+          "assessmentTimeoutMs": 1200000,
+          "feedbackReserveMs": 180000,
+          "reviewGroupSize": 3,
+          "migrationWarnings": []
+        },
+        "stopReviewer": {
+          "model": "custom/deepseek-v4.1-flash",
+          "effort": "low",
+          "maxOutputTokens": 32768,
+          "timeoutMs": 1200000,
+          "formatRepairAttempts": null,
+          "maxSteps": null,
+          "maxAttempts": null,
+          "maxBudgetUsd": null,
+          "session": "fork",
+          "sessionExplicit": false,
+          "provider": null
+        }
+      },
+      "elapsedMs": 255266,
+      "usage": {
+        "inputTokens": 1307775,
+        "outputTokens": 37709,
+        "totalTokens": 1345484,
+        "cacheReadTokens": 1047168,
+        "cacheWriteTokens": null,
+        "uncachedInputTokens": 260607,
+        "peakInputTokens": 134891,
+        "fixtureOrReal": "real",
+        "providerRequests": 19,
+        "requestsWithUsage": 19,
+        "complete": true,
+        "partialTotals": {
+          "inputTokens": 1307775,
+          "outputTokens": 37709,
+          "totalTokens": 1345484,
+          "cacheReadTokens": 1047168,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": 260607,
+          "peakInputTokens": 134891
+        },
+        "compactionRequests": 2,
+        "blockedBeforeDispatch": [],
+        "fee": {
+          "amount": null,
+          "reason": "Provider invoice unavailable; raw usage is retained."
+        },
+        "everySuccessfulRequestPinned": true,
+        "responseModels": [
+          "deepseek-v4-1-flash-261017"
+        ],
+        "failures": []
+      },
+      "evidence": {
+        "result.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\31e54729-c1a2-4e28-945d-3c486ea95e50\\result.json",
+          "sha256": "0272794a3d978a15ea62ba270cb03f0d685eec94d581c936ae8173abf5b52661"
+        },
+        "evidence-index.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\31e54729-c1a2-4e28-945d-3c486ea95e50\\evidence-index.json",
+          "sha256": "8a5ace42cd4b44e64cdd27e23381dea1e1801f4a94d09a88a54ed9f925136cc9"
+        },
+        "public-stop.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\31e54729-c1a2-4e28-945d-3c486ea95e50\\public-stop.json",
+          "sha256": "8181cb3cf7f540d957cf0b797b70154eb0d6a0da77338de85cba1e29dac6672c"
+        },
+        "public-report.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\31e54729-c1a2-4e28-945d-3c486ea95e50\\public-report.json",
+          "sha256": "acd1d2c5d9b6329a2c240a9a0b9273196a7d5a746703f8cac89480530df9af60"
+        }
+      },
+      "grade": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-1549a3909122d901a8\\structural-grade.json",
+        "sha256": "468ca74a03fcf63f11f37941257e4d9366185ad8be99585e4c0bb96038a4ce47"
+      },
+      "settlement": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-1549a3909122d901a8\\settled.json",
+        "sha256": "170e0c8faf953eb6d35ae02b3233748f0e5972a1762b7967a7ccb9d0d996dd5b"
+      },
+      "job": 1,
+      "kind": "frozen_real"
+    },
+    {
+      "candidate": "delivery-real",
+      "id": "t-3dab4e453183f79c82",
+      "scenario": "large-repo",
+      "variant": "defect",
+      "stopCount": 1,
+      "status": "UNVERIFIED",
+      "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+      "recordType": "ADJUDICATION_DRAFT",
+      "veto": [],
+      "failureLevel": "RC_PARTIAL",
+      "runtimePolicy": {
+        "stopCorrection": {
+          "metrics": {
+            "M01": false,
+            "M02": false,
+            "M03": false,
+            "M04": false,
+            "M05": false,
+            "M06": false,
+            "M07": false,
+            "M08": true,
+            "M09": true,
+            "M10": false,
+            "M11": false,
+            "M12": true,
+            "M13": true,
+            "M14": false,
+            "M15": true,
+            "M16": true
+          },
+          "fileQualityReviewEnabled": false,
+          "deviationOnly": true,
+          "originalRequirementsBasis": true,
+          "enabled": true,
+          "waitMode": "until_pass",
+          "maxCorrectionsPerSession": 3,
+          "maxCorrectionsPerFlow": 3,
+          "maxReviewSteps": 200,
+          "maxRepairSteps": 2000,
+          "assessmentTimeoutMs": 1200000,
+          "feedbackReserveMs": 180000,
+          "reviewGroupSize": 3,
+          "migrationWarnings": []
+        },
+        "stopReviewer": {
+          "model": "custom/deepseek-v4.1-flash",
+          "effort": "low",
+          "maxOutputTokens": 32768,
+          "timeoutMs": 1200000,
+          "formatRepairAttempts": null,
+          "maxSteps": null,
+          "maxAttempts": null,
+          "maxBudgetUsd": null,
+          "session": "fork",
+          "sessionExplicit": false,
+          "provider": null
+        }
+      },
+      "elapsedMs": 56583,
+      "usage": {
+        "inputTokens": 192609,
+        "outputTokens": 5924,
+        "totalTokens": 198533,
+        "cacheReadTokens": 163200,
+        "cacheWriteTokens": null,
+        "uncachedInputTokens": 29409,
+        "peakInputTokens": 34110,
+        "fixtureOrReal": "real",
+        "providerRequests": 8,
+        "requestsWithUsage": 8,
+        "complete": true,
+        "partialTotals": {
+          "inputTokens": 192609,
+          "outputTokens": 5924,
+          "totalTokens": 198533,
+          "cacheReadTokens": 163200,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": 29409,
+          "peakInputTokens": 34110
+        },
+        "compactionRequests": 0,
+        "blockedBeforeDispatch": [],
+        "fee": {
+          "amount": null,
+          "reason": "Provider invoice unavailable; raw usage is retained."
+        },
+        "everySuccessfulRequestPinned": true,
+        "responseModels": [
+          "deepseek-v4-1-flash-261017"
+        ],
+        "failures": []
+      },
+      "evidence": {
+        "result.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\da6cb2e8-52a0-405c-8ac9-3c8882422806\\result.json",
+          "sha256": "64f3f6059805394e915915e3e7e775d830fb6c9b15663faa6ac781258a1d14b6"
+        },
+        "evidence-index.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\da6cb2e8-52a0-405c-8ac9-3c8882422806\\evidence-index.json",
+          "sha256": "738d8a779966f1e9b5b42a78b2bb6874eda5e8772f7ed9585c068df83776b3c2"
+        },
+        "public-stop.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\da6cb2e8-52a0-405c-8ac9-3c8882422806\\public-stop.json",
+          "sha256": "05bf8754efd640092911e96030202ec600cdef8e7a36aae0321b6afb453e33ff"
+        },
+        "public-report.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\da6cb2e8-52a0-405c-8ac9-3c8882422806\\public-report.json",
+          "sha256": "7dff5d7d42efc89027a9759836d3e09f8306db1c70e60a2dbca91c22661a0191"
+        }
+      },
+      "grade": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-3dab4e453183f79c82\\structural-grade.json",
+        "sha256": "b0c2a1f90ad8b270ee84d707401225e5ed34dc12971bade92293bcd52245faf3"
+      },
+      "settlement": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-3dab4e453183f79c82\\settled.json",
+        "sha256": "b47052831fa82502bdb3165f8cd81ddf3659bf653ec8afd8433ee88230427171"
+      },
+      "job": 5,
+      "kind": "frozen_real"
+    },
+    {
+      "candidate": "reference-small",
+      "rcCommit": "8a9b662ec8cf6e83e762057f3136926d95ff7fc1",
+      "id": "t-baadd03a5b271c531f",
+      "scenario": "small",
+      "variant": "correct",
+      "stopCount": 0,
+      "reusedComparison": true,
+      "status": "NO_DEVIATION_FOUND",
+      "reason": "NO_DEVIATION_FOUND",
+      "veto": [],
+      "recordType": "SEMANTIC_SCORE",
+      "elapsedMs": 79025,
+      "usage": {
+        "inputTokens": 333562,
+        "outputTokens": 6418,
+        "totalTokens": 339980,
+        "cacheReadTokens": 303872,
+        "cacheWriteTokens": null,
+        "uncachedInputTokens": 29690,
+        "peakInputTokens": 34679,
+        "fixtureOrReal": "real",
+        "providerRequests": 13,
+        "requestsWithUsage": 13,
+        "complete": true,
+        "partialTotals": {
+          "inputTokens": 333562,
+          "outputTokens": 6418,
+          "totalTokens": 339980,
+          "cacheReadTokens": 303872,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": 29690,
+          "peakInputTokens": 34679
+        },
+        "compactionRequests": 0,
+        "blockedBeforeDispatch": [],
+        "fee": {
+          "amount": null,
+          "reason": "Provider invoice unavailable; raw usage is retained."
+        },
+        "everySuccessfulRequestPinned": true,
+        "responseModels": [
+          "deepseek-v4-1-flash-261017"
+        ],
+        "failures": []
+      },
+      "failureLevel": null,
+      "evidence": {
+        "result.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v1-20261126-reference-small\\artifacts\\aa55505d-e9c8-4035-bd62-e5e620902806\\result.json",
+          "sha256": "ca59dae93d884ad21eeb83b33157f5c472dc2fdfd7150aec887125226f9a4188"
+        },
+        "public-stop.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v1-20261126-reference-small\\artifacts\\aa55505d-e9c8-4035-bd62-e5e620902806\\public-stop.json",
+          "sha256": "7172c931302af1e035b03aa3a148bb8c3a1c2f05e8fb0a9d8a839af66b33b4bb"
+        },
+        "public-report.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v1-20261126-reference-small\\artifacts\\aa55505d-e9c8-4035-bd62-e5e620902806\\public-report.json",
+          "sha256": "a1fe456df890d744b0bce7e7f0c3993bd3c1e88226b30a1e187b68aaa442b742"
+        },
+        "evidence-index.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v1-20261126-reference-small\\artifacts\\aa55505d-e9c8-4035-bd62-e5e620902806\\evidence-index.json",
+          "sha256": "08f04f8732766b01a4439e34f775aea3f50d71e0e2698c824ca2a217caf2f286"
+        }
+      },
+      "comparisonReceipt": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\unified-evaluator\\batches\\deliver-v1-20261126\\reference-small.json",
+        "sha256": "b9190f26037dce504c1662a40871a0e7553372824ddcfd548142a3b404a829da"
+      },
+      "job": 7,
+      "kind": "frozen_real"
+    },
+    {
+      "candidate": "delivery-real",
+      "id": "t-3d89a0524144a149d5",
+      "scenario": "long-line",
+      "variant": "missing",
+      "stopCount": 1,
+      "status": "UNVERIFIED",
+      "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+      "recordType": "ADJUDICATION_DRAFT",
+      "veto": [],
+      "failureLevel": "RC_PARTIAL",
+      "runtimePolicy": {
+        "stopCorrection": {
+          "metrics": {
+            "M01": false,
+            "M02": false,
+            "M03": false,
+            "M04": false,
+            "M05": false,
+            "M06": false,
+            "M07": false,
+            "M08": true,
+            "M09": true,
+            "M10": false,
+            "M11": false,
+            "M12": true,
+            "M13": true,
+            "M14": false,
+            "M15": true,
+            "M16": true
+          },
+          "fileQualityReviewEnabled": false,
+          "deviationOnly": true,
+          "originalRequirementsBasis": true,
+          "enabled": true,
+          "waitMode": "until_pass",
+          "maxCorrectionsPerSession": 3,
+          "maxCorrectionsPerFlow": 3,
+          "maxReviewSteps": 200,
+          "maxRepairSteps": 2000,
+          "assessmentTimeoutMs": 1200000,
+          "feedbackReserveMs": 180000,
+          "reviewGroupSize": 3,
+          "migrationWarnings": []
+        },
+        "stopReviewer": {
+          "model": "custom/deepseek-v4.1-flash",
+          "effort": "low",
+          "maxOutputTokens": 32768,
+          "timeoutMs": 1200000,
+          "formatRepairAttempts": null,
+          "maxSteps": null,
+          "maxAttempts": null,
+          "maxBudgetUsd": null,
+          "session": "fork",
+          "sessionExplicit": false,
+          "provider": null
+        }
+      },
+      "elapsedMs": 176030,
+      "usage": {
+        "inputTokens": 584637,
+        "outputTokens": 18537,
+        "totalTokens": 603174,
+        "cacheReadTokens": 545536,
+        "cacheWriteTokens": null,
+        "uncachedInputTokens": 39101,
+        "peakInputTokens": 54821,
+        "fixtureOrReal": "real",
+        "providerRequests": 16,
+        "requestsWithUsage": 16,
+        "complete": true,
+        "partialTotals": {
+          "inputTokens": 584637,
+          "outputTokens": 18537,
+          "totalTokens": 603174,
+          "cacheReadTokens": 545536,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": 39101,
+          "peakInputTokens": 54821
+        },
+        "compactionRequests": 0,
+        "blockedBeforeDispatch": [],
+        "fee": {
+          "amount": null,
+          "reason": "Provider invoice unavailable; raw usage is retained."
+        },
+        "everySuccessfulRequestPinned": true,
+        "responseModels": [
+          "deepseek-v4-1-flash-261017"
+        ],
+        "failures": []
+      },
+      "evidence": {
+        "result.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\9248079f-537e-49c9-ba88-f4bd65317b6b\\result.json",
+          "sha256": "fb64ad430d267536600af81463f1f649c2a96bc69f674454dbf682fc5cb3c1f6"
+        },
+        "evidence-index.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\9248079f-537e-49c9-ba88-f4bd65317b6b\\evidence-index.json",
+          "sha256": "47975d4dcc0a4b0d77493fbae5f0216472ec7812f00af1b0c908dd2adaa664b4"
+        },
+        "public-stop.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\9248079f-537e-49c9-ba88-f4bd65317b6b\\public-stop.json",
+          "sha256": "be57470bdf05dc78a4228da34c12a49e6dc7b98c2f0a72830d223cb4069f5fac"
+        },
+        "public-report.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\9248079f-537e-49c9-ba88-f4bd65317b6b\\public-report.json",
+          "sha256": "29d1382feb11000ad07be97ee7a06446dbf36f9fd3bb5419e9668a158e74bc39"
+        }
+      },
+      "grade": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-3d89a0524144a149d5\\structural-grade.json",
+        "sha256": "7573c6113aeae3c424df7cb6fe48eee9cfa4d209f224bba24a00984b1025271e"
+      },
+      "settlement": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-3d89a0524144a149d5\\settled.json",
+        "sha256": "c38386cae0fbf39c1bbcb59241e084f76a35f8ba43031cd02cc3016e48daea4b"
+      },
+      "job": 4,
+      "kind": "frozen_real"
+    },
+    {
+      "candidate": "delivery-real",
+      "id": "t-baadd03a5b271c531f",
+      "scenario": "small",
+      "variant": "correct",
+      "stopCount": 1,
+      "status": "NO_DEVIATION_FOUND",
+      "reason": "NO_DEVIATION_FOUND",
+      "recordType": "SEMANTIC_SCORE",
+      "veto": [],
+      "failureLevel": null,
+      "runtimePolicy": {
+        "stopCorrection": {
+          "metrics": {
+            "M01": false,
+            "M02": false,
+            "M03": false,
+            "M04": false,
+            "M05": false,
+            "M06": false,
+            "M07": false,
+            "M08": true,
+            "M09": true,
+            "M10": false,
+            "M11": false,
+            "M12": true,
+            "M13": true,
+            "M14": false,
+            "M15": true,
+            "M16": true
+          },
+          "fileQualityReviewEnabled": false,
+          "deviationOnly": true,
+          "originalRequirementsBasis": true,
+          "enabled": true,
+          "waitMode": "until_pass",
+          "maxCorrectionsPerSession": 3,
+          "maxCorrectionsPerFlow": 3,
+          "maxReviewSteps": 200,
+          "maxRepairSteps": 2000,
+          "assessmentTimeoutMs": 1200000,
+          "feedbackReserveMs": 180000,
+          "reviewGroupSize": 3,
+          "migrationWarnings": []
+        },
+        "stopReviewer": {
+          "model": "custom/deepseek-v4.1-flash",
+          "effort": "low",
+          "maxOutputTokens": 32768,
+          "timeoutMs": 1200000,
+          "formatRepairAttempts": null,
+          "maxSteps": null,
+          "maxAttempts": null,
+          "maxBudgetUsd": null,
+          "session": "fork",
+          "sessionExplicit": false,
+          "provider": null
+        }
+      },
+      "elapsedMs": 103756,
+      "usage": {
+        "inputTokens": 363894,
+        "outputTokens": 8652,
+        "totalTokens": 372546,
+        "cacheReadTokens": 333696,
+        "cacheWriteTokens": null,
+        "uncachedInputTokens": 30198,
+        "peakInputTokens": 36497,
+        "fixtureOrReal": "real",
+        "providerRequests": 14,
+        "requestsWithUsage": 14,
+        "complete": true,
+        "partialTotals": {
+          "inputTokens": 363894,
+          "outputTokens": 8652,
+          "totalTokens": 372546,
+          "cacheReadTokens": 333696,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": 30198,
+          "peakInputTokens": 36497
+        },
+        "compactionRequests": 0,
+        "blockedBeforeDispatch": [],
+        "fee": {
+          "amount": null,
+          "reason": "Provider invoice unavailable; raw usage is retained."
+        },
+        "everySuccessfulRequestPinned": true,
+        "responseModels": [
+          "deepseek-v4-1-flash-261017"
+        ],
+        "failures": []
+      },
+      "evidence": {
+        "result.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\470afc0b-eb17-4a56-bdbc-3d6d258a9240\\result.json",
+          "sha256": "7ef5266066663dac052d541f723157211c07cd6df15215e6c9bc46cdc456bf07"
+        },
+        "evidence-index.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\470afc0b-eb17-4a56-bdbc-3d6d258a9240\\evidence-index.json",
+          "sha256": "79956321aa0e1a08e40c80710cf64e4aba1b09b8c7a48fe582f74ce6b96e6cc7"
+        },
+        "public-stop.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\470afc0b-eb17-4a56-bdbc-3d6d258a9240\\public-stop.json",
+          "sha256": "3955442f2307402e3bb7353cd1c4b89f2f04c3f8cfb967843476a1fa8fc558a2"
+        },
+        "public-report.json": {
+          "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\artifacts\\470afc0b-eb17-4a56-bdbc-3d6d258a9240\\public-report.json",
+          "sha256": "8bc0b8e0078b2a9fd41d42f76c953ecd226aa1bd2f4c7923576d541ce8d6c86e"
+        }
+      },
+      "grade": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-baadd03a5b271c531f\\structural-grade.json",
+        "sha256": "ac2398d5509b89db6ad9b2689607952b92e2d2515ab9957c4a6efb97cba89bdb"
+      },
+      "settlement": {
+        "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-large-sdd-3x3-20261125\\runs\\versions\\deliver-v3-20261126-delivery-real\\ledger\\real\\1\\t-baadd03a5b271c531f\\settled.json",
+        "sha256": "85494dcc09af3d96f54e159f9cfe7d16de98f2d2b615e5ab014bb371d0a79854"
+      },
+      "job": 6,
+      "kind": "frozen_real"
+    }
+  ],
+  "paired": {
+    "scenario": "mandatory-164k",
+    "variant": "defect",
+    "candidate": "delivery",
+    "stopCount": 2,
+    "stops": [
+      {
+        "stop": "UNVERIFIED",
+        "decision": "block",
+        "reason": "STOP_ORIGINAL_SCOPE_INCOMPLETE",
+        "acceptanceReport": {
+          "unreviewedScope": [
+            {
+              "id": "original:AGENTS.md",
+              "type": "ORIGINAL_SOURCE",
+              "reviewState": "UNREVIEWED",
+              "reason": "AGENTS.md：原文尚未完整交付，未读第 201–4539 行"
+            },
+            {
+              "id": "M16:original-3a7b3457ce2d1e508e1771d3",
+              "objectId": "M16:original-3a7b3457ce2d1e508e1771d3",
+              "type": "REQUIREMENT",
+              "reviewState": "UNREVIEWED",
+              "reason": "尚待核对：Standard mode must allow three retries: the standard-mode retry configuration must permit exactly three retries."
+            },
+            {
+              "id": "M16:original-b5a79f6aa37871693ec14e64",
+              "objectId": "M16:original-b5a79f6aa37871693ec14e64",
+              "type": "REQUIREMENT",
+              "reviewState": "UNREVIEWED",
+              "reason": "尚待核对：The operator signoff file must contain the word approved."
+            }
+          ],
+          "missingEvidence": [],
+          "complete": false,
+          "sourceCoverage": {
+            "checklistSubmitted": false,
+            "complete": false,
+            "sources": [
+              {
+                "ref": "AGENTS.md",
+                "declaredBy": {
+                  "ref": "transcript:request",
+                  "line": 1
+                },
+                "sha256": "3e7de15a24a0c9996c3ada444595ff63bf5ce8ef2e3cac70f03ebff2a8f5aa0f",
+                "totalLines": 4557,
+                "readLines": 218,
+                "unreadRanges": [
+                  [
+                    201,
+                    4539
+                  ]
+                ],
+                "checklistItems": 3,
+                "disposition": "SOURCE_PARTLY_READ"
+              }
+            ]
+          },
+          "confirmedDeviations": [
+            {
+              "id": "M16:original-64a9192a991ec335c17f9a79",
+              "reason": "AGENTS.md line 2 requires sealed mode to allow zero retries, but the delivered implementation in retry.mjs exports retries = {sealed:3,standard:3}, so sealed mode allows three retries instead of zero."
+            }
+          ],
+          "unverifiedItems": [
+            {
+              "id": "original:AGENTS.md",
+              "type": "ORIGINAL_SOURCE",
+              "reviewState": "UNREVIEWED",
+              "reason": "AGENTS.md：原文尚未完整交付，未读第 201–4539 行"
+            },
+            {
+              "id": "M16:original-3a7b3457ce2d1e508e1771d3",
+              "objectId": "M16:original-3a7b3457ce2d1e508e1771d3",
+              "type": "REQUIREMENT",
+              "reviewState": "UNREVIEWED",
+              "reason": "尚待核对：Standard mode must allow three retries: the standard-mode retry configuration must permit exactly three retries."
+            },
+            {
+              "id": "M16:original-b5a79f6aa37871693ec14e64",
+              "objectId": "M16:original-b5a79f6aa37871693ec14e64",
+              "type": "REQUIREMENT",
+              "reviewState": "UNREVIEWED",
+              "reason": "尚待核对：The operator signoff file must contain the word approved."
+            }
+          ]
+        },
+        "exitCode": 2,
+        "elapsedMs": 44993,
+        "failureLevel": "RC_PARTIAL",
+        "usage": {
+          "inputTokens": 170711,
+          "outputTokens": 3210,
+          "totalTokens": 173921,
+          "cacheReadTokens": 144000,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": 26711,
+          "peakInputTokens": 28711,
+          "fixtureOrReal": "real",
+          "providerRequests": 7,
+          "requestsWithUsage": 7,
+          "complete": true,
+          "partialTotals": {
+            "inputTokens": 170711,
+            "outputTokens": 3210,
+            "totalTokens": 173921,
+            "cacheReadTokens": 144000,
+            "cacheWriteTokens": null,
+            "uncachedInputTokens": 26711,
+            "peakInputTokens": 28711
+          },
+          "compactionRequests": 0,
+          "blockedBeforeDispatch": [],
+          "fee": {
+            "amount": null,
+            "reason": "Provider invoice unavailable; raw usage is retained."
+          },
+          "everySuccessfulRequestPinned": true,
+          "responseModels": [
+            "deepseek-v4-1-flash-261017"
+          ],
+          "failures": []
+        },
+        "evidence": {
+          "result.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\first\\result.json",
+            "sha256": "e42059a196d6b7b0712d5006ccec06eb11f1314161e32ec730ed8b4ebbabf3ea"
+          },
+          "public-stop.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\first\\public-stop.json",
+            "sha256": "89c7fec100f3db463e067ce251a66a526102c3a0e254abb5bf584017985233c7"
+          },
+          "public-report.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\first\\public-report.json",
+            "sha256": "3ad7c1224def4650fbbb4f223d1028a4d6f0835fd3e73cfc788562700b3bd3b6"
+          },
+          "executor-receipt.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\first\\executor-receipt.json",
+            "sha256": "de2e41286a90960eb75a77b247432fa8d5ae51292aa960474cf46cbf8773d097"
+          }
+        }
+      },
+      {
+        "stop": "UNVERIFIED",
+        "decision": "allow",
+        "reason": "REVIEWER_DEADLINE",
+        "acceptanceReport": {
+          "unreviewedScope": [
+            {
+              "id": "original:AGENTS.md",
+              "type": "ORIGINAL_SOURCE",
+              "reviewState": "UNREVIEWED",
+              "reason": "AGENTS.md：条款清单尚未提交，已读原文的要求也待核实，未读第 11–200、2619–4544 行"
+            }
+          ],
+          "missingEvidence": [],
+          "complete": false,
+          "sourceCoverage": {
+            "checklistSubmitted": false,
+            "complete": false,
+            "sources": [
+              {
+                "ref": "AGENTS.md",
+                "declaredBy": {
+                  "ref": "transcript:request",
+                  "line": 1
+                },
+                "sha256": "3e7de15a24a0c9996c3ada444595ff63bf5ce8ef2e3cac70f03ebff2a8f5aa0f",
+                "totalLines": 4557,
+                "readLines": 2441,
+                "unreadRanges": [
+                  [
+                    11,
+                    200
+                  ],
+                  [
+                    2619,
+                    4544
+                  ]
+                ],
+                "checklistItems": 0,
+                "disposition": "CHECKLIST_NOT_SUBMITTED"
+              }
+            ]
+          },
+          "confirmedDeviations": [],
+          "unverifiedItems": [
+            {
+              "id": "original:AGENTS.md",
+              "type": "ORIGINAL_SOURCE",
+              "reviewState": "UNREVIEWED",
+              "reason": "AGENTS.md：条款清单尚未提交，已读原文的要求也待核实，未读第 11–200、2619–4544 行"
+            }
+          ]
+        },
+        "exitCode": 2,
+        "elapsedMs": 117308,
+        "failureLevel": "TRANSPORT",
+        "usage": {
+          "inputTokens": null,
+          "outputTokens": null,
+          "totalTokens": null,
+          "cacheReadTokens": null,
+          "cacheWriteTokens": null,
+          "uncachedInputTokens": null,
+          "peakInputTokens": null,
+          "fixtureOrReal": "real",
+          "providerRequests": 19,
+          "requestsWithUsage": 18,
+          "complete": false,
+          "partialTotals": {
+            "inputTokens": 1064613,
+            "outputTokens": 7446,
+            "totalTokens": 1072059,
+            "cacheReadTokens": 966400,
+            "cacheWriteTokens": null,
+            "uncachedInputTokens": 98213,
+            "peakInputTokens": 106398
+          },
+          "compactionRequests": 1,
+          "blockedBeforeDispatch": [],
+          "fee": {
+            "amount": null,
+            "reason": "Provider invoice unavailable; raw usage is retained."
+          },
+          "everySuccessfulRequestPinned": false,
+          "responseModels": [
+            "deepseek-v4-1-flash-261017"
+          ],
+          "failures": [
+            {
+              "sequence": 19,
+              "httpStatus": 200,
+              "failureLevel": "TRANSPORT"
+            }
+          ]
+        },
+        "evidence": {
+          "result.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\second\\result.json",
+            "sha256": "0f7a5851019a4bdf8c505a8a78dea31eff5fc9c185dd88987848f6c7e29e539c"
+          },
+          "public-stop.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\second\\public-stop.json",
+            "sha256": "29b16c9c67a0d2b648bb28b67921e073c6379dee3aecee7bae2b32cb1507b6bf"
+          },
+          "public-report.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\second\\public-report.json",
+            "sha256": "b75436c9f9914a7305641c9900d91135ee156fa5ce0f9df308373336039f61b7"
+          },
+          "executor-receipt.json": {
+            "path": "C:\\Users\\user\\workspace\\program_workspace\\Experiments\\rc-deliver-v3-20261126-paired\\second\\executor-receipt.json",
+            "sha256": "f56ab631b1fae518f67fda4c74bf886970137d259ccec78458696c1f0ca3fd13"
+          }
+        }
+      }
+    ],
+    "job": 0,
+    "kind": "quick_chain",
+    "firstContinuedRead": {
+      "timestamp": "2026-11-26T03:10:18.533Z",
+      "firstLine": 201,
+      "lastLine": 400,
+      "explicitOffset": 201,
+      "timeline": {
+        "path": "C:/Users/user/workspace/program_workspace/Experiments/rc-deliver-v3-20261126-paired/second/raw/reviews/7ab178c5-088c-4a23-801f-5a25ef4d98bf/host-session.jsonl",
+        "sha256": "ca755cc4bcee0fe3941854968f90058236300f506707ad3978c6c9106bdacfc3"
+      }
+    }
+  },
+  "errors": [],
+  "vetoes": {},
+  "realStops": 7,
+  "deepseekTokens": 4749078,
+  "providerUsageComplete": false
+}
