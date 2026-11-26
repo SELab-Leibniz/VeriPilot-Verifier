@@ -121,6 +121,10 @@ async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false) {
     await call('seal_original_checklist', { noApplicableSources: [{ ref: charter, reason: 'This original delegates its content to the provisions.' }] });
     const firstPage = parsed(await call('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true, limit: 15 }));
     assert.equal(firstPage.total, submitted.length);
+    const projected = parsed(await call('review_checklist', { limit: 15, includeSourceIds: false }));
+    assert(firstPage.items.every(item => item.sourceId && item.sourceRevisionId && item.originalSource.sha256));
+    assert.deepEqual(projected.items, firstPage.items.map(({ sourceId, sourceRevisionId, ...item }) => item));
+    assert.equal(projected.nextOffset, firstPage.nextOffset);
     await assert.rejects(call('finish_stop_review', { summary: 'Only inspected the first page.' }), /have not been presented/u);
     let next = firstPage.nextOffset;
     while (next !== null) next = parsed(await call('review_checklist', { offset: next, limit: 20 })).nextOffset;
