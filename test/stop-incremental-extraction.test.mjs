@@ -176,6 +176,12 @@ async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false, g
       }));
       assert.equal(declared.some(check => check.taskIds.includes(group.objectId) && check.citations.some(cite => cite.path === delivery)),
         groupMode === 'with-proof');
+      const delivered = handle.sourceCitations.find(cite => cite.path === delivery && cite.usedBy.includes(group.objectId));
+      const current = checkpoint.citations.find(cite => cite.path === delivery);
+      if (groupMode === 'with-proof') {
+        assert(delivered);
+        assert.equal(delivered.contentHash, current.sha256);
+      } else assert.equal(delivered, undefined);
     }
   } else {
     assert.equal(handle.reviewCompleted, false);
