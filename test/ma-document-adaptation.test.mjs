@@ -137,11 +137,13 @@ test('document snapshot cancellation cannot be swallowed as ordinary missing cov
     error => error === cancelled);
 });
 
-async function runtimeFixture(t, paths = ['document.md', 'created.md', 'deleted.md'], { initialize = true } = {}) {
+async function runtimeFixture(t, paths = ['document.md', 'created.md', 'deleted.md'], { initialize = true, enabledStages } = {}) {
   let runtime;
   const root = await workspace(t, () => runtime?.dispose());
   await fs.mkdir(path.join(root, '.runtime-corrector'));
   await fs.writeFile(path.join(root, '.runtime-corrector/config.yaml'), `version: 2\nartifacts:\n  - name: document\n    stage: document\n    format: markdown\n    patterns: ${JSON.stringify(paths)}\n    rules:\n      enabled: false\n    review:\n      enabled: false\ndynamicGroundTruth:\n  enabled: false\nskillCorrection:\n  enabled: false\nstopCorrection:\n  enabled: false\nartifactCorrection:\n  groundTruthReviewEnabled: false\n  stageMetricsEnabled: false\n`);
+  if (enabledStages !== undefined) await fs.appendFile(path.join(root, '.runtime-corrector/config.yaml'),
+    `enabledStages: ${JSON.stringify(enabledStages)}\n`);
   await fs.writeFile(path.join(root, 'document.md'), '# Before\n'); await fs.writeFile(path.join(root, 'deleted.md'), '# Remove\n');
   const warnings = [], host = { config: {}, pluginConfig: {}, runtime: { version: '2026.7.1-2', state: { resolveStateDir: () => path.join(root, 'host-state') },
     agent: { resolveAgentWorkspaceDir: () => root } }, logger: { warn: value => warnings.push(value), info() {} } };
@@ -202,6 +204,26 @@ test('a complete bounded recheck reviews all declared current documents before c
   await f.runtime.toolResult({ toolName: 'exec', toolCallId: 'recheck', args: {}, result: { content: [] } }, f.ctx);
   const { task, events } = await f.journal(); assert.equal(task.documentCoverage.status, 'VERIFIED', f.warnings.join('\n'));
   assert(events.some(event => event.type === 'OPENCLAW_ARTIFACT_REVIEW' && event.toolCallId === 'recheck'));
+});
+
+test('disabled document stages do not mark a background command or later read as unverified', async t => {
+  const f = await runtimeFixture(t, ['document.md'], { enabledStages: [] });
+  const plan = await loadConfig({ cwd: f.root, pluginRoot });
+  assert.equal(plan.configuredArtifacts.length, 1);
+  assert.equal(plan.artifacts.length, 0);
+
+  for (const [id, toolName, params, details] of [
+    ['background', 'exec', { command: 'run-tests' }, { status: 'running', sessionId: 'public-tests' }],
+    ['terminal', 'process', { action: 'poll', sessionId: 'public-tests' }, { status: 'completed', sessionId: 'public-tests', exitCode: 0 }],
+    ['read-report', 'exec', { command: 'Get-Content report.txt' }, { status: 'completed', exitCode: 0 }],
+  ]) {
+    await f.runtime.beforeTool({ toolName, toolCallId: id, params }, f.ctx);
+    const response = await f.runtime.toolResult({ toolName, toolCallId: id, args: params,
+      result: { content: [{ type: 'text', text: 'native tool result' }], details } }, f.ctx);
+    assert.doesNotMatch(JSON.stringify(response ?? null), /DOCUMENT_(?:EXECUTION_PENDING|SCOPE_REREVIEW_REQUIRED)/u);
+  }
+  const task = await findTask({ projectRoot: f.root, sessionId: f.ctx.sessionId });
+  assert.equal(task?.documentCoverage, undefined);
 });
 
 test('PowerShell script mutations use the same bounded pre-execution receipt', async t => {
