@@ -16,3 +16,32 @@
 - 最终验证新增真实 Stop 7 次，已记账 4,749,078 DeepSeek tokens。两次淘汰的验证也计入探索预算。快速交付合计 22 次真实 Stop、已记账 14,139,943 tokens，含中止流的不完整小计。
 - 初版 `f118a76` 因跨阶段错误报通过淘汰。第二版 `6cd309f` 因续审截止时缺结构化报告淘汰。此报告的验收证据来自独立验证的 `16ba3b0`，小任务比较另用标明的 `8a9b662`。 [初版归档](/C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/unified-evaluator/batches/deliver-v1-20261126/veto-archive.json) · [第二版归档](/C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/runs/unified-evaluator/batches/deliver-v2-20261126/publication-archive.json)
 - 独立安装的 OpenClaw 插件构建回执绑定了该产品提交和运行入口。 [构建回执](/C:/Users/user/workspace/program_workspace/Experiments/rc-large-sdd-3x3-20261125/qualification/native/runtime-16ba3b02266ed9c78c98548b90c3ef0e76393bcf/ready.json)
+
+## 2026-11-26 · security_tool_2 端到端验证预检
+
+**停在上机前。** 在保留历史宿主事件时间戳的重放中，带确证偏差的 Stop 两次超过 30 分钟放行门槛。计时从原生 CLI 请求 `mabench.awaitStopReview` 起，到历史试点修正后的 supervisor 首次返回 `READY` 止。三类输入均通过 SHA-256 核对，取自交付版 `16ba3b0` 的公开结果。重放使用交付包的调度器、历史试点的放行代码和两条归档 Autopilot 状态轨迹。宿主派发回调由重放提供。[基础重放](../../../Experiments/rc-deliver-16ba3b0-security2-20261126/preflight/replay-results.json) · [逐次计时和状态证据](../../../Experiments/rc-deliver-16ba3b0-security2-20261126/preflight/timeline-results.json)
+
+| 交付版公开结果 | 历史 run0 的放行时间 | 历史 run1 的放行时间 | 结果 |
+| --- | ---: | ---: | --- |
+| `NO_DEVIATION_FOUND / allow` | 1 分 53.684 秒 | 1 分 53.282 秒 | 放行，0 次纠偏 |
+| `UNVERIFIED / allow`，1 项未审 | 2 分 06.852 秒 | 2 分 06.526 秒 | 放行，保留未审结论，0 次纠偏 |
+| `UNVERIFIED / block`，1 项确证偏差，随后复审为 `UNVERIFIED / allow` | **31 分 32.684 秒** | **39 分 50.571 秒** | 重放 1 轮纠偏及复审，最终放行，两条均超时限 |
+
+在两条超时限轨迹的第 30 分钟，RC 均已处于 `IDLE / UNVERIFIED`，待办为 0。Autopilot 仍处于 `running / claimed`，放行器返回 `WAIT`。Autopilot 进入 `paused / blocked / max_retries_reached`，通过历史放行器的稳定期和终态身份核验后，才允许阶段交接。从复审公开 `allow` 到放行分别为 17 分 04.938 秒和 17 分 05.650 秒。原生传输回归也验证了同一张放行凭据只转发一次 Stop，交付版配套的 91 项离线测试全部通过。[传输回执](../../../Experiments/rc-deliver-16ba3b0-security2-20261126/preflight/transport-regression.json) · [离线测试日志](../../../Experiments/rc-deliver-16ba3b0-security2-20261126/preflight/rc-transport-tests.tap)
+
+**计时对宿主调度敏感。** 上表保留历史宿主接手纠偏、提交复审及 Autopilot 重试的原始时刻，并代入交付版已测得的 Stop 用时。另一次重放假定首次审查提前多少，后续宿主动作也整体提前多少。此时两条纠偏路径分别在 24 分 47.493 秒和 28 分 15.303 秒放行。真实新运行会采用哪种时序仍待上机验证。本次观察到的是宿主交接等待，尚无交付版 RC 异常的证据。[两种时序对照](../../../Experiments/rc-deliver-16ba3b0-security2-20261126/preflight/timeline-results.json)
+
+交付包在宿主机上成功读入历史配置，Stop 为 `until_pass`，单流程和单会话纠偏上限均为 3，审查预算为 7,200,000 毫秒。按预检停点，本次启动 VM 0 台，新增原生开发轮次 0，业务和 RC 模型调用均为 0，新增模型 tokens 为 0。插件在客体中的加载、真实反馈及修复、原生 `completed/done`、真实 RC 成本、独立 F2P/P2P 和 Checklist 均未验证。本轮未产生可与历史成绩比较的新分数。正式终审继续停在 §10.3。[配置解析结果](../../../Experiments/rc-deliver-16ba3b0-security2-20261126/preflight/effective-profile.json)
+
+## 2026-11-26 · security_tool_2 本机实跑
+
+使用独立本机 Gateway、交付包 `16ba3b0` 和用户指定的 dae36f7 原始 YAML 实跑一轮。插件正常加载，提案 Stop 触发并完成一轮原生纠偏和复审，17 分 40 秒后放行。编码模型曾以 `stopReason=length` 提前结束，原生 CLI 在三次 Autopilot 续跑未启动模型后自动继续。编码后停在 20/21 项，剩余 ViewModel 单元测试在业务会话中被 MA 工具策略拦截。最近 RC 结论为 `UNVERIFIED / STOP_ORIGINAL_SCOPE_INCOMPLETE`，原生 `completed/done` 和独立评分均未取得。对照历史试点时，需考虑本次开启 Brief 注入并使用默认上下文引擎。 [本机报告](../../../Experiments/rc-local-security2-16ba3b0-20261126/report.md) · [状态和计时证据](../../../Experiments/rc-local-security2-16ba3b0-20261126/status-summary.json)
+
+## 2026-11-26 · 快速交付线 RC 修复与验证
+
+候选包来自 `codex/lc-deliver-20261126` 的 RC 工作树，基于记录提交 `c79cc40`，原交付产品提交为 `16ba3b0`。OpenClaw 和 MA 使用本机原有版本，插件包的 293 个文件均按 SHA-256 复核。正式终审仍暂停在 §10.3。 [构建凭据](../../../Experiments/rc-quick-hardening-20261126/candidate.json) · [验证过的 RC 插件包](../../../Experiments/rc-quick-hardening-20261126/runtime-corrector-openclaw-quick-20261126.zip) · [压缩包 SHA-256](../../../Experiments/rc-quick-hardening-20261126/archive-sha256.json)
+
+- **Reviewer 超时。** 在 Stop 结算窗口仍有效时，已落盘且证据当前有效的偏差可随 `UNVERIFIED / block` 送出，未审范围同时保留。受控真计时用例保留 1 项已证实偏差，给出 1 次纠偏预约。过期窗口和修改后的失效证据均放行且无纠偏预约。 [回归结果](../../../Experiments/rc-quick-hardening-20261126/regression.tap)
+- **大需求中断与收尾。** 无抽取项时也保存已收到的原文分页。相同原文的后续用户轮可以从第 11 行继续导航，并重新核对前段及当前交付证据。单独的 1,005 行、128 KiB 以上用例在绑定多行条款和确认背景后返回 `NO_DEVIATION_FOUND`。试图用宽泛条目或背景范围盖过独立要求时，漏项继续显示为 `UNVERIFIED`。现有 4,557 行中断用例完成偏差送出及修后重审，剩余原文范围继续显示待核实。 [回归结果](../../../Experiments/rc-quick-hardening-20261126/regression.tap) · [长原文续审](../../../Experiments/rc-quick-hardening-20261126/early-delivery/observations.json) · [独立原件范围检查](../../../Experiments/rc-quick-hardening-20261126/scope/result.json)
+- **宿主链路。** 在独立本机 OpenClaw 2026.7.1-2 Gateway 加载候选包并核实原生终结钩子、会话持久化和认证。历史 `security_tool_2` 放行器重放的三类公开结果均到达 `READY`。带确证偏差的一路只预约一次纠偏，收到修后复审后只转发一次 Stop。该重放使用模拟宿主回调，真实放行耗时未重新测量。 [Gateway 凭据](../../../Experiments/rc-quick-hardening-20261126/gateway-final/result.json) · [放行器重放](../../../Experiments/rc-quick-hardening-20261126/replay-results.json)
+- **验证结论。** 213 项回归中 212 项通过。混合清单的执行记录导航断言在候选和 `16ba3b0` 上均返回相同的 `2 !== 1`。本次派发模型 0 次，新增业务用量为 0。本机原生 `security_tool_2` 的最新实跑证据仍来自 `16ba3b0`，已经完成一轮提案纠偏和复审，未执行的 Hvigor 测试仍是业务完成和独立评分的阻塞点。候选包的 `completed/done`、F2P/P2P、Checklist、真实 Stop 延迟及模型用量待真实 Run 验证。 [候选回归](../../../Experiments/rc-quick-hardening-20261126/regression.tap) · [原版同一失败](../../../Experiments/rc-quick-hardening-20261126/baseline-16ba3b0-known-failure.tap) · [本机实跑状态](../../../Experiments/rc-local-security2-16ba3b0-20261126/status-summary.json)
