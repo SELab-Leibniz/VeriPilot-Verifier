@@ -10,7 +10,7 @@ import { coversSingleLineJsonRecords } from '../lib/runtime-v2/stop-source-cover
 import { loadReviewCheckpoint } from '../lib/review-task/history-memory.mjs';
 import { scriptedWorkspaceReview } from './helpers/scripted-workspace-review.mjs';
 
-test('a long multi-line user message keeps one original and stable late-clause coordinates', async t => {
+async function reviewLongUserOriginal(t, omitLateClause = false) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-user-original-'));
   t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }));
   const notes = Array.from({ length: 601 }, (_, i) => '往年记录 ' + i + ' 这段背景只用于解释词汇。'.repeat(4));
@@ -30,17 +30,42 @@ test('a long multi-line user message keeps one original and stable late-clause c
     assert.deepEqual(await fs.readFile(user[0]), Buffer.from(text));
     for (const file of task.basisFiles) await read(file);
     const start = Buffer.byteLength(notes.join('\n') + '\n');
-    await call('append_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
+    if (!omitLateClause) await call('append_original_checklist', { items: [{ metricId: 'M16', verificationTarget: 'IMPLEMENTATION',
       text: clause, path: user[0], lineStart: 602, lineEnd: 602, byteStart: start, byteEnd: Buffer.byteLength(text) }] });
+    // The unchanged original has no explicit Background or History heading.
+    await assert.rejects(call('seal_original_checklist', { backgroundRanges: [{ path: user[0], start: 1, end: 601 }] }),
+      { code: 'STOP_ORIGINAL_CHECKLIST_INVALID' });
     await call('seal_original_checklist', {});
     const page = parsed(await call('review_checklist', { stopClassification: 'TASK_COMPLETE', completionClaim: true }));
-    assert.equal(page.items[0].originalSource.start, 602);
-    assert.equal(page.items[0].originalSource.byteStart, start);
-    await call('finish_stop_review', { summary: 'Checked the late clause.' });
+    assert.equal(page.total, omitLateClause ? 0 : 1);
+    if (!omitLateClause) {
+      assert.equal(page.items[0].originalSource.start, 602);
+      assert.equal(page.items[0].originalSource.byteStart, start);
+      assert.equal(page.items[0].originalSource.byteEnd, Buffer.byteLength(text));
+    }
+    await call('finish_stop_review', { summary: 'Finished the submitted checklist.' });
   } });
   t.after(() => handle.close());
-  assert.equal(handle.reviewCompleted, true);
-});
+  const coverage = handle.result.sourceCoverage;
+  const source = coverage.sources.find(row => row.ref === 'transcript:latest');
+  assert.equal(source.sha256, originals.userMessages[0].sha256);
+  assert.equal(source.readLines, 602);
+  assert.deepEqual(source.unreadRanges, []);
+  assert.equal(coverage.checklistSubmitted, true);
+  assert.equal(coverage.complete, false);
+  assert.equal(handle.reviewCompleted, false);
+  assert.equal(handle.collection.reasonCode, 'STOP_ORIGINAL_SCOPE_INCOMPLETE');
+  assert.equal(source.checklistItems, omitLateClause ? 0 : 1);
+  assert.equal(source.disposition, omitLateClause ? 'SOURCE_NOT_REPRESENTED' : 'LONG_SOURCE_UNDISPOSED');
+  if (!omitLateClause) assert.deepEqual(source.unextractedRanges, [[1, 601]]);
+  assert(handle.result.unverifiedItems.some(item => item.id === 'original:transcript:latest' && item.reviewState === 'UNREVIEWED'));
+}
+
+test('a long multi-line user message keeps one original and stable late-clause coordinates',
+  t => reviewLongUserOriginal(t));
+
+test('a long multi-line user message remains unverified when its late clause is omitted',
+  t => reviewLongUserOriginal(t, true));
 
 async function reviewSingleLineAnnex(t, omittedIndex = null) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-single-review-'));
