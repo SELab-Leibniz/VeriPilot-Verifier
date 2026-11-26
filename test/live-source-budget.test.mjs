@@ -117,3 +117,26 @@ test('a file growing beyond the per-file cap is incomplete even when total budge
   assert.equal(result.scanIncomplete, true); assert.deepEqual(result.hits, []); assert.equal(f.observed.length, 0);
   assert.equal(io.bytes, 4 * 1024 * 1024 + 1); assert.equal(io.closed, 1);
 });
+
+test('wide grep reports a skipped large file and exact-path grep can find its tail within budget', async t => {
+  const large = '//'.padEnd(4 * 1024 * 1024, 'x') + '\nneedle at tail\n';
+  const f = await fixture(t, { 'a.ts': large, 'z.ts': 'needle at root' }, Buffer.byteLength(large) + 64);
+  const broad = await f.grep();
+  const file = path.join(f.root, 'a.ts');
+  assert.equal(broad.scanIncomplete, true);
+  assert.equal(broad.scanned.skippedLargeFiles, 1);
+  assert.equal(broad.scanned.firstSkippedPath, file);
+  assert.deepEqual(broad.hits, [path.join(f.root, 'z.ts') + ':1:needle at root']);
+  assert.deepEqual(f.observed.map(row => row.file), ['z.ts']);
+  const grep = f.tools.find(tool => tool.name === 'grep');
+  const direct = JSON.parse(toolText(await grep.execute('exact', { path: file, pattern: 'needle' })));
+  assert.equal(direct.scanIncomplete, undefined);
+  assert.equal(direct.navigationOnly, true);
+  assert.deepEqual(direct.hits, [file + ':2:needle at tail']);
+  assert.deepEqual(f.observed.at(-1).bytes, Buffer.from(large));
+  const bounded = createLiveSourceTools(f.root, { navigationBudget: { entries: 2, bytes: Buffer.byteLength(large) - 1 } })
+    .find(tool => tool.name === 'grep');
+  const limited = JSON.parse(toolText(await bounded.execute('exact', { path: file, pattern: 'needle' })));
+  assert.equal(limited.scanIncomplete, true);
+  assert.equal(limited.scanned.bytes, 0);
+});
