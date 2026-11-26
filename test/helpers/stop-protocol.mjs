@@ -54,7 +54,8 @@ export async function stopProtocolFixture(t, kind = 'classification', options = 
     const submit = async (name, value) => { advance(); const result = await tools.get(name).execute(crypto.randomUUID(), value);
       params.onAgentToolResult({ toolName: name, result, isError: false }); return JSON.parse(result.content[0].text); };
     await script({ params, brief, tools, read, readAll, submit, hooks, advance, turns: () => turns, calls });
-    return { payloads: [{ text: 'Display text is not a submission.' }], meta: { aborted: params.abortSignal.aborted } };
+    return settings.nativeResult?.(params, brief) ??
+      { payloads: [{ text: 'Display text is not a submission.' }], meta: { aborted: params.abortSignal.aborted } };
   } })(input);
   return { root, task, file, input, api, calls, run, hooks };
 }
