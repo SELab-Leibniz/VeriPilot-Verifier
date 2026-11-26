@@ -1576,12 +1576,12 @@
   "reportCurrentQa": {
     "status": "PASS",
     "report": ".runtime-correction/runtime-corrector-progress.html",
-    "htmlSha256": "59a136f08c30fcfb9cd51384fa2e04865c088fb614efe5df915e12b3b2fcdefd",
+    "htmlSha256": "aa94350383eb0f8ab64c36b0a5cc2489fc770a4539ca0a6938b69dd2b586c194",
     "receipt": {
-      "path": ".runtime-correction/validation/root-guard-local-report-pending/receipt.json",
-      "sha256": "2dfd526f7353ef144c9194013fa1b360cec02067141303ddbe3c4bf0af065532"
+      "path": ".runtime-correction/validation/root-guard-manifest-report-_kr6uqyy/report-qa/receipt.json",
+      "sha256": "0edd77917c0f70974f22c469ac059f645b3bb421c72bc2edcc535577f81c1d78"
     },
-    "actual": "3ab7aa/session60474 ->41647c/0 CLOSED",
+    "actual": "583f8c/session43541 ->014712/0 CLOSED",
     "views": 4,
     "languages": [
       "en",
@@ -1598,8 +1598,7 @@
     "browserErrors": 0,
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
-    "visualReadback": "walkthrough-en-1200 inspected; current failed model trial and local guard controls clearly separated from ownCI/package/model pending gates; no overflow",
-    "outputNamingNote": "Fresh render output used separate root-guard-local-report-pending directory; receipt is PASS and binds current HTML."
+    "visualReadback": "walkthrough-en-1200 inspected; failed first guard CI, corrected local artifact checks and pending freshCI/stock/model gates explicit; no overflow"
   },
   "precedingMethodPlanningAttempt": {
     "status": "INCOMPLETE_BEFORE_APPLY_LOCAL_REQUEST_CAP",
@@ -4658,7 +4657,7 @@
   },
   "reportCurrentWalkthrough": {
     "status": "CURRENT_PACKAGE_TRIAL_CLOSED_INCOMPLETE_GRADED37PASS_SEPARATE2FAIL",
-    "htmlSha256": "59a136f08c30fcfb9cd51384fa2e04865c088fb614efe5df915e12b3b2fcdefd",
+    "htmlSha256": "aa94350383eb0f8ab64c36b0a5cc2489fc770a4539ca0a6938b69dd2b586c194",
     "modelOutcomeReference": "evaluationRecords.ordinaryOn4f8b71f13dc",
     "precedingCompletedRunReference": "evaluationRecords.ordinaryOn7c0286F020",
     "precedingWalkthroughMovedToExistingHistory": true,
@@ -10200,7 +10199,7 @@
     "visualReadback": "walkthrough-en-1200 inspected; closed current failure separated from preceding fully evaluated result; no overflow"
   },
   "prospectiveReviewerReliabilityFollowup": {
-    "status": "GENERAL_READ_LOOP_GUARD_REVIEWED_INTEGRATED_SUPPORTED_HOST_FOCUSED_PASS_OWN_CI_PENDING",
+    "status": "GUARD_FIRST_OWN_CI_FAILED_PACKAGING_MANIFEST_CORRECTED_LOCAL17PASS_FRESH_CI_REQUIRED",
     "navigationIntegration": {
       "path": ".runtime-correction/validation/root-transcript-bounds-integration-64uxrmcp/integration.json",
       "sha256": "38e91ce3bae716919bd2e4cb3ed60dbba795b6d7710dddb6e76d4e43cbf84037"
@@ -10272,6 +10271,41 @@
       "fail": 1,
       "qualified": false,
       "reason": "Existing full SDK policy test imports Array.toSorted. Node18 is outside installed OpenClaw engines. All21 new controls passed; original raw failure retained."
+    },
+    "guardFirstOwnCi": {
+      "head": "970d13bcd35eca79b6b87fcb73664297a6d8f3c6",
+      "runId": 45590030690,
+      "attempt": 1,
+      "status": "NINE_JOBS_FAILED_ARTIFACT_VERIFICATION",
+      "terminal": {
+        "path": ".runtime-correction/validation/ci-fix/post-970d13b-natural-rv7wns_j/terminal-receipt.json",
+        "sha256": "0da4d0805a8e47645683cae1321ad2002aa98f97d1eb0fa66d69e4714543aa69"
+      },
+      "artifactTestsEach": {
+        "pass": 14,
+        "fail": 3,
+        "total": 17
+      },
+      "runtimeAndCoreTestsExecuted": false,
+      "runtimeInventory": null,
+      "windowsDisjointUnion": null,
+      "failure": "Explicit shipping manifest omitted both new modules imported by reviewer.mjs.",
+      "oldConclusionsPreserved": true
+    },
+    "guardManifestFix": {
+      "qualification": {
+        "path": ".runtime-correction/validation/root-guard-package-manifest-fix-27pku9kx/qualification.json",
+        "sha256": "8d36a8a186027fd373df73e1e9706df28a893b8e9fec3cae1c65655de683c445"
+      },
+      "manifestSha256": "ee917eef0e3bdf14d40f11a1f83be3c33fbd31c7c15b911b874b13a393d54fc4",
+      "derivedManifestRuntimeModules": 215,
+      "artifactChecksEachNode": {
+        "pass": 17,
+        "total": 17
+      },
+      "runtimeImplementationChanged": false,
+      "newSourceOwnCiQualified": false,
+      "sourceCommitPending": true
     }
   },
   "reportCurrentQaBeforeNavigationCi": {
@@ -10327,5 +10361,33 @@
     "rawHtmlNoExternalUrlDateOrHash": true,
     "humanizerApplied": true,
     "visualReadback": "phone-en-1200 inspected; navigation-only source CI is clearly separate from unreleased loop guard; no overflow"
+  },
+  "reportCurrentQaBeforeManifestFix": {
+    "status": "PASS",
+    "report": ".runtime-correction/runtime-corrector-progress.html",
+    "htmlSha256": "59a136f08c30fcfb9cd51384fa2e04865c088fb614efe5df915e12b3b2fcdefd",
+    "receipt": {
+      "path": ".runtime-correction/validation/root-guard-local-report-pending/receipt.json",
+      "sha256": "2dfd526f7353ef144c9194013fa1b360cec02067141303ddbe3c4bf0af065532"
+    },
+    "actual": "3ab7aa/session60474 ->41647c/0 CLOSED",
+    "views": 4,
+    "languages": [
+      "en",
+      "zh-CN"
+    ],
+    "widths": [
+      1200,
+      390
+    ],
+    "sections": 6,
+    "collapsedHistories": 3,
+    "internalLinks": 7,
+    "externalRequests": 0,
+    "browserErrors": 0,
+    "rawHtmlNoExternalUrlDateOrHash": true,
+    "humanizerApplied": true,
+    "visualReadback": "walkthrough-en-1200 inspected; current failed model trial and local guard controls clearly separated from ownCI/package/model pending gates; no overflow",
+    "outputNamingNote": "Fresh render output used separate root-guard-local-report-pending directory; receipt is PASS and binds current HTML."
   }
 }

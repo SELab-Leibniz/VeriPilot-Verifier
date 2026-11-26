@@ -192,6 +192,8 @@
     "lib/openclaw/review-notice.mjs",
     "lib/openclaw/reviewer-policy.mjs",
     "lib/openclaw/reviewer-progress.mjs",
+    "lib/openclaw/reviewer-read-loop.mjs",
+    "lib/openclaw/owned-read-loop-observer.mjs",
     "lib/openclaw/reviewer.mjs",
     "lib/runtime-v2/acceptance-feedback.mjs",
     "lib/openclaw/runtime.mjs",
