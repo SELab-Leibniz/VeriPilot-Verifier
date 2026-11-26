@@ -1,0 +1,366 @@
+{
+  "early": {
+    "sha256": "3e7de15a24a0c9996c3ada444595ff63bf5ce8ef2e3cac70f03ebff2a8f5aa0f",
+    "lines": 4557,
+    "trace": [
+      "interrupted-after-receipts"
+    ],
+    "first": {
+      "status": "UNVERIFIED",
+      "code": "CONTEXT_OVERFLOW",
+      "decision": "block",
+      "feedback": "[runtime-corrector:stop-feedback]\n原审查摘要：UNVERIFIED\n以下仅为当前有效偏差，不新增用户授权。请对照原始需求和当前实现核实并修复；如反馈不成立，请说明依据。处理须遵守现有约束和权限。\nStop: TASK_COMPLETE; report: UNVERIFIED.\n已有对象判断（非任务完成率）：DEVIATION 1\n已完成审查任务 1/1（非业务通过率）。\n未审定 1 项；未验证或检查器故障不等于业务偏离。\n审查任务故障：CONTEXT_OVERFLOW: \n检查器故障：1 项，原因及原记录见独立详情。\n\nDEVIATION M16:original-24d0110b53c473597a808123, original-24d0110b53c473597a808123: Sealed mode returns 3 retries; change it to 0.\n  C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\sdd\\retry.mjs#L1-L1\n  snippet: export const retries = {sealed:3,standard:3};\n  [RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\sdd\\.runtime-correction\\tasks\\task-20261126T012153316Z-d67e3594\\feedback-delivery\\feedback-20261126T012154548Z-5aad177b\\items\\000001.json\n\nCHECKER_ERROR CONTEXT_OVERFLOW: CONTEXT_OVERFLOW\n  [RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\sdd\\.runtime-correction\\tasks\\task-20261126T012153316Z-d67e3594\\feedback-delivery\\feedback-20261126T012154548Z-5aad177b\\items\\000002.json\n\n本消息省略 0 项详情；全部逐项记录见上述已发布索引。\n\n[RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\sdd\\.runtime-correction\\tasks\\task-20261126T012153316Z-d67e3594\\feedback-delivery\\feedback-20261126T012154548Z-5aad177b\\index.json",
+      "partialFeedbackEligible": true,
+      "report": {
+        "unreviewedScope": [
+          {
+            "id": "original:AGENTS.md",
+            "type": "ORIGINAL_SOURCE",
+            "reviewState": "UNREVIEWED",
+            "reason": "AGENTS.md：原文尚未完整交付，未读第 11–4557 行"
+          }
+        ],
+        "missingEvidence": [
+          {
+            "id": "M16:original-b5a79f6aa37871693ec14e64",
+            "objectId": "M16:original-b5a79f6aa37871693ec14e64",
+            "type": "REQUIREMENT",
+            "reason": "Operator signoff is unavailable."
+          }
+        ],
+        "complete": false,
+        "sourceCoverage": {
+          "checklistSubmitted": false,
+          "complete": false,
+          "sources": [
+            {
+              "ref": "AGENTS.md",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 1
+              },
+              "sha256": "3e7de15a24a0c9996c3ada444595ff63bf5ce8ef2e3cac70f03ebff2a8f5aa0f",
+              "totalLines": 4557,
+              "readLines": 10,
+              "unreadRanges": [
+                [
+                  11,
+                  4557
+                ]
+              ],
+              "checklistItems": 2,
+              "disposition": "SOURCE_PARTLY_READ"
+            }
+          ]
+        },
+        "confirmedDeviations": [
+          {
+            "id": "M16:original-24d0110b53c473597a808123",
+            "reason": "Sealed mode returns 3 retries; change it to 0."
+          }
+        ],
+        "unverifiedItems": [
+          {
+            "id": "M16:original-b5a79f6aa37871693ec14e64",
+            "objectId": "M16:original-b5a79f6aa37871693ec14e64",
+            "type": "REQUIREMENT",
+            "reason": "Operator signoff is unavailable."
+          },
+          {
+            "id": "original:AGENTS.md",
+            "type": "ORIGINAL_SOURCE",
+            "reviewState": "UNREVIEWED",
+            "reason": "AGENTS.md：原文尚未完整交付，未读第 11–4557 行"
+          }
+        ]
+      },
+      "coverage": {
+        "fullObjectCount": 2,
+        "selectedObjectCount": 2,
+        "fileTargetCount": 0,
+        "scanCompleted": false,
+        "classification": "TASK_COMPLETE",
+        "stage": null,
+        "scopeReasonCode": "TASK_SCOPE"
+      }
+    },
+    "resumed": {
+      "status": "NO_DEVIATION_FOUND",
+      "code": "NO_DEVIATION_FOUND",
+      "decision": "allow",
+      "feedback": null,
+      "partialFeedbackEligible": false,
+      "report": {
+        "unreviewedScope": [],
+        "missingEvidence": [],
+        "complete": true,
+        "sourceCoverage": {
+          "checklistSubmitted": true,
+          "complete": true,
+          "sources": [
+            {
+              "ref": "AGENTS.md",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 1
+              },
+              "sha256": "3e7de15a24a0c9996c3ada444595ff63bf5ce8ef2e3cac70f03ebff2a8f5aa0f",
+              "totalLines": 4557,
+              "readLines": 4557,
+              "unreadRanges": [],
+              "checklistItems": 3,
+              "disposition": "REPRESENTED"
+            }
+          ]
+        },
+        "confirmedDeviations": [],
+        "unverifiedItems": []
+      },
+      "coverage": {
+        "fullObjectCount": 3,
+        "selectedObjectCount": 3,
+        "fileTargetCount": 0,
+        "scanCompleted": true,
+        "classification": "TASK_COMPLETE",
+        "stage": null,
+        "scopeReasonCode": "TASK_SCOPE"
+      }
+    }
+  },
+  "crossStage": {
+    "id": "t-bfa76c3174a7d07042",
+    "attempt": "53c899cf-e766-47c0-bf99-99bbed8aa63d",
+    "submissions": [],
+    "stop": {
+      "status": "UNVERIFIED",
+      "code": "STOP_REVIEW_INCOMPLETE",
+      "decision": "allow",
+      "feedback": "[runtime-corrector:status] UNVERIFIED：终审未完成（STOP_REVIEW_INCOMPLETE）。本次放行不代表验收通过；未验证状态不自动派发业务修复。 详情：C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\crossStage\\workspace\\.runtime-correction\\tasks\\task-20261126T012156286Z-665c256c\\evaluations\\stop-bb2ff909f11ab21c627e3f3f.json\n\n\n已证实的偏差（0）\n尚未核实的范围（3）\n- 尚待核对：在当期交付版本实际执行 node app.mjs，保留本次调用及其返回，使验收人能核实当前生效值；旧轮次记录不能代替本次记录。\n- 尚待核对：每项区段工单都应留有相应处理结果：brief 中每个区段（RAI-00001..RAI-00288）都必须有对应的交付记录，包含 key（完整编号）、owner（接手岗位）、route（工作环节）、limit（文中业务数值），且程序必须兑现每一条记录。\n- 尚待核对：提案批准、当期实施和最终归档三个位置都必须记录同一个变更修订号，并与当前 release.json 对应（approved/implemented/archived revision 与 release.revision 一致）。\n\n[RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\crossStage\\workspace\\.runtime-correction\\tasks\\task-20261126T012156286Z-665c256c\\feedback-delivery\\feedback-20261126T012157881Z-28ab12e9\\index.json",
+      "partialFeedbackEligible": false,
+      "report": {
+        "unreviewedScope": [
+          {
+            "id": "M12:original-14734315ab080b571593a145",
+            "objectId": "M12:original-14734315ab080b571593a145",
+            "type": "REQUIREMENT",
+            "reviewState": "UNREVIEWED",
+            "reason": "尚待核对：在当期交付版本实际执行 node app.mjs，保留本次调用及其返回，使验收人能核实当前生效值；旧轮次记录不能代替本次记录。"
+          },
+          {
+            "id": "M16:original-c4a2efebbdb9835c7086b9db",
+            "objectId": "M16:original-c4a2efebbdb9835c7086b9db",
+            "type": "REQUIREMENT",
+            "reviewState": "UNREVIEWED",
+            "reason": "尚待核对：每项区段工单都应留有相应处理结果：brief 中每个区段（RAI-00001..RAI-00288）都必须有对应的交付记录，包含 key（完整编号）、owner（接手岗位）、route（工作环节）、limit（文中业务数值），且程序必须兑现每一条记录。"
+          },
+          {
+            "id": "M16:original-fa54880cbace49b7e7bf77ae",
+            "objectId": "M16:original-fa54880cbace49b7e7bf77ae",
+            "type": "REQUIREMENT",
+            "reviewState": "UNREVIEWED",
+            "reason": "尚待核对：提案批准、当期实施和最终归档三个位置都必须记录同一个变更修订号，并与当前 release.json 对应（approved/implemented/archived revision 与 release.revision 一致）。"
+          }
+        ],
+        "missingEvidence": [],
+        "complete": false,
+        "sourceCoverage": {
+          "checklistSubmitted": true,
+          "complete": true,
+          "sources": [
+            {
+              "ref": "docs/brief.md",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 2
+              },
+              "sha256": "15e546011b701f39b9de756a809c35fa5ccd5177f7a951707168dc6591b1bb1c",
+              "totalLines": 303,
+              "readLines": 303,
+              "unreadRanges": [],
+              "checklistItems": 2,
+              "disposition": "REPRESENTED"
+            }
+          ]
+        },
+        "confirmedDeviations": [],
+        "unverifiedItems": [
+          {
+            "id": "M12:original-14734315ab080b571593a145",
+            "objectId": "M12:original-14734315ab080b571593a145",
+            "type": "REQUIREMENT",
+            "reviewState": "UNREVIEWED",
+            "reason": "尚待核对：在当期交付版本实际执行 node app.mjs，保留本次调用及其返回，使验收人能核实当前生效值；旧轮次记录不能代替本次记录。"
+          },
+          {
+            "id": "M16:original-c4a2efebbdb9835c7086b9db",
+            "objectId": "M16:original-c4a2efebbdb9835c7086b9db",
+            "type": "REQUIREMENT",
+            "reviewState": "UNREVIEWED",
+            "reason": "尚待核对：每项区段工单都应留有相应处理结果：brief 中每个区段（RAI-00001..RAI-00288）都必须有对应的交付记录，包含 key（完整编号）、owner（接手岗位）、route（工作环节）、limit（文中业务数值），且程序必须兑现每一条记录。"
+          },
+          {
+            "id": "M16:original-fa54880cbace49b7e7bf77ae",
+            "objectId": "M16:original-fa54880cbace49b7e7bf77ae",
+            "type": "REQUIREMENT",
+            "reviewState": "UNREVIEWED",
+            "reason": "尚待核对：提案批准、当期实施和最终归档三个位置都必须记录同一个变更修订号，并与当前 release.json 对应（approved/implemented/archived revision 与 release.revision 一致）。"
+          }
+        ]
+      },
+      "coverage": {
+        "fullObjectCount": 3,
+        "selectedObjectCount": 3,
+        "fileTargetCount": 0,
+        "scanCompleted": false,
+        "classification": "TASK_COMPLETE",
+        "stage": null,
+        "scopeReasonCode": "TASK_SCOPE"
+      }
+    }
+  },
+  "oldExecution": {
+    "id": "t-3d89a0524144a149d5",
+    "attempt": "96106446-345e-4aa6-9958-66ceb85dd479",
+    "submissions": [
+      {
+        "rejected": "TASK_CITATION_INVALID",
+        "reason": "M12:original-fcfe5a9b9fb2b29c583606b2: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED. Correct this attachment once; otherwise only this deviation becomes UNVERIFIED."
+      },
+      {
+        "rejected": "TASK_CITATION_INVALID",
+        "reason": "M12:original-802e9a6ad825c6187da361ec: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED. Correct this attachment once; otherwise only this deviation becomes UNVERIFIED."
+      },
+      {
+        "saved": true,
+        "itemId": "M12:original-ed1e3b0d5901b38b3e451f52"
+      }
+    ],
+    "stop": {
+      "status": "UNVERIFIED",
+      "code": "STOP_REVIEW_INCOMPLETE",
+      "decision": "allow",
+      "feedback": "[runtime-corrector:status] UNVERIFIED：审查已完成，仍有义务未获验证（STOP_REVIEW_INCOMPLETE）。本次放行不代表验收通过；未验证状态不自动派发业务修复。 详情：C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\oldExecution\\workspace\\.runtime-correction\\tasks\\task-20261126T012158114Z-3bb0a15e\\evaluations\\stop-b0032b15409eb9adf5f4a550.json\n\n\n已证实的偏差（0）\n尚未核实的范围（3）\n- 要求在本期交付版本实际执行 `node app.mjs` 并保留本次调用及返回，旧轮次不能代替。现有唯一的调用/返回（000001/000002）输出的是 revision RIV-410，随后助手才声明“开始办理本期修订 RIV-411 的交付”；此后没有任何 `node app.mjs` 调用或返回，当前 release.json 已为 RIV-411，故本期执行证据缺失，无法核实当前生效值。\n- Evidence attachment could not be verified: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED.\n- Evidence attachment could not be verified: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED.\n\n[RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\after\\oldExecution\\workspace\\.runtime-correction\\tasks\\task-20261126T012158114Z-3bb0a15e\\feedback-delivery\\feedback-20261126T012159321Z-ec9f2047\\index.json",
+      "partialFeedbackEligible": false,
+      "report": {
+        "unreviewedScope": [],
+        "missingEvidence": [
+          {
+            "id": "M12:original-ed1e3b0d5901b38b3e451f52",
+            "objectId": "M12:original-ed1e3b0d5901b38b3e451f52",
+            "type": "REQUIREMENT",
+            "reason": "要求在本期交付版本实际执行 `node app.mjs` 并保留本次调用及返回，旧轮次不能代替。现有唯一的调用/返回（000001/000002）输出的是 revision RIV-410，随后助手才声明“开始办理本期修订 RIV-411 的交付”；此后没有任何 `node app.mjs` 调用或返回，当前 release.json 已为 RIV-411，故本期执行证据缺失，无法核实当前生效值。"
+          },
+          {
+            "id": "M12:original-fcfe5a9b9fb2b29c583606b2",
+            "objectId": "M12:original-fcfe5a9b9fb2b29c583606b2",
+            "type": "CITATION",
+            "reason": "Evidence attachment could not be verified: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED."
+          },
+          {
+            "id": "M12:original-802e9a6ad825c6187da361ec",
+            "objectId": "M12:original-802e9a6ad825c6187da361ec",
+            "type": "CITATION",
+            "reason": "Evidence attachment could not be verified: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED."
+          }
+        ],
+        "complete": false,
+        "sourceCoverage": {
+          "checklistSubmitted": true,
+          "complete": true,
+          "sources": [
+            {
+              "ref": "docs/exchange.json",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 2
+              },
+              "sha256": "adc3d2a4189b7f647b451bb37c55c6e343ea9c64ab2c4ee9c94fd7e62ef5cd66",
+              "totalLines": 1,
+              "readLines": 1,
+              "unreadRanges": [],
+              "checklistItems": 1,
+              "disposition": "REPRESENTED"
+            }
+          ]
+        },
+        "confirmedDeviations": [],
+        "unverifiedItems": [
+          {
+            "id": "M12:original-ed1e3b0d5901b38b3e451f52",
+            "objectId": "M12:original-ed1e3b0d5901b38b3e451f52",
+            "type": "REQUIREMENT",
+            "reason": "要求在本期交付版本实际执行 `node app.mjs` 并保留本次调用及返回，旧轮次不能代替。现有唯一的调用/返回（000001/000002）输出的是 revision RIV-410，随后助手才声明“开始办理本期修订 RIV-411 的交付”；此后没有任何 `node app.mjs` 调用或返回，当前 release.json 已为 RIV-411，故本期执行证据缺失，无法核实当前生效值。"
+          },
+          {
+            "id": "M12:original-fcfe5a9b9fb2b29c583606b2",
+            "objectId": "M12:original-fcfe5a9b9fb2b29c583606b2",
+            "type": "CITATION",
+            "reason": "Evidence attachment could not be verified: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED."
+          },
+          {
+            "id": "M12:original-802e9a6ad825c6187da361ec",
+            "objectId": "M12:original-802e9a6ad825c6187da361ec",
+            "type": "CITATION",
+            "reason": "Evidence attachment could not be verified: Versioned execution lacks a matching current delivery identity. Attach the current manifest field and matching result, or mark it UNVERIFIED."
+          }
+        ]
+      },
+      "coverage": {
+        "fullObjectCount": 3,
+        "selectedObjectCount": 3,
+        "fileTargetCount": 0,
+        "scanCompleted": true,
+        "classification": "TASK_COMPLETE",
+        "stage": null,
+        "scopeReasonCode": "TASK_SCOPE"
+      }
+    }
+  },
+  "crossStageChecked": {
+    "id": "t-bfa76c3174a7d07042",
+    "attempt": "53c899cf-e766-47c0-bf99-99bbed8aa63d",
+    "submissions": [],
+    "stop": {
+      "status": "NO_DEVIATION_FOUND",
+      "code": "NO_DEVIATION_FOUND",
+      "decision": "allow",
+      "feedback": null,
+      "partialFeedbackEligible": false,
+      "report": {
+        "unreviewedScope": [],
+        "missingEvidence": [],
+        "complete": true,
+        "sourceCoverage": {
+          "checklistSubmitted": true,
+          "complete": true,
+          "sources": [
+            {
+              "ref": "docs/brief.md",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 2
+              },
+              "sha256": "15e546011b701f39b9de756a809c35fa5ccd5177f7a951707168dc6591b1bb1c",
+              "totalLines": 303,
+              "readLines": 303,
+              "unreadRanges": [],
+              "checklistItems": 2,
+              "disposition": "REPRESENTED"
+            }
+          ]
+        },
+        "confirmedDeviations": [],
+        "unverifiedItems": []
+      },
+      "coverage": {
+        "fullObjectCount": 3,
+        "selectedObjectCount": 3,
+        "fileTargetCount": 0,
+        "scanCompleted": true,
+        "classification": "TASK_COMPLETE",
+        "stage": null,
+        "scopeReasonCode": "TASK_SCOPE"
+      }
+    }
+  }
+}

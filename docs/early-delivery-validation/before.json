@@ -1,0 +1,196 @@
+{
+  "early": {
+    "sha256": "3e7de15a24a0c9996c3ada444595ff63bf5ce8ef2e3cac70f03ebff2a8f5aa0f",
+    "lines": 4557,
+    "trace": [
+      "TASK_SUBMISSION_INVALID",
+      "TASK_BASIS_UNREAD"
+    ],
+    "first": {
+      "status": "UNVERIFIED",
+      "code": "TASK_BASIS_UNREAD",
+      "decision": "allow",
+      "feedback": "[runtime-corrector:status] UNVERIFIED：终审未完成（TASK_BASIS_UNREAD）。Stop task did not complete; inspect its saved receipts.本次放行不代表验收通过；未验证状态不自动派发业务修复。 详情：C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\sdd\\.runtime-correction\\tasks\\task-20261126T012153344Z-f5c9db97\\evaluations\\stop-90ed19b8158ecb8b4cfbedf9.json\n\n\n已证实的偏差（0）\n尚未核实的范围（1）\n- AGENTS.md：条款清单尚未提交，已读原文的要求也待核实，未读第 11–4557 行\n\n[RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\sdd\\.runtime-correction\\tasks\\task-20261126T012153344Z-f5c9db97\\feedback-delivery\\feedback-20261126T012154160Z-7044f215\\index.json",
+      "partialFeedbackEligible": false,
+      "report": {
+        "complete": false,
+        "sourceCoverage": {
+          "checklistSubmitted": false,
+          "complete": false,
+          "sources": [
+            {
+              "ref": "AGENTS.md",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 1
+              },
+              "sha256": "3e7de15a24a0c9996c3ada444595ff63bf5ce8ef2e3cac70f03ebff2a8f5aa0f",
+              "totalLines": 4557,
+              "readLines": 10,
+              "unreadRanges": [
+                [
+                  11,
+                  4557
+                ]
+              ],
+              "checklistItems": 0,
+              "disposition": "CHECKLIST_NOT_SUBMITTED"
+            }
+          ]
+        },
+        "confirmedDeviations": [],
+        "unverifiedItems": [
+          {
+            "id": "original:AGENTS.md",
+            "type": "ORIGINAL_SOURCE",
+            "reason": "AGENTS.md：条款清单尚未提交，已读原文的要求也待核实，未读第 11–4557 行"
+          }
+        ]
+      },
+      "coverage": {
+        "fullObjectCount": 0,
+        "selectedObjectCount": 0,
+        "fileTargetCount": 0,
+        "scanCompleted": false,
+        "classification": null,
+        "stage": null,
+        "scopeReasonCode": null
+      }
+    },
+    "resumed": {
+      "status": "UNVERIFIED",
+      "code": "CORRECTION_FLOW_CLOSED",
+      "decision": "allow",
+      "feedback": "[runtime-corrector:status] UNVERIFIED (CORRECTION_FLOW_CLOSED)：当前纠偏流程已结束。本次未启动自动纠偏。详情：C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\sdd\\.runtime-correction\\tasks\\task-20261126T012153344Z-f5c9db97\\evaluations\\stop-eaa071015de8df7b139e0e68.json\n\n[RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\sdd\\.runtime-correction\\tasks\\task-20261126T012153344Z-f5c9db97\\feedback-delivery\\feedback-20261126T012154389Z-7d5b86a0\\index.json",
+      "partialFeedbackEligible": false,
+      "coverage": {
+        "fullObjectCount": 0,
+        "selectedObjectCount": 0,
+        "fileTargetCount": 0,
+        "scanCompleted": false,
+        "classification": null,
+        "stage": null,
+        "scopeReasonCode": null
+      }
+    }
+  },
+  "crossStage": {
+    "id": "t-bfa76c3174a7d07042",
+    "attempt": "53c899cf-e766-47c0-bf99-99bbed8aa63d",
+    "submissions": [],
+    "stop": {
+      "status": "NO_DEVIATION_FOUND",
+      "code": "NO_DEVIATION_FOUND",
+      "decision": "allow",
+      "feedback": null,
+      "partialFeedbackEligible": false,
+      "report": {
+        "complete": true,
+        "sourceCoverage": {
+          "checklistSubmitted": true,
+          "complete": true,
+          "sources": [
+            {
+              "ref": "docs/brief.md",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 2
+              },
+              "sha256": "15e546011b701f39b9de756a809c35fa5ccd5177f7a951707168dc6591b1bb1c",
+              "totalLines": 303,
+              "readLines": 303,
+              "unreadRanges": [],
+              "checklistItems": 2,
+              "disposition": "REPRESENTED"
+            }
+          ]
+        },
+        "confirmedDeviations": [],
+        "unverifiedItems": []
+      },
+      "coverage": {
+        "fullObjectCount": 3,
+        "selectedObjectCount": 3,
+        "fileTargetCount": 0,
+        "scanCompleted": true,
+        "classification": "TASK_COMPLETE",
+        "stage": null,
+        "scopeReasonCode": "TASK_SCOPE"
+      }
+    }
+  },
+  "oldExecution": {
+    "id": "t-3d89a0524144a149d5",
+    "attempt": "96106446-345e-4aa6-9958-66ceb85dd479",
+    "submissions": [
+      {
+        "saved": true,
+        "itemId": "M12:original-fcfe5a9b9fb2b29c583606b2"
+      },
+      {
+        "saved": true,
+        "itemId": "M12:original-802e9a6ad825c6187da361ec"
+      },
+      {
+        "saved": true,
+        "itemId": "M12:original-ed1e3b0d5901b38b3e451f52"
+      }
+    ],
+    "stop": {
+      "status": "DEVIATION",
+      "code": null,
+      "decision": "block",
+      "feedback": "[runtime-corrector:stop-feedback]\n原审查摘要：DEVIATION\n以下仅为当前有效偏差，不新增用户授权。请对照原始需求和当前实现核实并修复；如反馈不成立，请说明依据。处理须遵守现有约束和权限。\nStop: TASK_COMPLETE; report: DEVIATION.\n已有对象判断（非任务完成率）：DEVIATION 2\n已完成审查任务 1/1（非业务通过率）。\n未审定 0 项；未验证或检查器故障不等于业务偏离。\n\nDEVIATION M12:original-fcfe5a9b9fb2b29c583606b2, original-fcfe5a9b9fb2b29c583606b2: 业务要求交换方只接受“一行 UTF-8 的测点目录”。\n  C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\oldExecution\\workspace\\app.mjs#L20-L22\n  snippet: } else { console.log(JSON.stringify({ revision: release.revision, phase })); for (const { file, count, digest } of groups) console.log(JSON.stringify({ file, count, digest }));\n  [RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\oldExecution\\workspace\\.runtime-correction\\tasks\\task-20261126T012155519Z-1b36c795\\feedback-delivery\\feedback-20261126T012156777Z-94c224e1\\items\\000001.json\n\nDEVIATION M12:original-802e9a6ad825c6187da361ec, original-802e9a6ad825c6187da361ec: docs/exchange.json 规定“程序必须呈现每一条记录”，即 1200 条 RIV 记录各自的 key/owner/route/limit 都应出现在交付输出中。\n  C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\oldExecution\\workspace\\.runtime-correction\\tasks\\task-20261126T012155519Z-1b36c795\\workspace-reviews\\6f775adb-53e5-408b-bffd-c6453df312d4\\execution\\000002-0000.txt#L1-L1\n  [RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\oldExecution\\workspace\\.runtime-correction\\tasks\\task-20261126T012155519Z-1b36c795\\feedback-delivery\\feedback-20261126T012156777Z-94c224e1\\items\\000002.json\n\n本消息省略 0 项详情；全部逐项记录见上述已发布索引。\n\n[RC_DETAILS] C:\\Users\\user\\workspace\\program_workspace\\rc-wt\\early-delivery-validation-20261126\\before\\oldExecution\\workspace\\.runtime-correction\\tasks\\task-20261126T012155519Z-1b36c795\\feedback-delivery\\feedback-20261126T012156777Z-94c224e1\\index.json",
+      "partialFeedbackEligible": false,
+      "report": {
+        "complete": false,
+        "sourceCoverage": {
+          "checklistSubmitted": true,
+          "complete": true,
+          "sources": [
+            {
+              "ref": "docs/exchange.json",
+              "declaredBy": {
+                "ref": "transcript:request",
+                "line": 2
+              },
+              "sha256": "adc3d2a4189b7f647b451bb37c55c6e343ea9c64ab2c4ee9c94fd7e62ef5cd66",
+              "totalLines": 1,
+              "readLines": 1,
+              "unreadRanges": [],
+              "checklistItems": 1,
+              "disposition": "REPRESENTED"
+            }
+          ]
+        },
+        "confirmedDeviations": [
+          {
+            "id": "M12:original-fcfe5a9b9fb2b29c583606b2",
+            "reason": "业务要求交换方只接受“一行 UTF-8 的测点目录”。但用户指定执行的默认分支 `node app.mjs`（app.mjs:20-22）用多次 console.log 先输出 1 行 revision/phase，再对 8 个分组各输出 1 行摘要，共 9 行；保留的返回记录也确证实际输出为 9 行，而不是单行测点目录，违反单行 UTF-8 格式约束。"
+          },
+          {
+            "id": "M12:original-802e9a6ad825c6187da361ec",
+            "reason": "docs/exchange.json 规定“程序必须呈现每一条记录”，即 1200 条 RIV 记录各自的 key/owner/route/limit 都应出现在交付输出中。默认 `node app.mjs` 只打印每组的 {file,count,digest}（app.mjs:20-22），不输出任何 RIV 编号、owner、route 或 limit；仅 --export 分支包含 entries，但验收指令要求执行的正是无参数 `node app.mjs`，因此交付输出未呈现每一条记录。"
+          }
+        ],
+        "unverifiedItems": [
+          {
+            "id": "M12:original-ed1e3b0d5901b38b3e451f52",
+            "objectId": "M12:original-ed1e3b0d5901b38b3e451f52",
+            "type": "REQUIREMENT",
+            "reason": "要求在本期交付版本实际执行 `node app.mjs` 并保留本次调用及返回，旧轮次不能代替。现有唯一的调用/返回（000001/000002）输出的是 revision RIV-410，随后助手才声明“开始办理本期修订 RIV-411 的交付”；此后没有任何 `node app.mjs` 调用或返回，当前 release.json 已为 RIV-411，故本期执行证据缺失，无法核实当前生效值。"
+          }
+        ]
+      },
+      "coverage": {
+        "fullObjectCount": 3,
+        "selectedObjectCount": 3,
+        "fileTargetCount": 0,
+        "scanCompleted": true,
+        "classification": "TASK_COMPLETE",
+        "stage": null,
+        "scopeReasonCode": "TASK_SCOPE"
+      }
+    }
+  }
+}
