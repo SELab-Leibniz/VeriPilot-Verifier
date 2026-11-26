@@ -57,8 +57,7 @@ const first=await hook({workspace,sessionId,transcript},'first',async({task,call
   if(mode==='after'){
     const assigned=text=>batch.items.find(i=>i.text===text).taskId;
     await assert.rejects(call('submit_review',{...frame,taskId:'unknown',verdict:'DEVIATION',reason:'Unassigned'}),/saved batch taskId/);
-    await call('submit_review',{...frame,taskId:assigned(lines[2]),verdict:'UNVERIFIED',reason:'Operator signoff is unavailable.',
-      extractedRanges:[{path:spec,start:1,end:10}]});
+    await call('submit_review',{...frame,taskId:assigned(lines[2]),verdict:'UNVERIFIED',reason:'Operator signoff is unavailable.'});
     await call('submit_review',{...frame,taskId:assigned(lines[1]),verdict:'DEVIATION',reason:'Sealed mode returns 3 retries; change it to 0.',
       citations:[{path:impl,start:1,end:1}]});
   } else {
@@ -88,11 +87,19 @@ if(mode==='after'){
   assert(first.report.missingEvidence.some(x=>x.reason.includes('signoff')));
   assert(first.report.unreviewedScope.some(x=>x.reason.includes('11')));
   const resumed=await hook({workspace,sessionId,transcript},'second',async({task,call,read})=>{
-    assert(task.extractionResume.ranges.some(r=>r.end===10));
+    const resume=task.extractionResume;
+    assert(resume.deliveredRanges.some(r=>r.path===spec && r.start===1 && r.end===10));
+    assert(resume.extractedRanges.some(r=>r.start===2 && r.end===3));
+    assert(resume.nextReads.some(r=>r.path===spec && r.offset===11));
+    assert.equal(resume.assigned.length,2);
     for(const f of task.basisFiles) if(f!==spec) await read(f);
-    let offset=11;
+    const firstNew=await call('source_read',{path:spec,limit:200,numbered:true});
+    assert(firstNew.content[0].text.includes(spec+':11-'));
+    let offset=firstNew.details.page.nextOffset;
     while(offset!==null){const r=await call('source_read',{path:spec,offset,limit:200});offset=r.details.page.nextOffset;}
     await call('append_original_checklist',{items:[item(lines.length)]});
+    await assert.rejects(call('seal_original_checklist',{}),/Mandatory source range pending/);
+    await call('source_read',{path:spec,offset:1,limit:10});
     await call('seal_original_checklist',{});
     const page=unpack(await call('review_checklist',frame));assert.equal(page.items.length,3);
     const citeId=await read(impl);await read(path.join(workspace,'signoff.txt'));
