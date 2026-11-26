@@ -245,6 +245,12 @@ test('large process navigation stays bounded and existing directory continuation
     assert.equal(checklist.processFileCount, 30); assert.equal(checklist.processFilesComplete, false);
     assert(checklist.processFiles.length <= 20); assert(Buffer.byteLength(JSON.stringify(checklist.processFiles)) <= 8192);
     const continuation = checklist.processFilesContinuation; assert.equal(continuation.tool, 'source_ls'); assert.equal(continuation.arguments.offset, 0);
+    const pageArgs = { offset: 2, limit: 3 };
+    const { classification, items, total, pending, nextOffset } = await api.submit('review_checklist', pageArgs);
+    const compact = await api.submit('review_checklist', { ...pageArgs, includeNavigation: false });
+    assert.deepEqual(compact, { classification, items, total, pending, nextOffset });
+    const restored = await api.submit('review_checklist', { ...pageArgs, includeNavigation: true });
+    assert.deepEqual(restored.processFilesContinuation, continuation);
     let offset = 0; const hits = [];
     do {
       api.advance(); const result = decode(await api.tools.get('source_ls').execute(crypto.randomUUID(), { ...continuation.arguments, offset, limit: 7 }));
