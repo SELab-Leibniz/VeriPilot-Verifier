@@ -12,10 +12,12 @@ MA 1.10.1 使用这个 ID 在 OpenClaw 的 `plugins list` 中查询插件启用�
 
 **正式市场条目必须下发 `installPath: "~/.openclaw/extensions"`。** 以 MA 客户端实际收到的条目为准。安装完成和重启后，MA 默认目录 `~/.matrixassistant/plugins/` 下必须没有任何 RC 文件，包括市场包、安装入口和状态文件。
 
+**RC 扩展目录必须固定为 `~/.openclaw/extensions/runtime-corrector/`。** 安装完成和重启后，`extensions` 下只能有这一份 RC。发行归档仍使用 `runtime-corrector-<版本号>.tgz`。
+
 上传构建生成的 `.tgz`。同目录的 `.tgz.sha256` 是最终归档的校验值；`.registry.json` 提供完整的本地测试记录，downloadUrl 指向本机文件。
 发布到市场时使用市场上传结果的下载地址及相同归档的 SHA-256，不能把本地 file URL 当作远程下载地址。上传时显式设置市场 ID 为 `runtime-corrector`，不要依赖文件名推断。
 
-市场条目指定 `~/.openclaw/extensions` 时，MA 将归档解压到 `~/.openclaw/extensions/runtime-corrector-<版本号>/`，OpenClaw 从该目录加载。
+MA 1.12.1 在调用 RC 之前，按市场条目中的插件 ID 和版本号生成子目录。即使 `installPath` 正确，它仍将归档解压到 `~/.openclaw/extensions/runtime-corrector-<版本号>/`。这个安装结果未通过固定目录名验收。
 市场条目省略 `installPath` 时，MA 会先把市场包解压到默认目录并在该处保留安装入口和状态。入口调用 MA 内置的 `openclaw plugins install`，将实际运行的扩展部署到 `~/.openclaw/extensions/runtime-corrector/`。这条兜底路径会在 MA 默认目录留下 RC 文件，违反上述发布要求。两种方式都无需 npm install。
 
 安装后在 MA 启用插件，并按 MA 提示重启网关。安装器设置 RC Hook 权限，沿用已有 Reviewer 参数，缺省参数及业务工具授权复用 `/rc-setup` 的配置逻辑。`plugins.load.paths` 可继续用于其他插件。RC 由 OpenClaw 的标准 extensions 目录发现。
@@ -45,7 +47,7 @@ MA 专用的 OpenClaw 入口同时检查此标记：标记缺失、未启用或�
 设置 `RC_MA_HOST_ROOT` 为本地 MA 安装目录后，同一命令还会读取实际 app.asar 的解包、Worker 激活与发现逻辑，在临时用户目录执行契约验证。
 此验证使用临时配置。桌面验收需要在独立用户目录用 MA 市场入口安装同一份归档，完整重启 MA 和 Gateway，再通过市场卸载。
 
-### 1.11.1 离线桌面验收
+### RC 1.11.1 离线桌面验收（新增固定目录名要求前）
 
 2026-11-26 在干净的独立用户目录中，用 Playwright 调用原版 MA 1.10.1 的市场接口完成安装、重启和卸载。市场清单和归档均来自本地，清单指定 `installPath: "~/.openclaw/extensions"`。验收包为 `runtime-corrector-1.11.1.tgz`，SHA-256 为 `de79e319f671b5696476f778e5f848d6d699decfdc9e664a483867ea6d64a17d`。
 
@@ -54,3 +56,9 @@ MA 专用的 OpenClaw 入口同时检查此标记：标记缺失、未启用或�
 - **卸载通过。** 通过市场卸载后，RC 扩展目录和配置项已清理。再次重启 Gateway 后，市场仍列出该条目，状态为可安装。MA 默认目录中没有 RC 文件，`plugins.load.paths` 中没有 RC 路径。
 
 正式市场实际下发的条目仍待核验。
+
+### MA 1.12.1 固定目录名复验
+
+在独立用户目录通过市场按钮安装 RC 1.11.1，退出 MA 和 Gateway 后，将扩展目录改名为 `runtime-corrector/`，再调用原版 RC 激活入口更新其安装记录。重启后 RC 可调用，MA 默认插件目录为空，`plugins.load.paths` 中没有 RC 路径。点击本地市场的「确认移除并重启网关」后，目录中仍有全部 297 个发行文件，`openclaw.json` 中仍有 RC 插件配置、白名单项和 Agent 工具授权。
+
+用相同目录布局离线运行 MA 处理服务端清单的 `plugin:list` 查询，该分支返回 `installed: false`。直接改名无法通过市场识别和卸载验收。
