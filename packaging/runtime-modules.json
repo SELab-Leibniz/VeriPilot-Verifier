@@ -133,6 +133,7 @@
     "lib/runtime-v2/stop-acceptance-sources.mjs",
     "lib/runtime-v2/stop-original-batches.mjs",
     "lib/runtime-v2/stop-source-coverage.mjs",
+    "lib/runtime-v2/stop-execution-binding.mjs",
     "lib/runtime-v2/stop-classification.mjs",
     "lib/runtime-v2/task-changes.mjs",
     "lib/runtime-v2/task-store.mjs",
