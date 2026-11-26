@@ -176,3 +176,57 @@ test('a fully read delegating SDD can explain why its independent obligations al
   assert.equal(handle.result.sourceCoverage.sources[1].disposition, 'REPRESENTED');
   await handle.close();
 });
+
+test('a checked long original group covers only explicitly located member lines', async t => {
+  const entries = Array.from({ length: 150 }, (_, i) =>
+    'Channel ' + i + ' must retain its distinct processing record. ' + 'The configured member result is mandatory. '.repeat(3));
+  const memberLines = entries.map((_, index) => index + 2);
+  const original = '# Channel provisions\n' + entries.join('\n');
+  const delivered = 'export const enabled = id => Number.isSafeInteger(id) && id >= 0 && id < 150;\n';
+  const text = 'Implement all requirements in annex.md.';
+
+  for (const mode of ['all-members', 'one-omission', 'missing-proof']) await t.test(mode, async sub => {
+    const root = await project(sub, { 'annex.md': original, 'delivery.mjs': delivered });
+    const source = path.join(root, 'annex.md'), delivery = path.join(root, 'delivery.mjs');
+    const originalRequirements = await manifest(root, text);
+    const task = await ensureTask({ projectRoot: root, sessionId: 'member-lines' });
+    const input = { projectRoot: root, taskId: task.taskId, role: 'stop-reviewer', schema: STOP_REVIEW_SCHEMA,
+      reviewer: { timeoutMs: 15000 }, evidence: { snapshot: snapshot(text), originalRequirements, groundTruth: { version: 0, claims: [] } },
+      request: { reviewScope: { kind: 'workspace-stop' }, workflowStages: [], hook: { last_assistant_message: 'Task complete.' },
+        population: { metrics: {}, reviewPolicy: { deviationOnly: true, metrics: { M16: true } } } } };
+    const expectedMembers = memberLines.filter(line => mode !== 'one-omission' || line !== 87);
+    let finished, optionalFailure;
+    const handle = await scriptedWorkspaceReview(input, { script: async ({ task: assigned, call, read }) => {
+      for (const file of assigned.basisFiles) await read(file);
+      const group = { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION',
+        text: 'Compare each separately located channel record with the current implementation.',
+        path: source, lineStart: 2, lineEnd: 151, memberLines: expectedMembers };
+      try {
+        await assert.rejects(call('append_original_checklist', { items: [{ ...group, memberLines: [1, 2] }] }),
+          { code: 'STOP_ORIGINAL_CHECKLIST_INVALID' });
+        await call('append_original_checklist', { items: [group] });
+      } catch (error) { optionalFailure = error; throw error; }
+      await call('seal_original_checklist', {});
+      const page = JSON.parse((await call('review_checklist', {
+        stopClassification: 'TASK_COMPLETE', completionClaim: true,
+      })).content[0].text);
+      const item = page.items[0];
+      assert.deepEqual(item.originalSource.memberLines, expectedMembers);
+      assert.equal(item.groupCheckRequired, true);
+      const checkedGroups = [];
+      if (mode !== 'missing-proof') {
+        await read(delivery);
+        checkedGroups.push({ taskIds: [item.taskId], method: 'Checked each declared member against the current source.',
+          citations: [{ path: delivery, start: 1, end: 1 }] });
+      }
+      finished = JSON.parse((await call('finish_stop_review', { summary: 'Finished the task review.', checkedGroups })).content[0].text);
+    } });
+    sub.after(() => handle.close());
+    assert.equal(optionalFailure, undefined);
+    assert.equal(finished?.complete, true);
+    assert.equal(handle.reviewCompleted, mode === 'all-members');
+    const coverage = handle.result.sourceCoverage.sources.find(row => row.ref === 'annex.md');
+    if (mode === 'all-members') assert.equal(coverage.disposition, 'REPRESENTED');
+    else assert.deepEqual(coverage.unextractedRanges, [mode === 'one-omission' ? [87, 87] : [2, 151]]);
+  });
+});
