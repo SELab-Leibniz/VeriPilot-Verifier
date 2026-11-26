@@ -123,6 +123,22 @@ if(mode==='after'){
   },false);
   results.early.resumed=resumed;await save();assert.equal(resumed.status,'UNVERIFIED');
 }
+if(mode==='after'){
+  const cutoff=path.resolve(out,'cutoff'),original=path.join(cutoff,'AGENTS.md'),log=path.join(cutoff,'session.jsonl');
+  await fs.mkdir(cutoff);
+  await fs.writeFile(original,lines.join('\n'));
+  await fs.writeFile(log,entries.slice(0,2).map(x=>JSON.stringify(x)).join('\n')+'\n');
+  const stopped=await hook({workspace:cutoff,transcript:log,sessionId:'unclassified-cutoff'},'cutoff',async({call})=>{
+    await call('source_read',{path:original,offset:1,limit:10});
+    throw Object.assign(new Error('Simulated reviewer cutoff before classification'),{code:'REVIEWER_DEADLINE'});
+  },true);
+  assert.equal(stopped.status,'UNVERIFIED');
+  assert.equal(stopped.report.confirmedDeviations.length,0);
+  assert.equal(stopped.report.missingEvidence.length,0);
+  assert(stopped.report.unreviewedScope.length>0);
+  assert.equal(stopped.report.sourceCoverage.sources[0].readLines,10);
+  results.cutoff=stopped;await save();
+}
 const trials=(await json(path.join(experiment,'explore-r1a-real/results.json'))).trials;
 for(const [id,name] of [['t-bfa76c3174a7d07042','crossStage'],['t-3d89a0524144a149d5','oldExecution'],
   ...(mode==='after'?[['t-bfa76c3174a7d07042','crossStageChecked']]:[])]){
