@@ -262,6 +262,90 @@ test("BOM config is accepted and a conflicting manually registered RC stays unto
   await fs.access(manifest);
 });
 
+test("MA's default directory bootstraps and uninstalls a native RC without altering the host policy", async t => {
+  const base = baseConfig();
+  base.plugins.deny = ["runtime-corrector"];
+  const f = await marketFixture(t, artifact, base, { defaultMarketPath: true });
+  const shell = await fs.realpath(f.pluginDir);
+  const stateDir = path.dirname(f.configPath);
+  const payload = path.join(stateDir, "extensions", "runtime-corrector");
+  const resources = path.join(f.root, "host", "resources");
+  const cli = path.join(resources, "openclaw", "openclaw.mjs");
+  const callsPath = path.join(stateDir, "native-calls.jsonl");
+  await fs.mkdir(path.dirname(cli), { recursive: true });
+  await fs.writeFile(cli, `
+    import assert from "node:assert/strict";
+    import { promises as fs } from "node:fs";
+    import path from "node:path";
+    const state = process.env.OPENCLAW_STATE_DIR;
+    const config = process.env.OPENCLAW_CONFIG_PATH;
+    const id = "runtime-corrector";
+    const payload = path.join(state, "extensions", id);
+    const shell = path.join(process.env.OPENCLAW_HOME, ".matrixassistant", "plugins", id);
+    const args = process.argv.slice(2);
+    assert.equal(path.dirname(config), state);
+    assert.notEqual(config, path.join(state, "openclaw.json"));
+    assert.equal(args[0], "plugins");
+    await fs.appendFile(path.join(state, "native-calls.jsonl"), JSON.stringify(args) + "\\n");
+    if (args[1] === "list") {
+      assert.equal(args[2], "--json");
+      console.log(JSON.stringify({ plugins: [] }));
+    } else if (args[1] === "install") {
+      assert.equal(path.resolve(args[2]), shell);
+      assert.equal(args.length, 3);
+      await fs.cp(shell, payload, { recursive: true });
+      const draft = JSON.parse(await fs.readFile(config, "utf8"));
+      draft.plugins.deny = [];
+      draft.plugins.entries[id] = { enabled: true };
+      await fs.writeFile(config, JSON.stringify(draft));
+    } else {
+      assert.deepEqual(args, ["plugins", "uninstall", id, "--force"]);
+      await fs.rm(payload, { recursive: true });
+    }
+  `);
+  const previous = Object.getOwnPropertyDescriptor(process, "resourcesPath");
+  Object.defineProperty(process, "resourcesPath", { configurable: true, value: resources });
+  t.after(() => {
+    if (previous) Object.defineProperty(process, "resourcesPath", previous);
+    else delete process.resourcesPath;
+  });
+
+  const installed = await f.plugin.activate(f.api, f.init);
+  assert.equal(installed.status, "active", installed.error);
+  assert.equal(installed.pluginRoot, await fs.realpath(payload));
+  assert.deepEqual((await f.readConfig()).plugins.deny, base.plugins.deny);
+  assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].enabled, true);
+  assert.equal((await f.readConfig()).plugins.load, undefined);
+  await f.writeMarker(true);
+  assert.equal((await f.plugin.activate(f.api, f.init)).changed, false);
+
+  const { reconcileNativeUninstall } = await import(pathToFileURL(path.join(payload, "installer.mjs")));
+  const owner = JSON.parse(await fs.readFile(path.join(payload, "ma-extension-owner.json")));
+  assert.equal(await reconcileNativeUninstall(owner, f.home), false);
+  await f.disable();
+  assert.equal(await reconcileNativeUninstall(owner, f.home), false, "disabled is not uninstalled");
+  await fs.writeFile(f.markerPath, JSON.stringify({ pluginId: "runtime-corrector", version: f.init.version }));
+  assert.equal(await reconcileNativeUninstall(owner, f.home), true);
+  assert.deepEqual(await f.readConfig(), base);
+  await assert.rejects(fs.access(payload), { code: "ENOENT" });
+  await assert.rejects(fs.access(f.pluginDir), { code: "ENOENT" });
+  const calls = (await fs.readFile(callsPath, "utf8")).trim().split("\n").map(line => JSON.parse(line));
+  assert.deepEqual(calls, [["plugins", "list", "--json"], ["plugins", "install", shell],
+    ["plugins", "uninstall", "runtime-corrector", "--force"]]);
+});
+
+test("the market fallback leaves a separately installed native RC and the config untouched", async t => {
+  const f = await marketFixture(t, artifact, baseConfig(), { defaultMarketPath: true });
+  const native = path.join(path.dirname(f.configPath), "extensions", "runtime-corrector");
+  await fs.cp(artifact, native, { recursive: true });
+  const original = await fs.readFile(f.configPath);
+  const rejected = await f.plugin.activate(f.api, f.init);
+  assert.match(rejected.error, /Another RC installation/u);
+  assert.deepEqual(await fs.readFile(f.configPath), original);
+  await fs.access(path.join(native, "openclaw.plugin.json"));
+  await assert.rejects(fs.access(path.join(f.pluginDir, "ma-extension-owner.json")), { code: "ENOENT" });
+});
+
 test("concurrent config edits during a blocked write are preserved with no applied installation state", async t => {
   const f = await marketFixture(t, artifact), rename = fs.rename;
   const concurrent = JSON.stringify({ ...baseConfig(), concurrent: "preserve" });

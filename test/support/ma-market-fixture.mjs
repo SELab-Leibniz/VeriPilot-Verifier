@@ -19,11 +19,12 @@ export async function waitFor(check, timeout = 3000) {
   assert.fail("Timed out waiting for the committed MA lifecycle state.");
 }
 
-export async function marketFixture(t, artifact, config = baseConfig(), { legacyCache = false } = {}) {
+export async function marketFixture(t, artifact, config = baseConfig(), { legacyCache = false, defaultMarketPath = false } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-market-user-"));
   const { version } = JSON.parse(await fs.readFile(path.join(artifact, "package.json"), "utf8"));
   const home = path.join(root, "user home 中文");
-  const pluginDir = path.join(home, ".openclaw", "extensions", `runtime-corrector-${version}`);
+  const pluginDir = defaultMarketPath ? path.join(home, ".matrixassistant", "plugins", "runtime-corrector")
+    : path.join(home, ".openclaw", "extensions", `runtime-corrector-${version}`);
   const configPath = path.join(home, ".openclaw", "openclaw.json");
   const cache = path.join(home, ".openclaw", legacyCache ? "runtime-corrector-ma" : "runtime-corrector");
   const statePath = path.join(cache, "state.json");
@@ -32,7 +33,7 @@ export async function marketFixture(t, artifact, config = baseConfig(), { legacy
   await fs.cp(artifact, pluginDir, { recursive: true });
   await fs.writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
   const markerPath = path.join(pluginDir, "install-complete.json");
-  const writeMarker = enabled => fs.writeFile(markerPath, JSON.stringify({ pluginId: "runtime-corrector", version, enabled }));
+  const writeMarker = enabled => fs.writeFile(markerPath, JSON.stringify({ pluginId: "runtime-corrector", version, source: "system", enabled }));
   await writeMarker(false);
   const api = { logger: { info() {}, warn() {}, error() {} } };
   const init = { homeDir: home, pluginDir, pluginId: "runtime-corrector", version, isPackaged: true };

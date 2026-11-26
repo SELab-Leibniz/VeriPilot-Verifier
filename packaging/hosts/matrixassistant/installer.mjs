@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { isMarketOwner, nativeOwnerFile, pathKey as key, readNativeOwner, runNativeCommand, sameNativeOwner } from "./native-install.mjs";
 
 const packageName = "runtime-corrector", pluginId = packageName, toolName = "runtime_corrector";
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -12,7 +13,6 @@ const equal = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 const hash = value => createHash("sha256").update(value).digest("hex");
 const parse = raw => JSON.parse(raw.replace(/^\uFEFF/u, ""));
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
-const key = value => process.platform === "win32" ? path.resolve(value).toLowerCase() : path.resolve(value);
 const jobs = globalThis[Symbol.for(`${packageName}.deactivation-jobs`)] ??= new Map();
 
 async function readOptional(file) {
@@ -43,6 +43,10 @@ async function locations(init = {}) {
   if (init.pluginDir && key(await fs.realpath(init.pluginDir)) !== key(owner)) throw new Error("MA pluginDir does not match the installed package.");
   const home = init.homeDir ?? os.homedir();
   if (!path.isAbsolute(home)) throw new Error("MA homeDir must be absolute.");
+  return installLocations(owner, home);
+}
+
+async function installLocations(owner, home) {
   const stateDir = path.resolve(process.env.OPENCLAW_STATE_DIR ?? path.join(home, ".openclaw"));
   const config = path.resolve(process.env.OPENCLAW_CONFIG_PATH ?? path.join(stateDir, "openclaw.json"));
   const currentCache = path.join(path.dirname(config), packageName);
@@ -53,7 +57,8 @@ async function locations(init = {}) {
     if (error.code !== "ENOENT") throw error;
     return currentCache;
   });
-  return { owner, home, config, extensions: path.join(stateDir, "extensions"), cache,
+  const extensions = path.join(stateDir, "extensions");
+  return { owner, home, config, extensions, native: path.join(extensions, pluginId), cache,
     state: path.join(cache, "state.json"), pending: path.join(cache, "pending.json"),
     lock: path.join(cache, "installer.lock"), marker: path.join(owner, "install-complete.json") };
 }
@@ -126,7 +131,7 @@ async function locked(where, run) {
         throw error;
       }
       return { changed: contents !== original };
-    });
+    }, original);
   } finally {
     await lock.close();
     if (await readOptional(where.lock) === token) await fs.unlink(where.lock);
@@ -195,37 +200,89 @@ function removeGrant(config, grant) {
   }
 }
 
-async function validateExtension(where) {
-  const extensions = await fs.realpath(where.extensions).catch(error => {
-    if (error.code !== "ENOENT") throw error;
-  });
-  if (!extensions || key(path.dirname(where.owner)) !== key(extensions)) {
-    throw new Error("Publish the MA package with installPath ~/.openclaw/extensions; the package must be in the active OpenClaw extensions directory.");
-  }
-  const manifest = parse(await fs.readFile(path.join(where.owner, "openclaw.plugin.json"), "utf8"));
-  const pkg = parse(await fs.readFile(path.join(where.owner, "package.json"), "utf8"));
-  if (manifest.id !== pluginId || typeof manifest.main !== "string" || !pkg.openclaw?.extensions?.includes(manifest.main)) {
+async function validatePackage(directory) {
+  const manifest = parse(await fs.readFile(path.join(directory, "openclaw.plugin.json"), "utf8"));
+  const pkg = parse(await fs.readFile(path.join(directory, "package.json"), "utf8"));
+  if (pkg.name !== packageName || typeof pkg.version !== "string" || manifest.id !== pluginId
+    || typeof manifest.main !== "string" || !pkg.openclaw?.extensions?.includes(manifest.main)) {
     throw new Error("Invalid RC OpenClaw extension manifest or entry.");
   }
-  const entry = await fs.realpath(path.resolve(where.owner, manifest.main));
-  const relative = path.relative(where.owner, entry);
+  const entry = await fs.realpath(path.resolve(directory, manifest.main));
+  const relative = path.relative(directory, entry);
   if (!relative || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) || !(await fs.stat(entry)).isFile()) {
     throw new Error("RC OpenClaw entry escapes the extension directory.");
   }
-  const standalone = path.join(extensions, pluginId);
-  if (key(standalone) !== key(where.owner)) {
-    const existing = await readOptional(path.join(standalone, "openclaw.plugin.json"));
+  return pkg.version;
+}
+
+async function installedDirectory(directory) {
+  try {
+    const info = await fs.lstat(directory);
+    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Unsafe RC install directory: ${directory}`);
+    return await fs.realpath(directory);
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function nativeDeployment(where, state, version, original, init) {
+  const extensions = await fs.realpath(where.extensions).catch(error => {
+    if (error.code !== "ENOENT") throw error;
+  });
+  if (extensions && key(extensions) === key(path.dirname(where.owner))) {
+    const existing = key(where.native) === key(where.owner) ? undefined
+      : await readOptional(path.join(where.native, "openclaw.plugin.json"));
     if (existing && parse(existing).id === pluginId) {
       throw new Error("Another RC installation is present in the OpenClaw extensions directory. Resolve the duplicate before enabling the MA package.");
     }
+    return { directory: where.owner };
   }
+  if (!isMarketOwner(where.home, where.owner)) {
+    throw new Error("The RC package must be in the active OpenClaw extensions or default MA market directory.");
+  }
+  for (const entry of extensions ? await fs.readdir(extensions, { withFileTypes: true }) : []) {
+    if (!entry.isDirectory() || !entry.name.startsWith(`${pluginId}-`)) continue;
+    const raw = await readOptional(path.join(extensions, entry.name, "openclaw.plugin.json"));
+    if (raw && parse(raw).id === pluginId) throw new Error("Another RC installation is present in the OpenClaw extensions directory.");
+  }
+
+  const target = await installedDirectory(where.native);
+  const current = readNativeOwner(where.owner);
+  const previous = target && readNativeOwner(target);
+  const owned = state?.active && key(state.payload) === key(where.native) && key(state.owner) === key(where.owner);
+  if (target && (!previous || key(previous.owner) !== key(where.owner))) {
+    throw new Error("Another RC installation occupies the OpenClaw native install directory.");
+  }
+  if (target && owned && sameNativeOwner(current, previous) && previous.version === version) return { directory: target };
+
+  const { stdout } = await runNativeCommand(where, ["list", "--json"], original, init?.clientInstallPath);
+  const other = parse(stdout).plugins.some(plugin => plugin.id === pluginId
+    && (!target || !plugin.source || key(path.dirname(plugin.source)) !== key(target)));
+  if (other) throw new Error("Another RC installation is registered with OpenClaw.");
+
+  const owner = { owner: where.owner, version, token: randomUUID() };
+  await atomicWrite(path.join(where.owner, nativeOwnerFile), json(owner));
+  const { config: nativeConfig } = await runNativeCommand(
+    where, ["install", where.owner, ...(target ? ["--force"] : [])], original, init?.clientInstallPath);
+  const installed = await installedDirectory(where.native);
+  if (!installed || !sameNativeOwner(owner, readNativeOwner(installed)) || await validatePackage(installed) !== version) {
+    throw new Error("OpenClaw did not install the verified RC package in its native extensions directory.");
+  }
+  const record = nativeConfig.plugins?.installs?.[pluginId];
+  return { directory: installed, deployed: true, installRecord: ownsInstallRecord(where, record) ? record : undefined };
+}
+
+function ownsInstallRecord(where, record) {
+  return typeof record?.sourcePath === "string" && typeof record?.installPath === "string"
+    && key(record.sourcePath) === key(where.owner) && key(record.installPath) === key(where.native);
 }
 
 export async function activate(api, init) {
   const where = await locations(init);
-  await validateExtension(where);
+  const version = await validatePackage(where.owner);
   const { initializeHostConfig } = await import(pathToFileURL(path.join(where.owner, "lib", "openclaw", "host-setup.mjs")));
-  const result = await locked(where, async (config, state, commit) => {
+  const result = await locked(where, async (config, state, commit, original) => {
     const before = structuredClone(config), paths = loadPaths(config);
     let retained = withoutPath(paths, where.owner, where.home);
     if (state?.active) retained = withoutPath(retained, state.payload, where.home);
@@ -242,6 +299,11 @@ export async function activate(api, init) {
       config.plugins.entries[pluginId] = structuredClone(state.savedEntry);
     }
     const setup = initializeHostConfig(config);
+    const deployment = await nativeDeployment(where, state, version, original, init);
+    if (deployment.installRecord) {
+      config.plugins.installs ??= {};
+      config.plugins.installs[pluginId] = deployment.installRecord;
+    }
     if (retained.length !== paths.length) {
       config.plugins.load.paths = retained;
       if (state?.active) pruneCreated(config, state.created.filter(parts => parts[0] === "plugins" && parts[1] === "load"));
@@ -249,8 +311,8 @@ export async function activate(api, init) {
     const grant = captureGrant(before, config, setup.agentId);
     const grants = state?.active ? [...state.grants] : [];
     if (grant && !grants.some(value => value.agentId === grant.agentId && value.name === grant.name)) grants.push(grant);
-    const next = { schemaVersion: 1, configPath: where.config, active: true, owner: where.owner, payload: where.owner,
-      generation: state?.active && state.owner === where.owner ? state.generation : randomUUID(), previousEntry,
+    const next = { schemaVersion: 1, configPath: where.config, active: true, owner: where.owner, payload: deployment.directory,
+      generation: state?.active && state.owner === where.owner && !deployment.deployed ? state.generation : randomUUID(), previousEntry,
       configuredEntry: state?.active ? state.configuredEntry : structuredClone(config.plugins.entries[pluginId]),
       savedEntry: null, grants, created: state?.active ? state.created : createdContainers(before),
       allowAdded: state?.active ? state.allowAdded : Array.isArray(before.plugins?.allow) && before.plugins.allow.length > 0 && !before.plugins.allow.includes(pluginId),
@@ -259,46 +321,50 @@ export async function activate(api, init) {
       bypassConfigWasMissing: state?.active === true && state.bypassConfigWasMissing === true,
       bypassWasMissing: state?.active === true && state.bypassWasMissing === true };
     const saved = await commit(next);
-    return { status: "active", pluginId, packageName, pluginRoot: where.owner, restartRequired: true, ...saved, warnings: setup.warnings };
+    return { status: "active", pluginId, packageName, pluginRoot: deployment.directory, restartRequired: true, ...saved, warnings: setup.warnings };
   });
-  api?.logger?.info?.(`[${packageName}] configured ${where.owner}; restart the gateway to load RC`);
+  api?.logger?.info?.(`[${packageName}] configured ${result.pluginRoot}; restart the gateway to load RC`);
   return result;
+}
+
+function restoreConfiguration(where, config, state) {
+  const entry = config.plugins?.entries?.[pluginId];
+  const savedEntry = object(entry) ? structuredClone(entry) : state.savedEntry;
+  if (Array.isArray(config.plugins?.load?.paths)) config.plugins.load.paths = withoutPath(config.plugins.load.paths, state.payload, where.home);
+  if (object(config.plugins?.entries)) {
+    if (state.previousEntry === null) delete config.plugins.entries[pluginId];
+    else {
+      const restored = structuredClone(state.previousEntry);
+      // Preserve RC parameter edits made while the market package was active,
+      // without retaining the installer's default additions in the baseline.
+      const initial = state.configuredEntry?.config ?? {}, latest = savedEntry?.config ?? {};
+      for (const name of new Set([...Object.keys(initial), ...Object.keys(latest)])) {
+        if (equal(initial[name], latest[name])) continue;
+        restored.config ??= {};
+        if (Object.hasOwn(latest, name)) restored.config[name] = structuredClone(latest[name]);
+        else delete restored.config[name];
+      }
+      config.plugins.entries[pluginId] = restored;
+    }
+  }
+  if (state.allowAdded && Array.isArray(config.plugins?.allow)) config.plugins.allow = config.plugins.allow.filter(value => value !== pluginId);
+  for (const grant of state.grants) removeGrant(config, grant);
+  if (state.bypassAdded) {
+    const settings = config.plugins?.entries?.["matrix-context-controller"]?.config;
+    if (Array.isArray(settings?.bypassSessionPatterns)) {
+      settings.bypassSessionPatterns = settings.bypassSessionPatterns.filter(value => value !== legacyBypassPattern);
+      if (!settings.bypassSessionPatterns.length && state.bypassWasMissing) delete settings.bypassSessionPatterns;
+      if (!Object.keys(settings).length && state.bypassConfigWasMissing) delete config.plugins.entries["matrix-context-controller"].config;
+    }
+  }
+  pruneCreated(config, state.created);
+  return { ...state, active: false, savedEntry, owner: null, payload: null, grants: [] };
 }
 
 async function removeConfiguration(where, expectedGeneration) {
   return locked(where, async (config, state, commit) => {
     if (!state?.active || key(state.owner) !== key(where.owner) || state.generation !== expectedGeneration) return { status: "inactive", changed: false };
-    const entry = config.plugins?.entries?.[pluginId];
-    const savedEntry = object(entry) ? structuredClone(entry) : state.savedEntry;
-    if (Array.isArray(config.plugins?.load?.paths)) config.plugins.load.paths = withoutPath(config.plugins.load.paths, state.payload, where.home);
-    if (object(config.plugins?.entries)) {
-      if (state.previousEntry === null) delete config.plugins.entries[pluginId];
-      else {
-        const restored = structuredClone(state.previousEntry);
-        // Preserve RC parameter edits made while the market package was active,
-        // without retaining the installer's default additions in the baseline.
-        const initial = state.configuredEntry?.config ?? {}, latest = savedEntry?.config ?? {};
-        for (const name of new Set([...Object.keys(initial), ...Object.keys(latest)])) {
-          if (equal(initial[name], latest[name])) continue;
-          restored.config ??= {};
-          if (Object.hasOwn(latest, name)) restored.config[name] = structuredClone(latest[name]);
-          else delete restored.config[name];
-        }
-        config.plugins.entries[pluginId] = restored;
-      }
-    }
-    if (state.allowAdded && Array.isArray(config.plugins?.allow)) config.plugins.allow = config.plugins.allow.filter(value => value !== pluginId);
-    for (const grant of state.grants) removeGrant(config, grant);
-    if (state.bypassAdded) {
-      const settings = config.plugins?.entries?.["matrix-context-controller"]?.config;
-      if (Array.isArray(settings?.bypassSessionPatterns)) {
-        settings.bypassSessionPatterns = settings.bypassSessionPatterns.filter(value => value !== legacyBypassPattern);
-        if (!settings.bypassSessionPatterns.length && state.bypassWasMissing) delete settings.bypassSessionPatterns;
-        if (!Object.keys(settings).length && state.bypassConfigWasMissing) delete config.plugins.entries["matrix-context-controller"].config;
-      }
-    }
-    pruneCreated(config, state.created);
-    const saved = await commit({ ...state, active: false, savedEntry, owner: null, payload: null, grants: [] });
+    const saved = await commit(restoreConfiguration(where, config, state));
     return { status: "inactive", ...saved };
   });
 }
@@ -306,6 +372,45 @@ async function removeConfiguration(where, expectedGeneration) {
 async function marker(where) {
   const raw = await readOptional(where.marker);
   return raw === undefined ? null : parse(raw);
+}
+
+async function marketUninstallRequested(where, owner) {
+  const directory = await installedDirectory(where.owner);
+  if (!directory) return true;
+  if (key(directory) !== key(where.owner) || !sameNativeOwner(owner, readNativeOwner(directory))) return false;
+  let current;
+  try { current = await marker(where); }
+  catch (error) {
+    if (error instanceof SyntaxError) return false;
+    throw error;
+  }
+  return current?.pluginId === pluginId && current.version === owner.version
+    && !Object.hasOwn(current, "source") && !Object.hasOwn(current, "enabled");
+}
+
+export async function reconcileNativeUninstall(owner, home = os.homedir()) {
+  if (!isMarketOwner(home, owner.owner)) return true;
+  const where = await installLocations(owner.owner, home);
+  if (!await marketUninstallRequested(where, owner)) return false;
+  return locked(where, async (config, state, commit, original) => {
+    if (!await marketUninstallRequested(where, owner)) return false;
+    if (state?.active && (key(state.owner) !== key(where.owner) || key(state.payload) !== key(where.native))) return true;
+    const target = await installedDirectory(where.native);
+    if (target) {
+      if (!sameNativeOwner(owner, readNativeOwner(target))) return true;
+      await runNativeCommand(where, ["uninstall", pluginId, "--force"], original);
+      if (await installedDirectory(where.native)) throw new Error("OpenClaw did not remove the RC native extension.");
+    }
+    if (!await marketUninstallRequested(where, owner)) return false;
+    const record = config.plugins?.installs?.[pluginId];
+    if (ownsInstallRecord(where, record)) {
+      delete config.plugins.installs[pluginId];
+      if (!Object.keys(config.plugins.installs).length) delete config.plugins.installs;
+    }
+    if (state) await commit(state.active ? restoreConfiguration(where, config, state) : state);
+    await fs.rm(where.owner, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    return true;
+  });
 }
 
 export async function deactivate(api, init) {

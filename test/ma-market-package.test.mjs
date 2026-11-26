@@ -22,6 +22,7 @@ test("MA release is a discoverable OpenClaw extension with named CJS lifecycle e
   const root = path.join(output, "unpacked"); await fs.mkdir(root);
   execFileSync("tar", ["-xzf", result.archive, "-C", root], { windowsHide: true });
   await assert.rejects(fs.access(path.join(root, "payload")));
+  await fs.access(path.join(root, "native-install.mjs"));
   const wrapper = require(path.join(root, "index.js"));
   assert.equal(typeof wrapper.activate, "function"); assert.equal(typeof wrapper.deactivate, "function");
   const pkg = JSON.parse(await fs.readFile(path.join(root, "package.json")));
