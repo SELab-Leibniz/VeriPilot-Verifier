@@ -67,7 +67,7 @@ test('a long multi-line user message keeps one original and stable late-clause c
 test('a long multi-line user message remains unverified when its late clause is omitted',
   t => reviewLongUserOriginal(t, true));
 
-async function reviewSingleLineAnnex(t, omittedIndex = null) {
+async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-single-review-'));
   t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }));
   await fs.mkdir(path.join(root, 'manuals'));
@@ -75,7 +75,9 @@ async function reviewSingleLineAnnex(t, omittedIndex = null) {
   await fs.writeFile(path.join(root, charter), 'All provisions in manuals/provisions.json are mandatory.');
   const file = path.join(root, annex);
   const records = Array.from({ length: 259 }, (_, index) => JSON.stringify({ id: '通道-' + index, rule: '通行条款须遵循原文。'.repeat(4) }));
-  const bytes = Buffer.from('[' + records.join(',') + ']');
+  const fields = envelope ? ['"title":"通行规范"', '"contract":"Every channel must enforce its independently listed provision."'] : [];
+  const list = '[' + records.join(',') + ']';
+  const bytes = Buffer.from(envelope ? '{' + fields.join(',') + ',"entries":' + list + '}' : list);
   await fs.writeFile(file, bytes);
   const request = '本次规范见 manuals/owner.md 。';
   const snapshot = { entries: [{ type: 'user', uuid: 'request', message: { content: request } }] };
@@ -87,11 +89,13 @@ async function reviewSingleLineAnnex(t, omittedIndex = null) {
     request: { reviewScope: { kind: 'workspace-stop' }, workflowStages: [], hook: { last_assistant_message: 'Delivered.' },
       population: { metrics: {}, reviewPolicy: { deviationOnly: true, metrics: { M16: true } } } } };
   let start = 1;
-  const items = records.map(record => {
-    const byteStart = start, byteEnd = start + Buffer.byteLength(record);
+  const items = [...fields, ...records].map((record, index) => {
+    const byteStart = bytes.indexOf(record, start), byteEnd = byteStart + Buffer.byteLength(record);
+    assert(byteStart >= start);
     start = byteEnd + 1;
     return { metricId: 'M16', verificationTarget: 'IMPLEMENTATION', implementationRole: 'PRODUCTION',
-      text: 'Enforce this separately located provision.', path: file, lineStart: 1, lineEnd: 1, byteStart, byteEnd };
+      text: index < fields.length ? 'Review the envelope field ' + record : 'Enforce this separately located provision.',
+      path: file, lineStart: 1, lineEnd: 1, byteStart, byteEnd };
   });
   const submitted = items.filter((_, index) => index !== omittedIndex);
   const parsed = result => JSON.parse(result.content[0].text);
@@ -136,7 +140,7 @@ async function reviewSingleLineAnnex(t, omittedIndex = null) {
   assert.equal(coverage.readLines, 1);
   assert.equal(coverage.checklistItems, submitted.length);
   t.diagnostic(JSON.stringify({ sha256: coverage.sha256, bytes: bytes.length, submitted: submitted.length,
-    omittedRecord: omittedIndex === null ? null : omittedIndex + 1, reviewCompleted: handle.reviewCompleted,
+    omittedRecord: omittedIndex === null ? null : omittedIndex + 1, ...(envelope ? { envelope: true } : {}), reviewCompleted: handle.reviewCompleted,
     disposition: coverage.disposition, reasonCode: handle.collection?.reasonCode ?? null }));
   if (omittedIndex === null) {
     assert.equal(coverage.disposition, 'REPRESENTED');
@@ -157,6 +161,12 @@ test('a single long annex line can be read and committed in more than 256 indepe
 test('a single long annex line stays unverified when one record is omitted',
   t => reviewSingleLineAnnex(t, 129));
 
+test('a single-line JSON envelope closes only with its contract and each record', async t => {
+  await t.test('all properties and records', sub => reviewSingleLineAnnex(sub, null, true));
+  await t.test('missing contract', sub => reviewSingleLineAnnex(sub, 1, true));
+  await t.test('missing one record', sub => reviewSingleLineAnnex(sub, 131, true));
+});
+
 test('single-line JSON coverage requires exact, valid object boundaries', () => {
   const first = JSON.stringify({ note: '中文 }, ["\\', nested: [{ value: true }] });
   const second = '{"id":2}';
@@ -171,4 +181,17 @@ test('single-line JSON coverage requires exact, valid object boundaries', () => 
   const malformed = Buffer.from(original);
   malformed[spans[1].byteEnd - 2] = 0x3a; // Keep the exact span and make its JSON invalid.
   assert.equal(coversSingleLineJsonRecords(malformed, spans), false);
+  const properties = ['"enabled":true', '"timeout":4', '"note":null'];
+  const prefix = '{"entries":';
+  const wrapped = Buffer.from(prefix + original + ',' + properties.join(',') + '}');
+  const wrappedSpans = spans.map(span => ({ ...span, byteStart: span.byteStart + prefix.length, byteEnd: span.byteEnd + prefix.length }));
+  for (const property of properties) {
+    const start = wrapped.indexOf(property);
+    wrappedSpans.push({ start: 1, end: 1, byteStart: start, byteEnd: start + property.length });
+  }
+  assert.equal(coversSingleLineJsonRecords(wrapped, wrappedSpans), true);
+  const duplicate = Buffer.concat([wrapped.subarray(0, -1), Buffer.from(',"enabled":false}')]);
+  const duplicateStart = wrapped.length;
+  assert.equal(coversSingleLineJsonRecords(duplicate, [...wrappedSpans,
+    { start: 1, end: 1, byteStart: duplicateStart, byteEnd: duplicate.length - 1 }]), false);
 });
