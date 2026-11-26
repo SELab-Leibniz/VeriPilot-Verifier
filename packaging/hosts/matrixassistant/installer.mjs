@@ -4,7 +4,7 @@ import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const packageName = "runtime-corrector-ma", pluginId = "runtime-corrector", toolName = "runtime_corrector";
+const packageName = "runtime-corrector", pluginId = packageName, toolName = "runtime_corrector";
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 const legacyBypassPattern = "agent:*:runtime-corrector:**";
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -13,7 +13,7 @@ const hash = value => createHash("sha256").update(value).digest("hex");
 const parse = raw => JSON.parse(raw.replace(/^\uFEFF/u, ""));
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
 const key = value => process.platform === "win32" ? path.resolve(value).toLowerCase() : path.resolve(value);
-const jobs = globalThis[Symbol.for("runtime-corrector-ma.deactivation-jobs")] ??= new Map();
+const jobs = globalThis[Symbol.for(`${packageName}.deactivation-jobs`)] ??= new Map();
 
 async function readOptional(file) {
   try { return await fs.readFile(file, "utf8"); }
@@ -45,7 +45,14 @@ async function locations(init = {}) {
   if (!path.isAbsolute(home)) throw new Error("MA homeDir must be absolute.");
   const stateDir = path.resolve(process.env.OPENCLAW_STATE_DIR ?? path.join(home, ".openclaw"));
   const config = path.resolve(process.env.OPENCLAW_CONFIG_PATH ?? path.join(stateDir, "openclaw.json"));
-  const cache = path.join(path.dirname(config), packageName);
+  const currentCache = path.join(path.dirname(config), packageName);
+  const legacyCache = `${currentCache}-ma`;
+  // An older installation and its deferred teardown must share the same lock
+  // and ownership state as the upgrade.
+  const cache = await fs.lstat(legacyCache).then(() => legacyCache, error => {
+    if (error.code !== "ENOENT") throw error;
+    return currentCache;
+  });
   return { owner, home, config, extensions: path.join(stateDir, "extensions"), cache,
     state: path.join(cache, "state.json"), pending: path.join(cache, "pending.json"),
     lock: path.join(cache, "installer.lock"), marker: path.join(owner, "install-complete.json") };

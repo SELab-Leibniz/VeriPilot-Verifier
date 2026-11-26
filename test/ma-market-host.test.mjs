@@ -157,8 +157,10 @@ test("installed MA alive judge matches the market ID against real OpenClaw plugi
   vm.runInContext(between("async function writeMarkerResult(", "async function writeMarkerAlive("), context);
   vm.runInContext(between("async function writeMarkerAlive(", "async function findCompleteJsonFile$1("), context);
   await context.refreshPluginAliveCache();
-  assert.equal(context.pluginAliveCache.has("runtime-corrector-ma"), false, "the distribution filename is not the OpenClaw ID");
-  const judged = await context.judgePluginAliveByList(Object.keys(records)[0], f.markerPath);
+  const [marketId] = Object.keys(records);
+  assert.equal(artifact.packageName, marketId);
+  assert.equal(context.pluginAliveCache.has(marketId), true);
+  const judged = await context.judgePluginAliveByList(marketId, f.markerPath);
   assert.equal(judged.alive, true);
   assert.equal(JSON.parse(await fs.readFile(f.markerPath)).alive, true);
 });

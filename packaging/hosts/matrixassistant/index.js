@@ -2,7 +2,7 @@
 function run(name, api, init) {
   return import('./installer.mjs').then(installer => installer[name](api, init)).catch(error => {
     const message = error instanceof Error ? error.message : String(error);
-    api?.logger?.error?.(`[runtime-corrector-ma] ${name}: ${message}`);
+    api?.logger?.error?.(`[runtime-corrector] ${name}: ${message}`);
     return { error: message };
   });
 }

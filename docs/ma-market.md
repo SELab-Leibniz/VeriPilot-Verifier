@@ -1,13 +1,13 @@
 # MatrixAssistant 市场发行包
 
-在源码目录运行 `npm run build:ma`，生成 `dist/runtime-corrector-ma-<版本号>.tgz`。
+在源码目录运行 `npm run build:ma`，生成 `dist/runtime-corrector-<版本号>.tgz`。
 发行版本默认取源码根 package.json 的版本，也可运行 `npm run build:ma -- --version 1.9.2`；MA 发行号限定为简单的 `x.y.z`。
 构建需要 Node.js 和系统 `tar`（Windows 自带），不需要安装构建依赖。
 
 ## 上传与安装
 
-包名为 `runtime-corrector-ma`。市场与 OpenClaw 使用同一个插件 ID `runtime-corrector`。
-MA 1.10.1 用市场 ID 直接查询 OpenClaw `plugins list` 的 enabled 状态；市场 ID 不能改成 `runtime-corrector-ma`，否则实际加载后仍会显示 alive:false。安装器会明确拒绝错误的市场 ID。
+包名、市场插件 ID 和 OpenClaw 插件 ID 均为 `runtime-corrector`。
+MA 1.10.1 使用这个 ID 在 OpenClaw 的 `plugins list` 中查询插件启用状态。
 市场模式选择 `client`，分类为 `user`，重启策略为 `gateway`。市场记录的 `installPath` 为 `~/.openclaw/extensions`。OpenClaw manifest 保留原生版本和运行时兼容检查。
 
 上传构建生成的 `.tgz`。同目录的 `.tgz.sha256` 是最终归档的校验值；`.registry.json` 提供完整的本地测试记录，downloadUrl 指向本机文件。
@@ -23,8 +23,8 @@ MA 将归档解压到 `~/.openclaw/extensions/runtime-corrector-<版本号>/`，
 ## 启停、升级与恢复
 
 MA 卸载市场目录时一并删除扩展代码。停用会清理安装器管理的配置和工具授权，保留用户设置、其他插件的路径、项目 `.runtime-corrector` 和历史 `.runtime-correction`。
-在 OpenClaw 配置旁创建 `runtime-corrector-ma/state.json`，保存本包的配置所有权和停用前的 RC 参数，便于再次启用；卸载不删除这份用户参数缓存。
-每次配置变更之前保存 `.runtime-corrector-ma-*.bak` 原文备份；写入检测并发编辑。中断的配置事务使用 pending.json 在下次操作时恢复。
+新安装在 OpenClaw 配置旁创建 `runtime-corrector/state.json`，保存配置所有权和停用前的 RC 参数。卸载后可用这份缓存恢复参数。升级沿用已有的安装状态目录及其安装锁。
+每次配置变更之前保存 `.runtime-corrector-*.bak` 原文备份。写入时检测并发编辑，中断的配置事务可在下次操作时从 `pending.json` 恢复。
 
 MA 1.10.1 的普通宿主重载与显式禁用都会调用 `deactivate()`，且显式禁用在方法返回后才写 `install-complete.json` 的 `enabled:false`。
 因此安装器短暂观察 MA 提交的标记，仅在真正停用时清理配置；普通重载保持原样。

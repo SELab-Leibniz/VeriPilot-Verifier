@@ -1,5 +1,5 @@
 {
-  "name": "runtime-corrector-ma",
+  "name": "runtime-corrector",
   "version": "1.9.1",
   "private": true,
   "description": "Runtime Corrector installer for MatrixAssistant (OpenClaw payload included).",

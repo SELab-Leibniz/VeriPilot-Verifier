@@ -30,6 +30,7 @@ test("enable configures discovery, permissions and only the main public tool; re
   const base = baseConfig(), f = await marketFixture(t, artifact, base);
   const result = await f.plugin.activate(f.api, f.init);
   assert.equal(result.status, "active", result.error); assert.equal(result.restartRequired, true);
+  assert.equal(result.packageName, "runtime-corrector"); assert.equal(result.pluginId, result.packageName);
   await f.writeMarker(true);
   const config = await f.readConfig(), entry = config.plugins.entries["runtime-corrector"];
   assert.deepEqual(config.tools, base.tools); assert.deepEqual(config.plugins.entries.existing, base.plugins.entries.existing);
@@ -44,6 +45,8 @@ test("enable configures discovery, permissions and only the main public tool; re
   assert.equal(await fs.readFile(f.configPath, "utf8"), before);
   assert.deepEqual(await fs.readdir(path.dirname(f.configPath)), files);
   const backup = files.find(name => name.endsWith(".bak"));
+  assert.match(backup, /^openclaw\.json\.runtime-corrector-[0-9a-f-]+\.bak$/u);
+  assert.equal(files.includes("runtime-corrector-ma"), false);
   assert.deepEqual(JSON.parse(await fs.readFile(path.join(path.dirname(f.configPath), backup))), base);
   await f.disable(); assert.deepEqual(await f.readConfig(), base);
 });
@@ -171,11 +174,13 @@ test("a superseded package cannot tear down the active extension configuration",
   assert.deepEqual(await f.readConfig(), base);
 });
 
-test("upgrade removes a legacy owned load path and preserves unrelated paths", async t => {
+test("upgrade reuses legacy installation state, removes its load path and preserves unrelated paths", async t => {
   for (const unrelated of [[], ["~/other-extension"]]) {
     const base = baseConfig();
     if (unrelated.length) base.plugins.load = { paths: unrelated };
-    const f = await marketFixture(t, artifact, base);
+    const f = await marketFixture(t, artifact, base, { legacyCache: true });
+    const currentCache = path.join(path.dirname(f.configPath), "runtime-corrector");
+    await fs.mkdir(path.join(currentCache, "cli-commands"), { recursive: true });
     assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
     const config = await f.readConfig(), state = await f.readState();
     const oldOwner = path.join(f.home, ".matrixassistant", "plugins", "runtime-corrector-1.9.1");
@@ -190,6 +195,7 @@ test("upgrade removes a legacy owned load path and preserves unrelated paths", a
     await f.writeMarker(true);
     assert.deepEqual((await f.readConfig()).plugins.load, base.plugins.load);
     assert.equal((await f.readState()).payload, await fs.realpath(f.pluginDir));
+    await assert.rejects(fs.access(path.join(currentCache, "state.json")), { code: "ENOENT" });
     await f.disable();
     assert.deepEqual(await f.readConfig(), base);
   }
@@ -224,7 +230,10 @@ test("invalid configuration, missing default model and mismatched package locati
     assert.equal(await fs.readFile(f.configPath, "utf8"), before);
   }
   const f = await marketFixture(t, artifact);
-  assert.match((await f.plugin.activate(f.api, { ...f.init, pluginId: "runtime-corrector-ma" })).error, /market ID runtime-corrector/u);
+  const errors = [], api = { logger: { error: message => errors.push(message) } };
+  const wrongId = await f.plugin.activate(api, { ...f.init, pluginId: "runtime-corrector-ma" });
+  assert.match(wrongId.error, /market ID runtime-corrector/u);
+  assert.deepEqual(errors, ["[runtime-corrector] activate: " + wrongId.error]);
   assert.match((await f.plugin.activate(f.api, { ...f.init, pluginDir: f.home })).error, /pluginDir/u);
   await fs.writeFile(f.configPath, "{broken");
   assert.equal(typeof (await f.plugin.activate(f.api, f.init)).error, "string");

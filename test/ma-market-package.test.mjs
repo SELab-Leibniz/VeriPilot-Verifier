@@ -25,7 +25,7 @@ test("MA release is a discoverable OpenClaw extension with named CJS lifecycle e
   const wrapper = require(path.join(root, "index.js"));
   assert.equal(typeof wrapper.activate, "function"); assert.equal(typeof wrapper.deactivate, "function");
   const pkg = JSON.parse(await fs.readFile(path.join(root, "package.json")));
-  assert.equal(pkg.name, "runtime-corrector-ma"); assert.equal(pkg.type, "commonjs"); assert.equal(pkg.main, "index.js");
+  assert.equal(pkg.name, "runtime-corrector"); assert.equal(pkg.type, "commonjs"); assert.equal(pkg.main, "index.js");
   const manifest = JSON.parse(await fs.readFile(path.join(root, "openclaw.plugin.json")));
   assert.equal(manifest.id, "runtime-corrector");
   assert.deepEqual(pkg.openclaw.extensions, ["./ma-entry.mjs"]);
@@ -50,17 +50,22 @@ test("release filename, registry ID, version and SHA-256 describe the actual upl
   const records = JSON.parse(await fs.readFile(result.registry)).plugins;
   assert.deepEqual(Object.keys(records), ["runtime-corrector"]);
   const record = records["runtime-corrector"];
-  assert.equal(path.basename(result.archive), `runtime-corrector-ma-${record.version}.tgz`);
+  const filename = `runtime-corrector-${record.version}.tgz`;
+  assert.equal(result.packageName, result.pluginId);
+  assert.equal(result.pluginId, "runtime-corrector");
+  assert.equal(path.basename(result.directory), result.packageName);
+  assert.equal(path.basename(result.archive), filename);
+  assert.equal(path.basename(result.registry), `runtime-corrector-${record.version}.registry.json`);
   assert.equal(new URL(record.downloadUrl).pathname.endsWith(path.basename(result.archive)), true);
   assert.equal(record.sha256, createHash("sha256").update(await fs.readFile(result.archive)).digest("hex"));
   assert.equal(record.sha256, result.sha256); assert.equal(record.mode, "client"); assert.equal(record.restart, "gateway");
   assert.equal(record.pluginType, "user"); assert.equal(record.installPath, "~/.openclaw/extensions");
-  assert.match(await fs.readFile(`${result.archive}.sha256`, "utf8"), new RegExp(`^${record.sha256}  runtime-corrector-ma-`));
+  assert.equal(await fs.readFile(`${result.archive}.sha256`, "utf8"), `${record.sha256}  ${filename}\n`);
 });
 
 test("MA version overrides do not change the OpenClaw manifest version or leave temporary build directories", async () => {
   const next = await buildMAPackage({ sourceRoot, outputRoot: path.join(output, "next"), version: "2.3.4" });
-  assert.equal(path.basename(next.archive), "runtime-corrector-ma-2.3.4.tgz");
+  assert.equal(path.basename(next.archive), "runtime-corrector-2.3.4.tgz");
   assert.equal(JSON.parse(await fs.readFile(path.join(next.directory, "package.json"))).version, "2.3.4");
   assert.equal(JSON.parse(await fs.readFile(path.join(next.directory, "openclaw.plugin.json"))).version,
     JSON.parse(await fs.readFile(path.join(sourceRoot, "packaging/hosts/openclaw/openclaw.plugin.json"))).version);
@@ -73,4 +78,15 @@ test("ambiguous MA directory versions and source-containing output roots fail be
   }
   await assert.rejects(fs.access(path.join(output, "invalid")));
   await assert.rejects(buildMAPackage({ sourceRoot, outputRoot: sourceRoot }), /source checkout/u);
+});
+
+test("a same-name output tree without MA entry points is preserved", async () => {
+  const outputRoot = path.join(output, "existing-output");
+  const directory = path.join(outputRoot, "runtime-corrector");
+  const packageFile = path.join(directory, "package.json");
+  const original = '{"name":"runtime-corrector","type":"module"}\n';
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(packageFile, original);
+  await assert.rejects(buildMAPackage({ sourceRoot, outputRoot }), /unrelated MA build directory/u);
+  assert.equal(await fs.readFile(packageFile, "utf8"), original);
 });

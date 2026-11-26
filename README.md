@@ -19,7 +19,7 @@ npm run build:plugins
 - Claude Code：`claude --plugin-dir ./dist/runtime-corrector-claude`
 - CodeAgent：用宿主插件安装流程选择 `dist/runtime-corrector-codeagent`。
 - OpenClaw：`openclaw plugins install ./dist/runtime-corrector-openclaw`。
-- MatrixAssistant 市场：运行 `npm run build:ma`，上传 `dist/runtime-corrector-ma-<版本号>.tgz`，选择 `client` 模式；详见 [MA 市场发行包](docs/ma-market.md)。也可按 [宿主指南](docs/openclaw.md) 使用内置 OpenClaw CLI 安装原生包。
+- MatrixAssistant 市场可运行 `npm run build:ma` 并上传 `dist/runtime-corrector-<版本号>.tgz`，选择 `client` 模式。也可使用内置 OpenClaw CLI 安装原生包。 [MA 市场发行包](docs/ma-market.md) · [宿主指南](docs/openclaw.md)
 
 只构建默认宿主使用 `npm run build:plugin`，指定宿主使用 `npm run build:plugin -- --host claude`。源码根目录不提供安装 manifest，安装时选择构建后的目录。
 
