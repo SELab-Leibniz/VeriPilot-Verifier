@@ -1149,6 +1149,29 @@ test("inlined material is capped so a huge document cannot blow the request", as
   assert.ok(entry.bytes > entry.text.length, "the manifest still records the true size");
 });
 
+test("onboarding enforces per-file and shared UTF-8 budgets at whole characters", async t => {
+  const root = await workspace(t);
+  const source = "🌷中".repeat(90000);
+  const roots = ["a.md", "b.md", "c.md"].map(name => path.join(root, name));
+  for (const file of roots) await fs.writeFile(file, source);
+  const identity = await materialManifest(roots);
+  const { digest, entries } = await materialManifest(roots, { includeContent: true });
+  assert.equal(digest, identity.digest);
+  let remaining = 400000;
+  for (const entry of entries) {
+    const allowance = Math.min(200000, remaining);
+    const kept = entry.text ?? "";
+    const bytes = Buffer.byteLength(kept);
+    assert.ok(source.startsWith(kept) && !kept.endsWith("\ud83c"));
+    assert.ok(bytes <= allowance);
+    const next = String.fromCodePoint(source.codePointAt(kept.length));
+    assert.ok(bytes + Buffer.byteLength(next) > allowance);
+    assert.ok(entry.contentTruncated || entry.contentOmitted);
+    assert.equal(entry.bytes, Buffer.byteLength(source));
+    remaining -= bytes;
+  }
+});
+
 test("the capability module is adapter-derived, never taken from the extractor", async () => {
   const adapter = await loadPlatformAdapter("harmonyos");
   // A panel pass that mapped the checklist table's code-file column into
