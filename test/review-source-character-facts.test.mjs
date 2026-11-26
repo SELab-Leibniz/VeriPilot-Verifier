@@ -134,3 +134,30 @@ test('conditional semantic fixtures record actual writes and distinguish a missi
     }
   }
 });
+
+test('live JSONL projection keeps line positions and binds the version without granting raw coverage', async t => {
+  const root = await workspace(t), file = path.join(root, 'table.jsonl');
+  const row = (key, limit, detail) => JSON.stringify({ key, limit, detail }) + '\n';
+  const bytes = Buffer.from(row('A', 1, 'long context '.repeat(4200)) + row('B', 2, 'tail'));
+  await fs.writeFile(file, bytes);
+  const evidence = await createTaskEvidence({ root, workspaceRoot: root, evidencePolicy: { jsonlProjection: true, byteReading: true },
+    active() {}, journal: { appendMessage() {} } });
+  const read = evidence.tools.find(tool => tool.name === 'source_read');
+  const args = { path: 'table.jsonl', numbered: true, limit: 1, jsonlFields: ['key', 'limit'] };
+  const first = await read.execute('projected', args);
+  assert.match(toolText(first), /^\[RC field projection\]\n\[1\] \{"key":"A","limit":1\}\n/u);
+  assert.equal(first.details.page.nextOffset, 2);
+  assert.equal(first.details.fileFacts.sha256, digest(bytes));
+  assert.doesNotMatch(toolText(first), /long context/u);
+  const second = await read.execute('next', { ...args, offset: first.details.page.nextOffset });
+  assert.match(toolText(second), /\[2\] \{"key":"B","limit":2\}/u);
+  assert.equal(disclosedRange(bytes, args, first), null, 'partial fields cannot count as a raw page');
+  evidence.observeReceipt({ toolName: 'source_read', toolCallId: 'projected', isSynthetic: false,
+    message: { role: 'toolResult', toolName: 'source_read', toolCallId: 'projected', isError: false, content: first.content } });
+  assert.equal(evidence.registry.size, 0);
+  assert.equal(evidence.reads.length, 0);
+  await assert.rejects(read.execute('missing-field', { ...args, jsonlFields: ['absent'] }), /every requested field/u);
+  await assert.rejects(read.execute('bytes-and-fields', { ...args, byteOffset: 0, byteLimit: 64 }), /cannot be projected/u);
+  await fs.writeFile(file, row('A', 1, 'different original') + row('B', 2, 'tail'));
+  await assert.rejects(evidence.assertFrozen({ force: true }), { code: 'BASELINE_INPUT_CHANGED' });
+});
