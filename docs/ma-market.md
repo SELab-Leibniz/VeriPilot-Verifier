@@ -6,26 +6,23 @@
 
 ## 上传与安装
 
-文件名及外层包名为 `runtime-corrector-ma`；市场插件 ID 和内层 OpenClaw 插件 ID 均为 `runtime-corrector`。
+包名为 `runtime-corrector-ma`。市场与 OpenClaw 使用同一个插件 ID `runtime-corrector`。
 MA 1.10.1 用市场 ID 直接查询 OpenClaw `plugins list` 的 enabled 状态；市场 ID 不能改成 `runtime-corrector-ma`，否则实际加载后仍会显示 alive:false。安装器会明确拒绝错误的市场 ID。
-市场模式选择 `client`，分类为 `user`，重启策略为 `gateway`。内层保留其原生构建版本和运行时版本检查。
+市场模式选择 `client`，分类为 `user`，重启策略为 `gateway`。市场记录的 `installPath` 为 `~/.openclaw/extensions`。OpenClaw manifest 保留原生版本和运行时兼容检查。
 
 上传构建生成的 `.tgz`。同目录的 `.tgz.sha256` 是最终归档的校验值；`.registry.json` 提供完整的本地测试记录，downloadUrl 指向本机文件。
 发布到市场时使用市场上传结果的下载地址及相同归档的 SHA-256，不能把本地 file URL 当作远程下载地址。上传时显式设置市场 ID 为 `runtime-corrector`，不要依赖文件名推断。
 
-归档根目录直接包含 `index.js`、`package.json`、`installer.mjs` 和 `payload/runtime-corrector/`。
-MA 先解压归档，再调用 CommonJS `activate(api, init)`；内层保留 ESM。
-无需运行 npm install，也无需下载、修改 MA 或其内置 OpenClaw。
+MA 将归档解压到 `~/.openclaw/extensions/runtime-corrector-<版本号>/`，再调用根目录的 CommonJS 生命周期入口。OpenClaw 在同一目录发现 manifest 并加载 ESM 入口。安装无需 npm install。
 
-安装后在 MA 启用插件，并按 MA 提示重启网关。安装器自动登记包内载荷的绝对加载路径，设置 RC Hook 权限，沿用已有 Reviewer 参数；缺省参数及业务工具授权复用 `/rc-setup` 的配置逻辑。
+安装后在 MA 启用插件，并按 MA 提示重启网关。安装器设置 RC Hook 权限，沿用已有 Reviewer 参数，缺省参数及业务工具授权复用 `/rc-setup` 的配置逻辑。`plugins.load.paths` 可继续用于其他插件。RC 由 OpenClaw 的标准 extensions 目录发现。
 全局插件白名单的空值/缺省含义、工具 deny、其他 Agent 和其他插件设置保留。
 项目和 Session 开关独立：仍需在所选项目执行 `/rc-project init`、`/rc-project on`、`/rc-session on`。
 全局插件关闭或显式 deny 仍可能阻止 RC；安装器返回相应 warnings，不清除这些限制。
 
 ## 启停、升级与恢复
 
-载荷直接位于 MA 的安装目录内，不另复制一份到 extensions；MA 卸载外层目录时一并删除对应代码。
-安装器只移除本发行包登记的路径与新增工具授权，保留其他路径、用户配置及项目 `.runtime-corrector`、历史 `.runtime-correction`。
+MA 卸载市场目录时一并删除扩展代码。停用会清理安装器管理的配置和工具授权，保留用户设置、其他插件的路径、项目 `.runtime-corrector` 和历史 `.runtime-correction`。
 在 OpenClaw 配置旁创建 `runtime-corrector-ma/state.json`，保存本包的配置所有权和停用前的 RC 参数，便于再次启用；卸载不删除这份用户参数缓存。
 每次配置变更之前保存 `.runtime-corrector-ma-*.bak` 原文备份；写入检测并发编辑。中断的配置事务使用 pending.json 在下次操作时恢复。
 
@@ -34,8 +31,8 @@ MA 1.10.1 的普通宿主重载与显式禁用都会调用 `deactivate()`，且�
 MA 专用的 OpenClaw 入口同时检查此标记：标记缺失、未启用或出错时不注册 RC，防止重启抢先于配置清理或进程中断后误加载。
 启停以 MA 的标记和网关重启为准，不把写入配置视为当前运行已完成切换。
 
-升级时新发行包接管已登记的旧 MA 载荷路径，旧包的延迟清理不会移除新包配置。
-如果 load.paths 显式指向另一份手工安装的 RC，安装器报出冲突，保留原配置；先处理该冲突再启用市场包。
+升级时新发行包移除旧 MA 安装器自行登记的载荷路径。旧包的延迟清理仍按原安装身份结算。
+如果已有独立安装的 RC 占用标准扩展目录，或自定义路径指向另一份 RC，先处理重复安装再启用市场包。
 若中断后配置又被其他程序修改，安装器停止恢复并提示使用原文备份处理，不覆盖后续编辑。
 
 ## 验证范围

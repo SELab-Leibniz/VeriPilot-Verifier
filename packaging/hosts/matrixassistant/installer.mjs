@@ -43,12 +43,12 @@ async function locations(init = {}) {
   if (init.pluginDir && key(await fs.realpath(init.pluginDir)) !== key(owner)) throw new Error("MA pluginDir does not match the installed package.");
   const home = init.homeDir ?? os.homedir();
   if (!path.isAbsolute(home)) throw new Error("MA homeDir must be absolute.");
-  const config = path.resolve(process.env.OPENCLAW_CONFIG_PATH
-    ?? path.join(process.env.OPENCLAW_STATE_DIR ?? path.join(home, ".openclaw"), "openclaw.json"));
+  const stateDir = path.resolve(process.env.OPENCLAW_STATE_DIR ?? path.join(home, ".openclaw"));
+  const config = path.resolve(process.env.OPENCLAW_CONFIG_PATH ?? path.join(stateDir, "openclaw.json"));
   const cache = path.join(path.dirname(config), packageName);
-  return { owner, home, config, cache, state: path.join(cache, "state.json"), pending: path.join(cache, "pending.json"),
-    lock: path.join(cache, "installer.lock"), payload: await fs.realpath(path.join(owner, "payload", pluginId)),
-    marker: path.join(owner, "install-complete.json") };
+  return { owner, home, config, extensions: path.join(stateDir, "extensions"), cache,
+    state: path.join(cache, "state.json"), pending: path.join(cache, "pending.json"),
+    lock: path.join(cache, "installer.lock"), marker: path.join(owner, "install-complete.json") };
 }
 
 function validateState(state, where) {
@@ -132,21 +132,23 @@ function list(value, label) {
 }
 
 function loadPaths(config) {
-  config.plugins ??= {};
-  if (!object(config.plugins)) throw new Error("plugins must be an object.");
-  config.plugins.load ??= {};
-  if (!object(config.plugins.load)) throw new Error("plugins.load must be an object.");
-  config.plugins.load.paths ??= [];
-  return list(config.plugins.load.paths, "plugins.load.paths");
+  if (config.plugins !== undefined && !object(config.plugins)) throw new Error("plugins must be an object.");
+  const load = config.plugins?.load;
+  if (load === undefined) return [];
+  if (!object(load)) throw new Error("plugins.load must be an object.");
+  return load.paths === undefined ? [] : list(load.paths, "plugins.load.paths");
+}
+
+function expandHome(value, home) {
+  return value === "~" ? home : value.startsWith("~/") || value.startsWith("~\\") ? path.join(home, value.slice(2)) : value;
 }
 
 function withoutPath(values, target, home) {
-  const expand = value => value === "~" ? home : value.startsWith("~/") || value.startsWith("~\\") ? path.join(home, value.slice(2)) : value;
-  return values.filter(value => key(expand(value)) !== key(target));
+  return values.filter(value => key(expandHome(value, home)) !== key(target));
 }
 
 function createdContainers(config) {
-  return [["plugins"], ["plugins", "entries"], ["plugins", "load"], ["plugins", "load", "paths"], ["agents"], ["agents", "list"]]
+  return [["plugins"], ["plugins", "entries"], ["agents"], ["agents", "list"]]
     .filter(parts => parts.reduce((value, part) => value?.[part], config) === undefined);
 }
 
@@ -186,46 +188,61 @@ function removeGrant(config, grant) {
   }
 }
 
-async function validatePayload(where) {
-  const manifest = parse(await fs.readFile(path.join(where.payload, "openclaw.plugin.json"), "utf8"));
-  const pkg = parse(await fs.readFile(path.join(where.payload, "package.json"), "utf8"));
+async function validateExtension(where) {
+  const extensions = await fs.realpath(where.extensions).catch(error => {
+    if (error.code !== "ENOENT") throw error;
+  });
+  if (!extensions || key(path.dirname(where.owner)) !== key(extensions)) {
+    throw new Error("Publish the MA package with installPath ~/.openclaw/extensions; the package must be in the active OpenClaw extensions directory.");
+  }
+  const manifest = parse(await fs.readFile(path.join(where.owner, "openclaw.plugin.json"), "utf8"));
+  const pkg = parse(await fs.readFile(path.join(where.owner, "package.json"), "utf8"));
   if (manifest.id !== pluginId || typeof manifest.main !== "string" || !pkg.openclaw?.extensions?.includes(manifest.main)) {
-    throw new Error("Invalid RC OpenClaw payload manifest/entry.");
+    throw new Error("Invalid RC OpenClaw extension manifest or entry.");
   }
-  const entry = await fs.realpath(path.resolve(where.payload, manifest.main));
-  const relative = path.relative(where.payload, entry);
+  const entry = await fs.realpath(path.resolve(where.owner, manifest.main));
+  const relative = path.relative(where.owner, entry);
   if (!relative || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) || !(await fs.stat(entry)).isFile()) {
-    throw new Error("RC OpenClaw payload entry escapes the payload directory.");
+    throw new Error("RC OpenClaw entry escapes the extension directory.");
   }
-  return pkg;
+  const standalone = path.join(extensions, pluginId);
+  if (key(standalone) !== key(where.owner)) {
+    const existing = await readOptional(path.join(standalone, "openclaw.plugin.json"));
+    if (existing && parse(existing).id === pluginId) {
+      throw new Error("Another RC installation is present in the OpenClaw extensions directory. Resolve the duplicate before enabling the MA package.");
+    }
+  }
 }
 
 export async function activate(api, init) {
   const where = await locations(init);
-  await validatePayload(where);
-  const { initializeHostConfig } = await import(pathToFileURL(path.join(where.payload, "lib", "openclaw", "host-setup.mjs")));
+  await validateExtension(where);
+  const { initializeHostConfig } = await import(pathToFileURL(path.join(where.owner, "lib", "openclaw", "host-setup.mjs")));
   const result = await locked(where, async (config, state, commit) => {
     const before = structuredClone(config), paths = loadPaths(config);
-    for (const candidate of paths) {
-      const expanded = candidate.replace(/^~(?=[\\/]|$)/u, where.home);
-      const raw = await readOptional(path.join(expanded, "openclaw.plugin.json"));
-      if (raw && parse(raw).id === pluginId && key(expanded) !== key(where.payload)
-        && !(state?.active && key(expanded) === key(state.payload))) {
-        throw new Error("Another RC installation is configured in plugins.load.paths; remove that conflicting path before enabling the MA package.");
+    let retained = withoutPath(paths, where.owner, where.home);
+    if (state?.active) retained = withoutPath(retained, state.payload, where.home);
+    for (const candidate of retained) {
+      const raw = await readOptional(path.join(expandHome(candidate, where.home), "openclaw.plugin.json"));
+      if (raw && parse(raw).id === pluginId) {
+        throw new Error("Another RC installation is configured in plugins.load.paths. Resolve that duplicate before enabling the MA package.");
       }
     }
     const previousEntry = state?.active ? state.previousEntry : before.plugins?.entries?.[pluginId] ?? null;
-    if (!config.plugins.entries?.[pluginId] && state?.savedEntry) {
+    if (!config.plugins?.entries?.[pluginId] && state?.savedEntry) {
+      config.plugins ??= {};
       config.plugins.entries ??= {};
       config.plugins.entries[pluginId] = structuredClone(state.savedEntry);
     }
     const setup = initializeHostConfig(config);
-    config.plugins.load.paths = withoutPath(paths, state?.active ? state.payload : where.payload, where.home);
-    if (!config.plugins.load.paths.some(value => key(value) === key(where.payload))) config.plugins.load.paths.push(where.payload.replaceAll("\\", "/"));
+    if (retained.length !== paths.length) {
+      config.plugins.load.paths = retained;
+      if (state?.active) pruneCreated(config, state.created.filter(parts => parts[0] === "plugins" && parts[1] === "load"));
+    }
     const grant = captureGrant(before, config, setup.agentId);
     const grants = state?.active ? [...state.grants] : [];
     if (grant && !grants.some(value => value.agentId === grant.agentId && value.name === grant.name)) grants.push(grant);
-    const next = { schemaVersion: 1, configPath: where.config, active: true, owner: where.owner, payload: where.payload,
+    const next = { schemaVersion: 1, configPath: where.config, active: true, owner: where.owner, payload: where.owner,
       generation: state?.active && state.owner === where.owner ? state.generation : randomUUID(), previousEntry,
       configuredEntry: state?.active ? state.configuredEntry : structuredClone(config.plugins.entries[pluginId]),
       savedEntry: null, grants, created: state?.active ? state.created : createdContainers(before),
@@ -235,9 +252,9 @@ export async function activate(api, init) {
       bypassConfigWasMissing: state?.active === true && state.bypassConfigWasMissing === true,
       bypassWasMissing: state?.active === true && state.bypassWasMissing === true };
     const saved = await commit(next);
-    return { status: "active", pluginId, packageName, pluginRoot: where.payload, restartRequired: true, ...saved, warnings: setup.warnings };
+    return { status: "active", pluginId, packageName, pluginRoot: where.owner, restartRequired: true, ...saved, warnings: setup.warnings };
   });
-  api?.logger?.info?.(`[${packageName}] configured ${where.payload}; restart the gateway to load RC`);
+  api?.logger?.info?.(`[${packageName}] configured ${where.owner}; restart the gateway to load RC`);
   return result;
 }
 

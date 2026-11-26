@@ -21,17 +21,19 @@ export async function waitFor(check, timeout = 3000) {
 
 export async function marketFixture(t, artifact, config = baseConfig()) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "rc-ma-market-user-"));
-  const home = path.join(root, "user home 中文"), pluginDir = path.join(home, ".matrixassistant", "plugins", "runtime-corrector-1.9.1");
+  const { version } = JSON.parse(await fs.readFile(path.join(artifact, "package.json"), "utf8"));
+  const home = path.join(root, "user home 中文");
+  const pluginDir = path.join(home, ".openclaw", "extensions", `runtime-corrector-${version}`);
   const configPath = path.join(home, ".openclaw", "openclaw.json");
   const statePath = path.join(home, ".openclaw", "runtime-corrector-ma", "state.json");
   await fs.mkdir(path.dirname(configPath), { recursive: true });
   await fs.cp(artifact, pluginDir, { recursive: true });
   await fs.writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
   const markerPath = path.join(pluginDir, "install-complete.json");
-  const writeMarker = enabled => fs.writeFile(markerPath, JSON.stringify({ pluginId: "runtime-corrector", version: "1.9.1", enabled }));
+  const writeMarker = enabled => fs.writeFile(markerPath, JSON.stringify({ pluginId: "runtime-corrector", version, enabled }));
   await writeMarker(false);
   const api = { logger: { info() {}, warn() {}, error() {} } };
-  const init = { homeDir: home, pluginDir, pluginId: "runtime-corrector", version: "1.9.1", isPackaged: true };
+  const init = { homeDir: home, pluginDir, pluginId: "runtime-corrector", version, isPackaged: true };
   const plugin = require(path.join(pluginDir, "index.js"));
   const readConfig = async () => JSON.parse(await fs.readFile(configPath, "utf8"));
   const readState = async () => JSON.parse(await fs.readFile(statePath, "utf8"));
@@ -55,5 +57,5 @@ export async function marketFixture(t, artifact, config = baseConfig()) {
     await fs.rm(root, { recursive: true, force: true });
   });
   return { root, home, pluginDir, configPath, statePath, markerPath, plugin, api, init, readConfig, readState, writeMarker, disable,
-    payload: path.join(pluginDir, "payload", "runtime-corrector") };
+    payload: pluginDir };
 }

@@ -35,7 +35,7 @@ test("enable configures discovery, permissions and only the main public tool; re
   assert.deepEqual(config.tools, base.tools); assert.deepEqual(config.plugins.entries.existing, base.plugins.entries.existing);
   assert.deepEqual(config.untouched, base.untouched);
   assert.deepEqual(config.plugins.allow, ["existing", "runtime-corrector"]);
-  assert.deepEqual(config.plugins.load.paths, [f.payload.replaceAll("\\", "/")]);
+  assert.equal(config.plugins.load, undefined);
   assert.deepEqual(entry.hooks, { allowConversationAccess: true, allowPromptInjection: true });
   assert.equal(entry.config.reviewerModel, "test/reviewer");
   assert.deepEqual(config.agents.list[0].tools.alsoAllow, ["browser", "runtime_corrector"]);
@@ -153,23 +153,46 @@ test("disable follows the host's committed switch, preserves unrelated edits and
   assert.equal((await f.readState()).active, false);
 });
 
-test("upgrade switches the owned path and an old pending teardown cannot remove the new install", async t => {
+test("a superseded package cannot tear down the active extension configuration", async t => {
   const base = baseConfig(), f = await marketFixture(t, artifact, base);
   await f.plugin.activate(f.api, f.init); await f.writeMarker(true);
   await f.plugin.deactivate(f.api, f.init);
-  const newDir = path.join(path.dirname(f.pluginDir), "runtime-corrector-1.9.2");
+  const newDir = path.join(path.dirname(f.pluginDir), "runtime-corrector-9.9.9");
   await fs.cp(artifact, newDir, { recursive: true });
-  const next = require(path.join(newDir, "index.js")), init = { ...f.init, pluginDir: newDir, version: "1.9.2" };
+  const next = require(path.join(newDir, "index.js")), init = { ...f.init, pluginDir: newDir, version: "9.9.9" };
   assert.equal((await next.activate(f.api, init)).status, "active");
   await fs.writeFile(path.join(newDir, "install-complete.json"), '{"enabled":true}');
   await f.writeMarker(false);
   await new Promise(resolve => setTimeout(resolve, 120));
-  const paths = (await f.readConfig()).plugins.load.paths;
-  assert.deepEqual(paths, [path.join(newDir, "payload", "runtime-corrector").replaceAll("\\", "/")]);
-  assert.equal((await f.readState()).active, true);
+  assert.equal((await f.readConfig()).plugins.load, undefined);
+  assert.equal((await f.readState()).owner, await fs.realpath(newDir));
   await fs.writeFile(path.join(newDir, "install-complete.json"), '{"enabled":false}');
   assert.equal((await next.deactivate(f.api, init)).status, "inactive");
   assert.deepEqual(await f.readConfig(), base);
+});
+
+test("upgrade removes a legacy owned load path and preserves unrelated paths", async t => {
+  for (const unrelated of [[], ["~/other-extension"]]) {
+    const base = baseConfig();
+    if (unrelated.length) base.plugins.load = { paths: unrelated };
+    const f = await marketFixture(t, artifact, base);
+    assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+    const config = await f.readConfig(), state = await f.readState();
+    const oldOwner = path.join(f.home, ".matrixassistant", "plugins", "runtime-corrector-1.9.1");
+    state.owner = oldOwner;
+    state.payload = path.join(oldOwner, "payload", "runtime-corrector");
+    if (!unrelated.length) state.created.push(["plugins", "load"], ["plugins", "load", "paths"]);
+    const oldPath = "~/" + path.relative(f.home, state.payload).replaceAll("\\", "/");
+    config.plugins.load = { paths: [...unrelated, oldPath, f.pluginDir] };
+    await fs.writeFile(f.configPath, JSON.stringify(config));
+    await fs.writeFile(f.statePath, JSON.stringify(state));
+    assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+    await f.writeMarker(true);
+    assert.deepEqual((await f.readConfig()).plugins.load, base.plugins.load);
+    assert.equal((await f.readState()).payload, await fs.realpath(f.pluginDir));
+    await f.disable();
+    assert.deepEqual(await f.readConfig(), base);
+  }
 });
 
 test("MA-specific OpenClaw entry refuses disabled, missing or corrupt markers and delegates only when enabled", async t => {
@@ -218,6 +241,16 @@ test("BOM config is accepted and a conflicting manually registered RC stays unto
   const original = JSON.stringify(config); await fs.writeFile(f.configPath, original);
   assert.match((await f.plugin.activate(f.api, f.init)).error, /Another RC installation/u);
   assert.equal(await fs.readFile(f.configPath, "utf8"), original);
+  delete config.plugins.load;
+  const withoutExplicitPath = JSON.stringify(config);
+  await fs.writeFile(f.configPath, withoutExplicitPath);
+  const standalone = path.join(path.dirname(f.pluginDir), "runtime-corrector");
+  await fs.mkdir(standalone);
+  const manifest = path.join(standalone, "openclaw.plugin.json");
+  await fs.writeFile(manifest, '{"id":"runtime-corrector"}');
+  assert.match((await f.plugin.activate(f.api, f.init)).error, /Another RC installation/u);
+  assert.equal(await fs.readFile(f.configPath, "utf8"), withoutExplicitPath);
+  await fs.access(manifest);
 });
 
 test("concurrent config edits during a blocked write are preserved with no applied installation state", async t => {
@@ -247,7 +280,7 @@ test("an interrupted state commit is recovered from the prepared config transact
   finally { mock.mock.restore(); }
   await fs.access(path.join(path.dirname(f.statePath), "pending.json"));
   assert.equal((await f.plugin.activate(f.api, f.init)).status, "active"); await f.writeMarker(true);
-  assert.equal((await f.readConfig()).plugins.load.paths.length, 1);
+  assert.equal((await f.readConfig()).plugins.load, undefined);
   await assert.rejects(fs.access(path.join(path.dirname(f.statePath), "pending.json")));
   await f.disable(); assert.deepEqual(await f.readConfig(), baseConfig());
 });
@@ -285,9 +318,9 @@ test("RC parameter edits are retained when restoring a pre-existing disabled ent
   assert.deepEqual((await f.readConfig()).plugins.entries["runtime-corrector"], { enabled: false, config: { reviewerModel: "new/reviewer" } });
 });
 
-test("escaping payload entries are rejected before any host config is changed", async t => {
+test("escaping extension entries are rejected before any host config is changed", async t => {
   const f = await marketFixture(t, artifact), file = path.join(f.payload, "openclaw.plugin.json");
-  const manifest = JSON.parse(await fs.readFile(file)); manifest.main = "../../../outside.mjs";
+  const manifest = JSON.parse(await fs.readFile(file)); manifest.main = "../outside.mjs";
   await fs.writeFile(file, JSON.stringify(manifest));
   const pkgFile = path.join(f.payload, "package.json"), pkg = JSON.parse(await fs.readFile(pkgFile));
   pkg.openclaw.extensions = [manifest.main]; await fs.writeFile(pkgFile, JSON.stringify(pkg));

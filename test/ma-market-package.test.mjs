@@ -18,33 +18,32 @@ before(async () => {
 });
 after(() => fs.rm(output, { recursive: true, force: true }));
 
-test("MA release is a flat tar.gz with complete ESM payload and named CJS lifecycle exports", async () => {
+test("MA release is a discoverable OpenClaw extension with named CJS lifecycle exports", async () => {
   const root = path.join(output, "unpacked"); await fs.mkdir(root);
   execFileSync("tar", ["-xzf", result.archive, "-C", root], { windowsHide: true });
-  assert.deepEqual((await fs.readdir(root)).sort(), ["README.md", "index.js", "installer.mjs", "package.json", "payload"]);
+  await assert.rejects(fs.access(path.join(root, "payload")));
   const wrapper = require(path.join(root, "index.js"));
   assert.equal(typeof wrapper.activate, "function"); assert.equal(typeof wrapper.deactivate, "function");
   const pkg = JSON.parse(await fs.readFile(path.join(root, "package.json")));
   assert.equal(pkg.name, "runtime-corrector-ma"); assert.equal(pkg.type, "commonjs"); assert.equal(pkg.main, "index.js");
-  const payload = path.join(root, "payload/runtime-corrector");
-  const native = JSON.parse(await fs.readFile(path.join(payload, "package.json")));
-  const manifest = JSON.parse(await fs.readFile(path.join(payload, "openclaw.plugin.json")));
-  assert.equal(native.type, "module"); assert.equal(manifest.id, "runtime-corrector");
-  assert.equal(manifest.main, native.openclaw.extensions[0]); assert.equal(manifest.main, "./ma-entry.mjs");
-  assert.equal(manifest.version, native.version);
-  assert.equal(native.dependencies, undefined);
+  const manifest = JSON.parse(await fs.readFile(path.join(root, "openclaw.plugin.json")));
+  assert.equal(manifest.id, "runtime-corrector");
+  assert.deepEqual(pkg.openclaw.extensions, ["./ma-entry.mjs"]);
+  assert.equal(manifest.main, pkg.openclaw.extensions[0]);
+  assert.equal(manifest.version, pkg.version);
+  assert.equal(pkg.dependencies, undefined);
   for (const file of [".runtime-corrector-default/config.yaml", "config/openclaw-tool-contracts.json", "skills/runtime-corrector/SKILL.md",
     "lib/openclaw/entry.mjs", "lib/openclaw/ui/index.html", "lib/runtime-v2/production-stop.mjs",
     "scripts/rc-status.mjs", "scripts/rc-refresh.mjs", "scripts/rc-terminate.mjs", "docs/session-runtime-status.md",
     "lib/openclaw/session-runtime-client.mjs", "lib/openclaw/session-runtime-status.mjs",
-    "lib/openclaw/session-runtime-controls.mjs", "lib/openclaw/session-runtime-cli.mjs"]) await fs.access(path.join(payload, file));
+    "lib/openclaw/session-runtime-controls.mjs", "lib/openclaw/session-runtime-cli.mjs"]) await fs.access(path.join(root, file));
   const project = path.join(output, "standalone-status-project"); await fs.mkdir(project);
-  const queried = JSON.parse(execFileSync(process.execPath, [path.join(payload, "scripts/rc-status.mjs"),
+  const queried = JSON.parse(execFileSync(process.execPath, [path.join(root, "scripts/rc-status.mjs"),
     "--project-root", project, "--session-key", "agent:main:packaged-status", "--session-id", "packaged-status"],
   { cwd: root, encoding: "utf8", windowsHide: true, env: { ...process.env, NODE_PATH: "" } }));
   assert.equal(queried.ok, true); assert.equal(queried.result.status, "NOT_REGISTERED");
   assert.deepEqual(await fs.readdir(project), [], "a packaged query must not initialize a project");
-  for (const name of ["node_modules", ".git", "test", "experiments"]) await assert.rejects(fs.access(path.join(payload, name)));
+  for (const name of ["node_modules", ".git", "test", "experiments"]) await assert.rejects(fs.access(path.join(root, name)));
 });
 
 test("release filename, registry ID, version and SHA-256 describe the actual upload archive", async () => {
@@ -55,15 +54,15 @@ test("release filename, registry ID, version and SHA-256 describe the actual upl
   assert.equal(new URL(record.downloadUrl).pathname.endsWith(path.basename(result.archive)), true);
   assert.equal(record.sha256, createHash("sha256").update(await fs.readFile(result.archive)).digest("hex"));
   assert.equal(record.sha256, result.sha256); assert.equal(record.mode, "client"); assert.equal(record.restart, "gateway");
-  assert.equal(record.pluginType, "user"); assert.equal(record.installPath, "~/.matrixassistant/plugins");
+  assert.equal(record.pluginType, "user"); assert.equal(record.installPath, "~/.openclaw/extensions");
   assert.match(await fs.readFile(`${result.archive}.sha256`, "utf8"), new RegExp(`^${record.sha256}  runtime-corrector-ma-`));
 });
 
-test("MA version overrides do not change the inner OpenClaw release or leave temporary build directories", async () => {
+test("MA version overrides do not change the OpenClaw manifest version or leave temporary build directories", async () => {
   const next = await buildMAPackage({ sourceRoot, outputRoot: path.join(output, "next"), version: "2.3.4" });
   assert.equal(path.basename(next.archive), "runtime-corrector-ma-2.3.4.tgz");
   assert.equal(JSON.parse(await fs.readFile(path.join(next.directory, "package.json"))).version, "2.3.4");
-  assert.equal(JSON.parse(await fs.readFile(path.join(next.directory, "payload/runtime-corrector/package.json"))).version,
+  assert.equal(JSON.parse(await fs.readFile(path.join(next.directory, "openclaw.plugin.json"))).version,
     JSON.parse(await fs.readFile(path.join(sourceRoot, "packaging/hosts/openclaw/openclaw.plugin.json"))).version);
   assert.equal((await fs.readdir(path.dirname(next.directory))).some(name => name.startsWith(".ma-build-")), false);
 });

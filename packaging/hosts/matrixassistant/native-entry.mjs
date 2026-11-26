@@ -7,7 +7,7 @@ export default {
   ...plugin,
   register(api) {
     let marker;
-    try { marker = JSON.parse(readFileSync(new URL("../../install-complete.json", import.meta.url), "utf8").replace(/^\uFEFF/u, "")); }
+    try { marker = JSON.parse(readFileSync(new URL("./install-complete.json", import.meta.url), "utf8").replace(/^\uFEFF/u, "")); }
     catch { return; }
     if (marker.enabled !== true || marker.status === "error") return;
     return plugin.register(api);

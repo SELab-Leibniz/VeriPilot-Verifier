@@ -52,7 +52,7 @@ function between(start, end) {
 function named(name) {
   const start = source.indexOf(`function ${name}(`), end = source.indexOf("function ", start + 9);
   assert(start >= 0 && end > start, `installed MA still exposes ${name}`);
-  return source.slice(start, end);
+  return source.slice(start, end).replace(/\basync\s*$/u, "");
 }
 
 before(async () => {
@@ -81,9 +81,8 @@ test("installed MA streaming and fallback tar extractors both unpack the actual 
   ]) {
     const root = path.join(output, name); await extract(root);
     assert.equal(typeof require(path.join(root, "index.js")).activate, "function", name);
-    const payload = path.join(root, "payload/runtime-corrector");
-    await fs.access(path.join(payload, ".runtime-corrector-default/config.yaml"));
-    assert.equal(JSON.parse(await fs.readFile(path.join(payload, "openclaw.plugin.json"))).main, "./ma-entry.mjs");
+    await fs.access(path.join(root, ".runtime-corrector-default/config.yaml"));
+    assert.equal(JSON.parse(await fs.readFile(path.join(root, "openclaw.plugin.json"))).main, "./ma-entry.mjs");
   }
 });
 
@@ -102,19 +101,23 @@ test("installed MA Worker activates the package, startup retains it, and actual 
   await f.writeMarker(true);
 
   let config = await f.readConfig();
-  const functions = ["pluginEntryExists", "scanPluginManifestIds", "collectKnownPluginIds", "ensureDefaultPluginPaths", "cleanupStalePluginConfigs"].map(named).join("\n");
+  const registry = JSON.parse(await fs.readFile(artifact.registry)).plugins;
+  const functions = ["pluginEntryExists", "scanPluginManifestIds", "collectKnownPluginIds", "ensureDefaultPluginPaths",
+    "cleanupStalePluginConfigs", "resolveInstallPath", "computePluginDir"].map(named).join("\n");
   const aliases = Object.fromEntries([...functions.matchAll(/\bpath\$\d+\b/gu)].map(([name]) => [name, path]));
   const startup = vm.createContext({ u: fsSync, ...aliases, DEFAULT_PLUGIN_ENTRY: "dist/index.js",
     SEMVER_SUFFIX_REGEX: /[.-]\d+\.\d+.*/u, electron: { app: { isPackaged: true, getPath: () => f.home } },
-    getResourcesDirPath$1: () => path.join(hostRoot, "resources"), readPluginRegistry: () => ({}), readAllPluginStates: () => ({}),
+    getResourcesDirPath$1: () => path.join(hostRoot, "resources"), readPluginRegistry: () => registry, readAllPluginStates: () => ({}),
+    expandPath$1: value => path.join(f.home, value.slice(2)),
     logger$2: logger, isYellowMode: () => false, readConfig$2: () => config, writeConfig$2: next => { config = next; },
     performBackup: () => "fixture-only", cleanupOldBackups() {},
   });
   vm.runInContext(functions, startup);
+  assert.equal(startup.computePluginDir("runtime-corrector"), f.pluginDir);
   for (let restart = 0; restart < 2; restart++) {
     vm.runInContext("ensureDefaultPluginPaths(); cleanupStalePluginConfigs();", startup);
     assert.equal(config.plugins.entries["runtime-corrector"].enabled, true);
-    assert(config.plugins.load.paths.includes(f.payload.replaceAll("\\", "/")));
+    assert(!config.plugins.load.paths.some(value => /runtime-corrector/u.test(value)));
   }
 
   const disable = vm.createContext({ path$1: path, fs$2: fs, u: fsSync, logger$4: logger, require,
@@ -141,6 +144,9 @@ test("installed MA alive judge matches the market ID against real OpenClaw plugi
   });
   const metadata = JSON.parse(stdout), native = metadata.plugins.find(value => value.id === "runtime-corrector");
   assert.equal(native?.enabled, true, stderr);
+  assert.equal(native.origin, "global");
+  assert.equal(path.resolve(native.source), path.resolve(f.pluginDir, "ma-entry.mjs"));
+  assert.equal((await f.readConfig()).plugins.load, undefined);
   const records = JSON.parse(await fs.readFile(artifact.registry)).plugins;
   const context = vm.createContext({ pluginAliveCache: null, logger$4: logger, fs$2: fs,
     runPluginsListJson: async () => ({ stdout, stderr, code: 0 }), defaultGetConnectedAt: () => Date.now(),
