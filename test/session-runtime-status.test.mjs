@@ -20,12 +20,12 @@ async function until(read, label) {
   while (Date.now() < end) { const value = await read(); if (value) return value; await pause(10); }
   throw new Error(`Timed out: ${label}`);
 }
-async function fixture(t, { terminal = async () => ({ status: "ok" }), review } = {}) {
+async function fixture(t, { terminal = async () => ({ status: "ok" }), review, concurrency, beforeReview } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-runtime-status-")));
   const states = new Map(), pausedScopes = new Map(), cancelled = [], dispatched = [], reviewing = [];
   let service;
   const manager = createPostRunDispatcher({ directoryFor: () => path.join(root, "host"), validate: async () => true,
-    waitTerminal: terminal,
+    waitTerminal: terminal, concurrency, beforeReview,
     review: review ?? (async (record, { signal }) => {
       reviewing.push(record.runId);
       return new Promise(resolve => {
@@ -66,6 +66,190 @@ async function fixture(t, { terminal = async () => ({ status: "ok" }), review } 
   const refresh = async identity => service.refresh({ ...identity, actor: "test-owner" });
   return { root, manager, service, states, cancelled, dispatched, reviewing, session, refresh };
 }
+
+function queryStopRunning({ projectRoot, sessionKey, sessionId }) {
+  return execute(process.execPath, [path.join(rootDir, "scripts/rc-stop-review-running.mjs"),
+    "--project-root", projectRoot, "--session-key", sessionKey, "--session-id", sessionId], { windowsHide: true });
+}
+
+async function assertStopRunning(identity, running) {
+  const response = await queryStopRunning(identity);
+  assert.equal(response.stdout, JSON.stringify({ running }) + "\n");
+  assert.equal(response.stderr, "");
+}
+
+test("Stop query follows finalizing, queueing, review, repair and re-review until an unverified release", async t => {
+  const reviews = new Map();
+  let confirmTerminal;
+  const terminalGate = new Promise(resolve => { confirmTerminal = resolve; });
+  const f = await fixture(t, { concurrency: 1,
+    terminal: (_record, runId) => runId === "run-query" ? terminalGate : { status: "ok" },
+    review: (record, { signal }) => new Promise(resolve => {
+      reviews.set(record.runId, resolve);
+      signal.addEventListener("abort", () => resolve({ reviewStatus: "CANCELLED" }), { once: true });
+    }),
+  });
+  const a = await f.session("query"), blocker = await f.session("blocker");
+  const sourceRunId = a.state.nativeRunId, blockerRunId = blocker.state.nativeRunId;
+  const candidate = runId => ({ runId, text: "Done", reviewBudgetMs: 30000, terminalBudgetMs: 30000 });
+  const expectPhase = async (phase, runId = sourceRunId) => until(async () => {
+    const snapshot = await readSessionRuntimeStatus(a.identity);
+    return snapshot.phase === phase && snapshot.runId === runId && snapshot;
+  }, phase);
+
+  await assertStopRunning(a.identity, false);
+  f.service.reviewStarted(a.state, "normal-development-check", { role: "ground-truth-extractor" });
+  await f.service.flush();
+  await assertStopRunning(a.identity, false);
+  f.service.reviewEnded(a.state, "normal-development-check");
+  await f.manager.candidate(blocker.identity, candidate(blockerRunId));
+  await until(() => reviews.has(blockerRunId), "blocker holds the only reviewer slot");
+  await f.manager.candidate(a.identity, candidate(sourceRunId));
+  await expectPhase("FINALIZING");
+  await assertStopRunning(a.identity, true);
+  confirmTerminal({ status: "ok" });
+  await expectPhase("REVIEW_QUEUED");
+  await assertStopRunning(a.identity, true);
+  reviews.get(blockerRunId)({ reviewStatus: "PASS" });
+  await until(() => reviews.has(sourceRunId), "initial review");
+  await expectPhase("REVIEWING");
+  await assertStopRunning(a.identity, true);
+
+  const repairRunId = "rc-stop-" + "c".repeat(64);
+  await f.manager.correction(a.identity, repairRunId, Date.now() + 30000, "query-stop", sourceRunId);
+  await expectPhase("WAIT_CORRECTION");
+  await assertStopRunning(a.identity, true);
+  reviews.get(sourceRunId)({ reviewStatus: "UNVERIFIED" });
+  a.state.nativeRunId = repairRunId;
+  await f.manager.started(a.identity, repairRunId, 30000, false);
+  const pending = await expectPhase("WAIT_CORRECTION", repairRunId);
+  await assertStopRunning(a.identity, true);
+  f.service.onPostRun({ ...f.manager.snapshot(a.identity), phase: "RUNNING" });
+  const repairRunning = await expectPhase("RUNNING", repairRunId);
+  assert.equal(repairRunning.roundId, pending.roundId);
+  await assertStopRunning(a.identity, true);
+  await f.manager.started(a.identity, repairRunId, 30000);
+  await expectPhase("CORRECTING", repairRunId);
+  await assertStopRunning(a.identity, true);
+
+  await f.manager.candidate(a.identity, candidate(repairRunId));
+  await until(() => reviews.has(repairRunId), "repair re-review");
+  await expectPhase("REVIEWING", repairRunId);
+  await assertStopRunning(a.identity, true);
+  reviews.get(repairRunId)({ reviewStatus: "UNVERIFIED", reasonCode: "STOP_ORIGINAL_SCOPE_INCOMPLETE" });
+  await f.manager.drain();
+  const ended = await expectPhase("IDLE", repairRunId);
+  assert.equal(ended.outcome, "UNVERIFIED");
+  await assertStopRunning(a.identity, false);
+
+  a.state.nativeRunId = "next-business-run";
+  await f.manager.started(a.identity, a.state.nativeRunId);
+  const next = await expectPhase("RUNNING", a.state.nativeRunId);
+  assert.equal(next.lastEndedRound.roundId, ended.roundId);
+  await assertStopRunning(a.identity, false);
+});
+
+test("an admitted Stop stays running in the dispatcher RUNNING snapshot while being requeued", async t => {
+  let autopilotRunning = true;
+  const f = await fixture(t, {
+    beforeReview: () => ({ hold: autopilotRunning, coexistence: { status: autopilotRunning ? "RUNNING" : "IDLE" } }),
+    review: async () => ({ reviewStatus: "UNVERIFIED", reasonCode: "STOP_ORIGINAL_SCOPE_INCOMPLETE" }),
+  });
+  const a = await f.session("requeue"), other = await f.session("ordinary");
+  const runId = a.state.nativeRunId;
+  await assertStopRunning(a.identity, false);
+  await f.manager.candidate(a.identity, { runId, text: "Done", reviewBudgetMs: 30000 });
+  const held = await until(async () => {
+    const snapshot = await readSessionRuntimeStatus(a.identity);
+    return snapshot.phase === "COEXIST_WAIT" && snapshot;
+  }, "Stop waits for Autopilot");
+  await assertStopRunning(a.identity, true);
+  await f.manager.drain();
+
+  // Pause just before the real dispatcher offers the candidate again, so the
+  // command reads the actual intervening RUNNING publication.
+  let continueCandidate;
+  const requeueGate = new Promise(resolve => { continueCandidate = resolve; });
+  const candidate = f.manager.candidate.bind(f.manager);
+  f.manager.candidate = async (...args) => {
+    await requeueGate;
+    return candidate(...args);
+  };
+  autopilotRunning = false;
+  const record = f.manager.get(a.identity);
+  const requeue = f.manager.recheck(a.identity, { actor: "test-owner", runId, version: record.version });
+  void requeue.catch(() => {});
+  try {
+    const duringRequeue = await until(async () => {
+      const snapshot = await readSessionRuntimeStatus(a.identity);
+      return snapshot.phase === "RUNNING" && snapshot;
+    }, "dispatcher uses RUNNING before requeueing");
+    assert.equal(duringRequeue.roundId, held.roundId);
+    assert.equal(duringRequeue.repairRound, false);
+    assert.deepEqual(duringRequeue.activities, []);
+    await assertStopRunning(a.identity, true);
+
+    f.service.track(a.state);
+    await f.service.flush();
+    const republished = await readSessionRuntimeStatus(a.identity);
+    assert.equal(republished.phase, "RUNNING");
+    assert.ok(republished.version > duringRequeue.version);
+    await assertStopRunning(a.identity, true);
+    await assertStopRunning(other.identity, false);
+  } finally {
+    continueCandidate();
+  }
+
+  await requeue;
+  await f.manager.drain();
+  await f.service.flush();
+  const ended = await readSessionRuntimeStatus(a.identity);
+  assert.equal(ended.roundId, held.roundId);
+  assert.equal(ended.outcome, "UNVERIFIED");
+  assert.equal(ended.ended, true);
+  await assertStopRunning(a.identity, false);
+
+  a.state.nativeRunId = "next-after-requeue";
+  await f.manager.started(a.identity, a.state.nativeRunId);
+  await f.service.flush();
+  await assertStopRunning(a.identity, false);
+});
+
+test("Stop query rejects unregistered, mismatched, expired and invalid status without writing", async t => {
+  const f = await fixture(t);
+  const file = sessionRuntimeStatusPath(f.root);
+  const reject = (identity, message) => assert.rejects(queryStopRunning(identity), error => {
+    assert.equal(error.code, 1);
+    assert.equal(error.stdout, "");
+    assert.match(error.stderr, message);
+    return true;
+  });
+  await reject({ projectRoot: f.root, sessionKey: "agent:main:none", sessionId: "none" }, /exact host session/u);
+  await assert.rejects(fs.access(path.dirname(file)), { code: "ENOENT" });
+
+  const { identity } = await f.session("exact");
+  await reject({ ...identity, sessionId: "another-instance" }, /exact host session/u);
+  const original = await fs.readFile(file, "utf8"), key = sessionRuntimeKey(identity);
+  for (const [edit, message] of [
+    [{ heartbeatExpiresAt: 0, stopReviewActive: true }, /STALE/u],
+    [{ sessionId: "mismatched-stored-instance" }, /identity does not match/u],
+    [{ roundId: "invalid-round" }, /valid current round/u],
+  ]) {
+    const data = JSON.parse(original);
+    const invalid = JSON.stringify({ ...data, sessions: { ...data.sessions, [key]: { ...data.sessions[key], ...edit } } });
+    await fs.writeFile(file, invalid);
+    await reject(identity, message);
+    assert.equal(await fs.readFile(file, "utf8"), invalid);
+  }
+  await fs.writeFile(file, "{incomplete");
+  await reject(identity, /Invalid session runtime status JSON/u);
+  assert.equal(await fs.readFile(file, "utf8"), "{incomplete");
+  await fs.writeFile(file, original);
+
+  f.service.onPostRun({ ...f.manager.snapshot(identity), phase: "IDLE", runId: null });
+  await f.service.flush();
+  await assertStopRunning(identity, false);
+});
 
 test("a project status file isolates Sessions and cancellation ends only its round before queued users continue", async t => {
   const f = await fixture(t), a = await f.session("a"), b = await f.session("b");
@@ -176,6 +360,8 @@ test("stopping an owned correction stays STOPPING until its exact host terminal,
   const before = await f.refresh(a.identity);
   const stopping = await f.service.terminate({ ...a.identity, roundId: before.roundId, actor: "test-owner" });
   assert.equal(stopping.target.ended, false); assert.equal(stopping.current.status, "STOPPING");
+  assert.equal(stopping.current.phase, "RELEASING");
+  await assertStopRunning(a.identity, true);
   assert.equal(f.dispatched.length, 0); assert.equal(f.cancelled[0].stopId, "exact-stop");
   const repeated = await f.service.terminate({ ...a.identity, roundId: before.roundId, actor: "test-owner" });
   assert.equal(repeated.alreadyRequested, true); assert.equal(f.cancelled.length, 1);
