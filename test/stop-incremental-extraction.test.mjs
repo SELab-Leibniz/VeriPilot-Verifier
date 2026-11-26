@@ -67,7 +67,7 @@ test('a long multi-line user message keeps one original and stable late-clause c
 test('a long multi-line user message remains unverified when its late clause is omitted',
   t => reviewLongUserOriginal(t, true));
 
-async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false) {
+async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false, groupMode = null) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rc-single-review-'));
   t.after(() => fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 }));
   await fs.mkdir(path.join(root, 'manuals'));
@@ -97,6 +97,13 @@ async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false) {
       text: index < fields.length ? 'Review the envelope field ' + record : 'Enforce this separately located provision.',
       path: file, lineStart: 1, lineEnd: 1, byteStart, byteEnd };
   });
+  const groupDescription = 'Compare the first two channel provisions with their current implementation.';
+  const delivery = path.join(root, 'delivery.mjs');
+  if (groupMode) {
+    await fs.writeFile(delivery, 'export const hasCurrentProvision = id => ["通道-0", "通道-1"].includes(id);\n');
+    const first = items[fields.length], second = items[fields.length + 1];
+    items.splice(fields.length + 2, 0, { ...first, text: groupDescription, byteEnd: second.byteEnd });
+  }
   const submitted = items.filter((_, index) => index !== omittedIndex);
   const parsed = result => JSON.parse(result.content[0].text);
   const handle = await scriptedWorkspaceReview(input, { script: async ({ task: assigned, call, read }) => {
@@ -128,7 +135,15 @@ async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false) {
     await assert.rejects(call('finish_stop_review', { summary: 'Only inspected the first page.' }), /have not been presented/u);
     let next = firstPage.nextOffset;
     while (next !== null) next = parsed(await call('review_checklist', { offset: next, limit: 20 })).nextOffset;
-    await call('finish_stop_review', { summary: 'Finished the individually scoped review.' });
+    const grouped = firstPage.items.filter(item => item.groupCheckRequired);
+    if (groupMode) assert.deepEqual(grouped.map(item => item.description), [groupDescription]);
+    const checkedGroups = [];
+    if (groupMode === 'with-proof') {
+      await read(delivery);
+      checkedGroups.push({ taskIds: [grouped[0].taskId], method: 'Compared both provisions with the current implementation.',
+        citations: [{ path: delivery, start: 1, end: 1 }] });
+    }
+    await call('finish_stop_review', { summary: 'Finished the individually scoped review.', ...(groupMode ? { checkedGroups } : {}) });
   } });
   t.after(() => handle.close());
   const base = path.join(taskDirectory(root, task.taskId), 'workspace-reviews');
@@ -148,8 +163,20 @@ async function reviewSingleLineAnnex(t, omittedIndex = null, envelope = false) {
     disposition: coverage.disposition, reasonCode: handle.collection?.reasonCode ?? null }));
   if (omittedIndex === null) {
     assert.equal(coverage.disposition, 'REPRESENTED');
-    assert.equal(handle.reviewCompleted, true);
+    assert.equal(handle.reviewCompleted, groupMode !== 'no-proof');
     assert.equal(handle.result.sourceCoverage.complete, true);
+    if (groupMode) {
+      const group = saved.population.metrics.M16.find(item => item.description === groupDescription);
+      assert(group);
+      assert.equal(handle.result.unverifiedItems.some(item => item.objectId === group.objectId && item.reviewState === 'UNREVIEWED'),
+        groupMode === 'no-proof');
+      const declared = JSON.parse(await fs.readFile(path.join(base, id, 'checked-groups.json'), 'utf8').catch(error => {
+        if (error.code !== 'ENOENT') throw error;
+        return '[]';
+      }));
+      assert.equal(declared.some(check => check.taskIds.includes(group.objectId) && check.citations.some(cite => cite.path === delivery)),
+        groupMode === 'with-proof');
+    }
   } else {
     assert.equal(handle.reviewCompleted, false);
     assert.equal(handle.result.sourceCoverage.complete, false);
@@ -169,6 +196,12 @@ test('a single-line JSON envelope closes only with its contract and each record'
   await t.test('all properties and records', sub => reviewSingleLineAnnex(sub, null, true));
   await t.test('missing contract', sub => reviewSingleLineAnnex(sub, 1, true));
   await t.test('missing one record', sub => reviewSingleLineAnnex(sub, 131, true));
+});
+
+test('a same-line original group keeps its own proof and the independently located records', async t => {
+  await t.test('full original and current group proof', sub => reviewSingleLineAnnex(sub, null, true, 'with-proof'));
+  await t.test('full original with no group proof', sub => reviewSingleLineAnnex(sub, null, true, 'no-proof'));
+  await t.test('group proof cannot replace an omitted member', sub => reviewSingleLineAnnex(sub, 3, true, 'with-proof'));
 });
 
 test('single-line JSON coverage requires exact, valid object boundaries', () => {
