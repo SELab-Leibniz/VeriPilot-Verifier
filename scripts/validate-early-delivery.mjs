@@ -53,7 +53,15 @@ const first=await hook({workspace,sessionId,transcript},'first',async({task,call
   assert(task.basisFiles.includes(spec),'The pressure document must be a mandatory source.');
   for(const f of task.basisFiles) if(f!==spec) await read(f);
   await call('source_read',{path:spec,offset:1,limit:10});await read(impl);
-  await call('append_original_checklist',{items:[item(2),item(3)]});
+  const batch=unpack(await call('append_original_checklist',{items:[item(2),item(3)]}));
+  if(mode==='after'){
+    const assigned=text=>batch.items.find(i=>i.text===text).taskId;
+    await assert.rejects(call('submit_review',{...frame,taskId:'unknown',verdict:'DEVIATION',reason:'Unassigned'}),/saved batch taskId/);
+    await call('submit_review',{...frame,taskId:assigned(lines[2]),verdict:'UNVERIFIED',reason:'Operator signoff is unavailable.',
+      extractedRanges:[{path:spec,start:1,end:10}]});
+    await call('submit_review',{...frame,taskId:assigned(lines[1]),verdict:'DEVIATION',reason:'Sealed mode returns 3 retries; change it to 0.',
+      citations:[{path:impl,start:1,end:1}]});
+  } else {
   try {await call('seal_original_checklist',{partial:true,extractedRanges:[{path:spec,start:1,end:10}]});}
   catch(err){
     trace.push(err.code);
@@ -64,6 +72,7 @@ const first=await hook({workspace,sessionId,transcript},'first',async({task,call
   for(const o of [...page.items].sort((a,b)=>Number(a.description===lines[1])-Number(b.description===lines[1]))){
     if(o.description===lines[2]) await call('submit_review',{taskId:o.taskId,verdict:'UNVERIFIED',reason:'Operator signoff is unavailable.'});
     if(o.description===lines[1]) await call('submit_review',{taskId:o.taskId,verdict:'DEVIATION',reason:'Sealed mode returns 3 retries; change it to 0.',citations:[{path:impl,start:1,end:1}]});
+  }
   }
   assert(worker.isComplete(),'Native host must be able to return immediately after the saved defect.');
   trace.push('interrupted-after-receipts');throw Object.assign(new Error('Host context interrupted'),{code:'CONTEXT_OVERFLOW'});
