@@ -108,7 +108,9 @@ if(mode==='after'){
     for(const o of page.items) if(o.previousDeviation) await call('submit_review',{taskId:o.taskId,verdict:'PASS',reason:'Sealed mode now has zero retries.',citeIds:[citeId]});
     await call('finish_stop_review',{summary:'Reviewed the remaining original and the current repaired implementation.'});
   },false);
-  results.early.resumed=resumed;await save();assert.equal(resumed.status,'NO_DEVIATION_FOUND',JSON.stringify(resumed));
+  results.early.resumed=resumed;await save();assert.equal(resumed.status,'UNVERIFIED',JSON.stringify(resumed));
+  assert.equal(resumed.report.confirmedDeviations.length,0);
+  assert(resumed.report.unreviewedScope.some(item=>item.reason.includes('长原件')));
 } else {
   assert.equal(first.report.confirmedDeviations.length,0);
   assert(trace.includes('TASK_BASIS_UNREAD'));
@@ -195,6 +197,6 @@ for(const [id,name] of [['t-bfa76c3174a7d07042','crossStage'],['t-3d89a0524144a1
     assert.equal(submissions.filter(s=>s.rejected==='TASK_CITATION_INVALID').length,2);
     assert(stop.report.missingEvidence.some(item=>item.reason.includes('RIV-410') && item.reason.includes('RIV-411')));
   }
-  assert.equal(stop.status,name==='crossStageChecked'||mode==='before'&&name==='crossStage'?'NO_DEVIATION_FOUND':mode==='before'?'DEVIATION':'UNVERIFIED',JSON.stringify(stop));
+  assert.equal(stop.status,mode==='before'&&name==='crossStage'?'NO_DEVIATION_FOUND':mode==='before'?'DEVIATION':'UNVERIFIED',JSON.stringify(stop));
 }
 console.log(out);
