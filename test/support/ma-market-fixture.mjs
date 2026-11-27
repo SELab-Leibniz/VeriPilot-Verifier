@@ -40,6 +40,12 @@ export async function marketFixture(t, artifact, config = baseConfig(), { legacy
   const plugin = require(path.join(pluginDir, "index.js"));
   const readConfig = async () => JSON.parse(await fs.readFile(configPath, "utf8"));
   const readState = async () => JSON.parse(await fs.readFile(statePath, "utf8"));
+  const stopObservers = () => {
+    const jobs = globalThis[Symbol.for("runtime-corrector.deactivation-jobs")];
+    for (const [jobKey, job] of jobs ?? []) {
+      if (typeof jobKey === "string" && jobKey.startsWith(configPath + "\0")) job.stop();
+    }
+  };
   const disable = async () => {
     const result = await plugin.deactivate(api, init);
     assert.equal(result.error, undefined, result.error);
@@ -56,9 +62,10 @@ export async function marketFixture(t, artifact, config = baseConfig(), { legacy
     // Finish an observer before removing its fake home, so it cannot recreate
     // fixture state after the test's directory has been deleted.
     try { await disable(); } catch {}
+    stopObservers();
     assert.equal(path.dirname(root), await fs.realpath(os.tmpdir()));
     await fs.rm(root, { recursive: true, force: true });
   });
   return { root, home, pluginDir, configPath, statePath, markerPath, plugin, api, init, readConfig, readState, writeMarker, disable,
-    payload: pluginDir };
+    payload: pluginDir, stopObservers };
 }

@@ -1,4 +1,4 @@
-import { promises as fs, watchFile, unwatchFile } from "node:fs";
+import { constants, promises as fs, watchFile, unwatchFile } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
@@ -59,6 +59,8 @@ async function installLocations(owner, home) {
   });
   const extensions = path.join(stateDir, "extensions");
   return { owner, home, config, extensions, native: path.join(extensions, pluginId), cache,
+    data: path.join(stateDir, pluginId), oldSessions: path.join(stateDir, "runtime-corrector-stop-sessions"),
+    retainedMarker: path.join(cache, "market-marker.json"),
     state: path.join(cache, "state.json"), pending: path.join(cache, "pending.json"),
     lock: path.join(cache, "installer.lock"), marker: path.join(owner, "install-complete.json") };
 }
@@ -73,11 +75,16 @@ function validateState(state, where) {
 }
 
 async function locked(where, run) {
-  await fs.mkdir(where.cache, { recursive: true, mode: 0o700 });
   let lock;
-  try { lock = await fs.open(where.lock, "wx", 0o600); }
-  catch (error) {
-    if (error.code !== "EEXIST") throw error;
+  for (let attempt = 0; !lock; attempt++) {
+    await fs.mkdir(where.cache, { recursive: true, mode: 0o700 });
+    await installedDirectory(where.cache);
+    try { lock = await fs.open(where.lock, "wx", 0o600); break; }
+    catch (error) {
+      // A finishing uninstall may remove the empty directory between mkdir and open.
+      if (error.code === "ENOENT" && attempt < 2) continue;
+      if (error.code !== "EEXIST") throw error;
+    }
     // A terminated installer must not permanently prevent repair. Respect live
     // operations until their lease outlasts MA's activation timeout.
     const raw = await readOptional(where.lock);
@@ -92,7 +99,6 @@ async function locked(where, run) {
     if (alive && !expired) throw new Error("Another RC MA setup is running; retry after it finishes.");
     if (await readOptional(where.lock) !== raw) throw new Error("RC MA setup lock changed; retry.");
     await fs.unlink(where.lock);
-    lock = await fs.open(where.lock, "wx", 0o600);
   }
   // A host-terminated Worker shares the still-live MA PID. Give that abandoned
   // lock a finite lease, longer than MA's ordinary 120s activation timeout.
@@ -118,7 +124,10 @@ async function locked(where, run) {
       let applied = false;
       try {
         if (contents !== original) {
-          await fs.writeFile(`${where.config}.${packageName}-${randomUUID()}.bak`, original, { flag: "wx", mode: 0o600 });
+          const backups = path.join(where.cache, "config-backups");
+          await fs.mkdir(backups, { recursive: true, mode: 0o700 });
+          await installedDirectory(backups);
+          await fs.writeFile(path.join(backups, `${path.basename(where.config)}-${randomUUID()}.bak`), original, { flag: "wx", mode: 0o600 });
           await atomicWrite(where.config, contents, original);
         }
         applied = true;
@@ -135,7 +144,13 @@ async function locked(where, run) {
   } finally {
     await lock.close();
     if (await readOptional(where.lock) === token) await fs.unlink(where.lock);
+    await removeEmptyDirectory(where.cache);
   }
+}
+
+async function removeEmptyDirectory(directory) {
+  try { await fs.rmdir(directory); }
+  catch (error) { if (!["ENOENT", "ENOTEMPTY", "EEXIST"].includes(error.code)) throw error; }
 }
 
 function list(value, label) {
@@ -235,6 +250,68 @@ async function installedDirectory(directory) {
   }
 }
 
+async function migrateStopSessions(where) {
+  if (!await installedDirectory(where.oldSessions)) return;
+  protectConfig(where, where.oldSessions);
+  await fs.mkdir(where.data, { recursive: true, mode: 0o700 });
+  await installedDirectory(where.data);
+  const destination = path.join(where.data, "stop-sessions");
+  if (!await installedDirectory(destination)) return fs.rename(where.oldSessions, destination);
+  await mergeSessionDirectory(where.oldSessions, destination);
+}
+
+// A previous Gateway can leave additional files at the old location during
+// upgrade. A retry may finish a partial merge, but never replace a newer ledger.
+async function mergeSessionDirectory(source, destination) {
+  for (const item of await fs.readdir(source, { withFileTypes: true })) {
+    const from = path.join(source, item.name), to = path.join(destination, item.name);
+    if (item.isDirectory()) {
+      await fs.mkdir(to, { recursive: true, mode: 0o700 });
+      await installedDirectory(to);
+      await mergeSessionDirectory(from, to);
+    } else {
+      if (!item.isFile()) throw new Error(`Unexpected RC Stop session file: ${from}`);
+      try { await fs.copyFile(from, to, constants.COPYFILE_EXCL); }
+      catch (error) {
+        if (error.code !== "EEXIST") throw error;
+        if (!(await fs.lstat(to)).isFile() || !(await fs.readFile(from)).equals(await fs.readFile(to))) {
+          throw new Error(`Conflicting RC Stop session data; both copies were kept: ${from}`);
+        }
+      }
+      await fs.unlink(from);
+    }
+  }
+  await fs.rmdir(source);
+}
+
+// Only known RC-owned paths are disposable. In particular never recurse into
+// the config directory, a project directory, or a redirected data-directory link.
+function protectConfig(where, target) {
+  const config = key(where.config), directory = key(target);
+  if (config === directory || config.startsWith(directory + path.sep)) {
+    throw new Error(`OpenClaw configuration is inside the RC data path: ${target}`);
+  }
+}
+
+async function purgeMarketData(where) {
+  const privatePaths = ["stop-sessions", "cli-commands", "approval-modes.json"].map(name => path.join(where.data, name));
+  const backups = path.join(where.cache, "config-backups");
+  for (const target of [where.oldSessions, backups, ...privatePaths]) protectConfig(where, target);
+  if (await installedDirectory(where.oldSessions)) {
+    await fs.rm(where.oldSessions, { recursive: true, force: true, maxRetries: 3 });
+  }
+  if (await installedDirectory(where.data)) {
+    for (const directory of privatePaths) {
+      await fs.rm(directory, { recursive: true, force: true, maxRetries: 3 });
+    }
+    if (key(where.data) !== key(where.cache)) await removeEmptyDirectory(where.data);
+  }
+  await fs.rm(backups, { recursive: true, force: true, maxRetries: 3 });
+  await fs.rm(where.retainedMarker, { force: true });
+  // Keep ownership available for retry until every preceding removal succeeds.
+  await fs.rm(where.state, { force: true });
+}
+
 async function nativeDeployment(where, state, version, original, init) {
   const extensions = await fs.realpath(where.extensions).catch(error => {
     if (error.code !== "ENOENT") throw error;
@@ -301,6 +378,16 @@ export async function activate(api, init) {
         throw new Error("Another RC installation is configured in plugins.load.paths. Resolve that duplicate before enabling the MA package.");
       }
     }
+    // A prior uninstall may have committed the host config before its process
+    // exited. Finish that purge before a fresh install can restore old settings.
+    if (state?.uninstalled || (state && !state.active && await sawMarketUninstall(where, state.marketVersion))) {
+      if (await hasReplacementRegistration(where, config, state.disabledPayload ?? where.owner)
+        || await hasOtherExtension(where, state.disabledPayload ?? where.owner)) {
+        throw new Error("Another RC installation is present; its data was preserved.");
+      }
+      await purgeMarketData(where);
+      state = null;
+    }
     const previousEntry = state?.active ? state.previousEntry : before.plugins?.entries?.[pluginId] ?? null;
     if (!config.plugins?.entries?.[pluginId] && state?.savedEntry) {
       config.plugins ??= {};
@@ -309,6 +396,7 @@ export async function activate(api, init) {
     }
     const setup = initializeHostConfig(config);
     const deployment = await nativeDeployment(where, state, version, original, init);
+    await migrateStopSessions(where);
     if (deployment.installRecord) {
       config.plugins.installs ??= {};
       config.plugins.installs[pluginId] = deployment.installRecord;
@@ -320,7 +408,7 @@ export async function activate(api, init) {
     const grant = captureGrant(before, config, setup.agentId);
     const grants = state?.active ? [...state.grants] : [];
     if (grant && !grants.some(value => value.agentId === grant.agentId && value.name === grant.name)) grants.push(grant);
-    const next = { schemaVersion: 1, configPath: where.config, active: true, owner: where.owner, payload: deployment.directory,
+    const next = { schemaVersion: 1, configPath: where.config, active: true, marketVersion: version, owner: where.owner, payload: deployment.directory,
       generation: state?.active && state.owner === where.owner && !deployment.deployed ? state.generation : randomUUID(), previousEntry,
       configuredEntry: state?.active ? state.configuredEntry : structuredClone(config.plugins.entries[pluginId]),
       savedEntry: null, grants, created: state?.active ? state.created : createdContainers(before),
@@ -330,6 +418,7 @@ export async function activate(api, init) {
       bypassConfigWasMissing: state?.active === true && state.bypassConfigWasMissing === true,
       bypassWasMissing: state?.active === true && state.bypassWasMissing === true };
     const saved = await commit(next);
+    await retainMarketMarker(where);
     return { status: "active", pluginId, packageName, pluginRoot: deployment.directory, restartRequired: true, ...saved, warnings: setup.warnings };
   });
   api?.logger?.info?.(`[${packageName}] configured ${result.pluginRoot}; restart the gateway to load RC`);
@@ -354,7 +443,8 @@ function restoreConfiguration(where, config, state) {
     }
   }
   pruneCreated(config, state.created);
-  return { ...state, active: false, savedEntry, owner: null, payload: null, grants: [] };
+  return { ...state, active: false, savedEntry, disabledOwner: state.owner, disabledPayload: state.payload,
+    owner: null, payload: null, grants: [] };
 }
 
 async function marker(where) {
@@ -367,21 +457,62 @@ function strippedMarketMarker(current, version) {
     && !Object.hasOwn(current, "source") && !Object.hasOwn(current, "enabled");
 }
 
+// MA writes source/enabled in place. Only explicit uninstall strips them;
+// upgrade can delete the entire old package before downloading its successor.
+// A hard link lets the observer read the final marker even after that deletion.
+async function retainMarketMarker(where) {
+  const source = await fs.lstat(where.marker, { bigint: true }).catch(error => {
+    if (error.code !== "ENOENT") throw error;
+  });
+  if (!source?.isFile()) return;
+  const retained = await fs.lstat(where.retainedMarker, { bigint: true }).catch(error => {
+    if (error.code !== "ENOENT") throw error;
+  });
+  if (retained?.ino === source.ino && retained.dev === source.dev) return;
+  if (retained) await fs.unlink(where.retainedMarker);
+  try { await fs.link(where.marker, where.retainedMarker); }
+  catch (error) {
+    // Redirected profiles may span volumes. Only a directly observed stripped
+    // marker authorizes destroying history when the filesystem cannot link it.
+    if (!["ENOENT", "EXDEV", "ENOTSUP", "EINVAL", "EPERM", "EACCES"].includes(error.code)) throw error;
+  }
+}
+
+async function sawMarketUninstall(where, version) {
+  const raw = await readOptional(where.retainedMarker);
+  return raw !== undefined && strippedMarketMarker(parse(raw), version);
+}
+
+async function declaresRC(directory) {
+  const raw = await readOptional(path.join(directory, "openclaw.plugin.json")).catch(error => {
+    if (error.code !== "ENOTDIR") throw error;
+  });
+  if (!raw) return false;
+  try { return parse(raw).id === pluginId; }
+  catch (error) { if (!(error instanceof SyntaxError)) throw error; return false; }
+}
+
 async function hasReplacementRegistration(where, config, payload) {
   const target = config.plugins?.installs?.[pluginId]?.installPath;
   const belongs = value => [where.owner, payload].some(owned => owned && key(value) === key(owned));
   if (typeof target === "string" && !belongs(expandHome(target, where.home))) return true;
   for (const value of loadPaths(config)) {
     const directory = expandHome(value, where.home);
-    if (!belongs(directory)) {
-      const raw = await readOptional(path.join(directory, "openclaw.plugin.json")).catch(error => {
-        if (error.code !== "ENOTDIR") throw error;
-      });
-      if (raw) {
-        try { if (parse(raw).id === pluginId) return true; }
-        catch (error) { if (!(error instanceof SyntaxError)) throw error; }
-      }
-    }
+    if (!belongs(directory) && await declaresRC(directory)) return true;
+  }
+  return false;
+}
+
+async function hasOtherExtension(where, payload) {
+  const entries = await fs.readdir(where.extensions, { withFileTypes: true }).catch(error => {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  });
+  for (const entry of entries) {
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+    const directory = path.join(where.extensions, entry.name);
+    if (key(directory) === key(where.owner) || key(directory) === key(payload)) continue;
+    if (await declaresRC(directory)) return true;
   }
   return false;
 }
@@ -434,7 +565,9 @@ export async function reconcileNativeUninstall(owner, home = os.homedir(), insta
   return locked(where, async (config, state, commit, original) => {
     if (!await marketUninstallRequested(where, owner)) return false;
     if (state?.active && (key(state.owner) !== key(where.owner) || key(state.payload) !== key(where.native))) return true;
+    if (state?.disabledOwner && key(state.disabledOwner) !== key(where.owner)) return true;
     if (await hasReplacementRegistration(where, config, where.native)) return true;
+    if (await hasOtherExtension(where, where.native)) return true;
     const target = await installedDirectory(where.native);
     if (target) {
       if (!sameNativeOwner(owner, readNativeOwner(target))) return true;
@@ -446,7 +579,9 @@ export async function reconcileNativeUninstall(owner, home = os.homedir(), insta
       const next = state.active ? restoreConfiguration(where, config, state) : state;
       removeUninstalledReferences(where, config, where.native);
       pruneCreated(config, state.created);
-      await commit(next);
+      const confirmed = strippedMarketMarker(await marker(where), owner.version) || await sawMarketUninstall(where, owner.version);
+      await commit(confirmed ? { ...next, uninstalled: true } : next);
+      if (confirmed) await purgeMarketData(where);
     }
     if (await installedDirectory(where.owner) && await marketUninstallRequested(where, owner)) {
       await fs.rm(where.owner, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
@@ -459,7 +594,9 @@ async function observeMarketSwitch(api, where, init, uninstallOnly) {
   const raw = await readOptional(where.state);
   if (raw === undefined) return;
   const state = validateState(parse(raw), where);
-  if (!state.active || key(state.owner) !== key(where.owner)) return;
+  const owner = state.owner ?? state.disabledOwner;
+  const payload = state.payload ?? state.disabledPayload;
+  if (!owner || !payload || key(owner) !== key(where.owner)) return;
   // Each Gateway service owns its watcher. An outgoing Gateway must not stop a new one's watcher.
   const jobKey = uninstallOnly ? Symbol("market uninstall") : `${where.config}\0${where.owner}`;
   const existing = jobs.get(jobKey);
@@ -467,22 +604,33 @@ async function observeMarketSwitch(api, where, init, uninstallOnly) {
   if (existing?.stop) existing.stop();
   else clearTimeout(existing?.timer); // A previous MA package can share this process.
 
-  const version = uninstallOnly ? init.version : init?.version || await validatePackage(where.owner);
+  const version = init?.version ?? state.marketVersion ?? (uninstallOnly ? undefined : await validatePackage(where.owner));
+  if (state.marketVersion && await readOptional(where.retainedMarker) === undefined && await readOptional(where.marker) !== undefined) {
+    await locked(where, async (_config, latest) => {
+      if (latest?.generation === state.generation) await retainMarketMarker(where);
+    });
+  }
   const nativeOwner = isMarketOwner(where.home, where.owner) ? readNativeOwner(where.owner) : null;
   let queue = Promise.resolve(), retry;
   const pending = { status: "deactivating", pending: true };
   const stop = () => {
     unwatchFile(where.marker, notify);
+    unwatchFile(where.retainedMarker, notify);
     clearTimeout(retry);
     if (jobs.get(jobKey) === job) jobs.delete(jobKey);
   };
   const reconcile = async () => {
     const current = await marker(where);
     if (current?.enabled === true) return pending;
-    const uninstalled = strippedMarketMarker(current, version) || (!current && !await installedDirectory(where.owner));
+    const confirmed = strippedMarketMarker(current, version) || (!current && await sawMarketUninstall(where, version));
+    const uninstalled = confirmed || (!current && !await installedDirectory(where.owner));
     if (uninstallOnly && !uninstalled) return pending;
     if (!uninstalled && current && current.enabled !== false) return pending;
-    if (await readOptional(where.state) === undefined) { stop(); return { status: "inactive", changed: false }; }
+    const latestRaw = await readOptional(where.state);
+    if (latestRaw === undefined) { stop(); return { status: "inactive", changed: false }; }
+    // Both links may notify about the same disable. Once it has been committed,
+    // a second notification must not contend with the next enable for the lock.
+    if (!uninstalled && !validateState(parse(latestRaw), where).active) return { status: "inactive", changed: false };
     if (uninstalled && nativeOwner) {
       if (await reconcileNativeUninstall(nativeOwner, where.home, init?.clientInstallPath)) stop();
       return { status: "inactive" };
@@ -494,16 +642,19 @@ async function observeMarketSwitch(api, where, init, uninstallOnly) {
       // An intervening enable or reinstall may have replaced the observed marker.
       if (!equal(current, await marker(where))) return pending;
       if (!latest.active && !uninstalled) return { status: "inactive", changed: false };
-      if (await hasReplacementRegistration(where, config, state.payload)) {
+      if (await hasReplacementRegistration(where, config, payload) || (uninstalled && await hasOtherExtension(where, payload))) {
         stop(); return { status: "inactive", changed: false };
       }
       const next = latest.active ? restoreConfiguration(where, config, latest) : latest;
       if (uninstalled) {
-        removeUninstalledReferences(where, config, state.payload);
+        removeUninstalledReferences(where, config, payload);
         pruneCreated(config, latest.created);
       }
-      const saved = await commit(next);
-      if (uninstalled) stop();
+      const saved = await commit(confirmed ? { ...next, uninstalled: true } : next);
+      if (uninstalled) {
+        if (confirmed) await purgeMarketData(where);
+        stop();
+      }
       return { status: "inactive", ...saved };
     });
   };
@@ -527,6 +678,7 @@ async function observeMarketSwitch(api, where, init, uninstallOnly) {
   // Disable/uninstall commits its marker after the hook returns. Also observe
   // removal after disable: MA skips the hook for an already disabled plugin.
   watchFile(where.marker, { persistent: false, interval: 250 }, notify);
+  watchFile(where.retainedMarker, { persistent: false, interval: 250 }, notify);
   return job;
 }
 

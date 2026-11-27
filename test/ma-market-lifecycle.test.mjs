@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import test, { before, after } from "node:test";
 import { buildMAPackage } from "../lib/ma-package-builder.mjs";
+import { createStopCorrectionStore } from "../lib/runtime-v2/stop-correction-store.mjs";
 import { baseConfig, marketFixture, waitFor } from "./support/ma-market-fixture.mjs";
 
 const sourceRoot = fileURLToPath(new URL("../", import.meta.url));
@@ -44,10 +45,11 @@ test("enable configures discovery, permissions and only the main public tool; re
   assert.equal((await f.plugin.activate(f.api, f.init)).changed, false);
   assert.equal(await fs.readFile(f.configPath, "utf8"), before);
   assert.deepEqual(await fs.readdir(path.dirname(f.configPath)), files);
-  const backup = files.find(name => name.endsWith(".bak"));
-  assert.match(backup, /^openclaw\.json\.runtime-corrector-[0-9a-f-]+\.bak$/u);
+  const backups = path.join(path.dirname(f.statePath), "config-backups");
+  const [backup] = await fs.readdir(backups);
+  assert.match(backup, /^openclaw\.json-[0-9a-f-]+\.bak$/u);
   assert.equal(files.includes("runtime-corrector-ma"), false);
-  assert.deepEqual(JSON.parse(await fs.readFile(path.join(path.dirname(f.configPath), backup))), base);
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(backups, backup))), base);
   await f.disable(); assert.deepEqual(await f.readConfig(), base);
 });
 
@@ -155,10 +157,22 @@ test("disable follows the host's committed switch, preserves unrelated edits and
   assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
   assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].config.reviewerModel, "changed/reviewer");
   await f.writeMarker(true); await f.disable();
+  await stripMarker(f);
   await fs.rm(f.pluginDir, { recursive: true, force: true });
   assert.equal(JSON.stringify(await f.readConfig()).includes(f.payload.replaceAll("\\", "/")), false);
-  assert.equal((await f.readState()).active, false);
+  await waitFor(() => missing(path.dirname(f.statePath)));
 });
+
+function missing(file) {
+  return fs.lstat(file).then(() => false, error => {
+    if (error.code === "ENOENT") return true;
+    throw error;
+  });
+}
+
+function stripMarker(f) {
+  return fs.writeFile(f.markerPath, JSON.stringify({ pluginId: f.init.pluginId, version: f.init.version }));
+}
 
 test("a superseded package cannot tear down the active extension configuration", async t => {
   const base = baseConfig(), f = await marketFixture(t, artifact, base);
@@ -169,8 +183,8 @@ test("a superseded package cannot tear down the active extension configuration",
   const next = require(path.join(newDir, "index.js")), init = { ...f.init, pluginDir: newDir, version: "9.9.9" };
   assert.equal((await next.activate(f.api, init)).status, "active");
   await fs.writeFile(path.join(newDir, "install-complete.json"), '{"enabled":true}');
-  await f.writeMarker(false);
-  await new Promise(resolve => setTimeout(resolve, 120));
+  await fs.rm(f.pluginDir, { recursive: true });
+  await new Promise(resolve => setTimeout(resolve, 400));
   assert.equal((await f.readConfig()).plugins.load, undefined);
   assert.equal((await f.readState()).owner, await fs.realpath(newDir));
   await fs.writeFile(path.join(newDir, "install-complete.json"), '{"enabled":false}');
@@ -333,6 +347,7 @@ test("MA's default directory bootstraps and uninstalls a native RC without alter
   assert.deepEqual(await f.readConfig(), base);
   await assert.rejects(fs.access(payload), { code: "ENOENT" });
   await assert.rejects(fs.access(f.pluginDir), { code: "ENOENT" });
+  assert.equal(await missing(path.dirname(f.statePath)), true);
   const calls = (await fs.readFile(callsPath, "utf8")).trim().split("\n").map(line => JSON.parse(line));
   assert.deepEqual(calls, [["plugins", "list", "--json"], ["plugins", "install", shell],
     ["plugins", "uninstall", "runtime-corrector", "--force"]]);
@@ -438,7 +453,7 @@ test("a delayed market uninstall with a stripped marker cleans RC registrations 
   await new Promise(resolve => setTimeout(resolve, 2750));
   assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].enabled, true);
   await fs.writeFile(f.markerPath, JSON.stringify({ pluginId: f.init.pluginId, version: f.init.version }));
-  await waitFor(async () => !(await f.readState()).active);
+  await waitFor(() => missing(path.dirname(f.statePath)));
   const expected = structuredClone(base);
   delete expected.plugins.entries["runtime-corrector"];
   expected.plugins.installs = { existing: { installPath: "/other" } };
@@ -458,8 +473,9 @@ test("market removal after disable clears remaining references without a second 
   await f.writeMarker(true);
   await f.disable();
   assert.deepEqual(await f.readConfig(), base);
+  await stripMarker(f);
   await fs.rm(f.pluginDir, { recursive: true });
-  await waitFor(async () => !(await f.readConfig()).tools.alsoAllow.includes("runtime_corrector"));
+  await waitFor(() => missing(path.dirname(f.statePath)));
   assert.deepEqual(await f.readConfig(), baseConfig());
 });
 
@@ -477,7 +493,7 @@ test("a replacement registration owns its configuration when an older market dir
 });
 
 test("direct market removal without an MA deactivate callback reconciles the live entry", async t => {
-  for (const scenario of ["while running", "during shutdown", "replacement installed"]) await t.test(scenario, async t => {
+  for (const scenario of ["while running", "during shutdown", "marker removed first", "replacement installed"]) await t.test(scenario, async t => {
     const base = baseConfig();
     const f = await marketFixture(t, artifact, base);
     assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
@@ -499,13 +515,100 @@ test("direct market removal without an MA deactivate callback reconciles the liv
         base.plugins.entries["runtime-corrector"] = { enabled: true, config: { reviewerModel: "independent/reviewer" } };
         await fs.writeFile(f.configPath, JSON.stringify(base));
       }
-      await fs.rm(f.pluginDir, { recursive: true });
+      await stripMarker(f);
+      if (scenario === "marker removed first") await fs.unlink(f.markerPath);
+      else await fs.rm(f.pluginDir, { recursive: true });
       if (scenario === "while running") {
-        await waitFor(async () => !(await f.readConfig()).plugins.entries["runtime-corrector"]);
+        await waitFor(() => missing(path.dirname(f.statePath)));
       } else await service.stop();
       assert.deepEqual(await f.readConfig(), base);
+      assert.equal(await missing(path.dirname(f.statePath)), scenario !== "replacement installed");
     } finally { await service.stop(); }
   });
+});
+
+test("market upgrade moves existing Stop ledgers, preserves them on disable, and removes only private data on uninstall", async t => {
+  const f = await marketFixture(t, artifact);
+  const root = path.dirname(f.configPath), data = path.dirname(f.statePath);
+  const legacy = path.join(root, "runtime-corrector-stop-sessions");
+  const oldStore = createStopCorrectionStore({ directory: legacy });
+  const id = "continued-session";
+  await oldStore.initializeSession({ sessionId: id, initialize: { kind: "VERIFIED_HISTORY", evidence: "old run",
+    starts: [{ flowId: "flow", executionId: "original-repair", startedAt: 1 }] } });
+  const original = await fs.readFile(oldStore.fileFor(id));
+  const report = path.join(f.home, "project", ".runtime-correction", "report.md");
+  await fs.mkdir(path.dirname(report), { recursive: true });
+  await fs.writeFile(report, "delivered");
+  const current = path.join(data, "stop-sessions");
+  const store = createStopCorrectionStore({ directory: current });
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  assert.equal(await missing(legacy), true);
+  assert.deepEqual(await fs.readFile(store.fileFor(id)), original);
+  assert.equal((await store.inspect(id)).used, 1);
+  await f.writeMarker(true);
+  await f.disable();
+  assert.deepEqual(await fs.readFile(store.fileFor(id)), original);
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  await f.writeMarker(true);
+  assert.deepEqual(await fs.readFile(store.fileFor(id)), original);
+  await f.plugin.deactivate(f.api, f.init);
+  await fs.writeFile(f.markerPath, JSON.stringify({ pluginId: f.init.pluginId, version: f.init.version }));
+  await waitFor(() => missing(data));
+  assert.deepEqual(await f.readConfig(), baseConfig());
+  assert.equal(await fs.readFile(report, "utf8"), "delivered");
+});
+
+test("merging a partially moved Stop directory preserves distinct ledgers and refuses conflicting copies", async t => {
+  const f = await marketFixture(t, artifact);
+  const legacy = path.join(path.dirname(f.configPath), "runtime-corrector-stop-sessions", "sessions");
+  const current = path.join(path.dirname(f.statePath), "stop-sessions", "sessions");
+  for (const directory of [legacy, current]) await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(path.join(legacy, "same.json"), "old");
+  await fs.writeFile(path.join(current, "same.json"), "new");
+  assert.match((await f.plugin.activate(f.api, f.init)).error, /Conflicting RC Stop session data/u);
+  assert.equal(await fs.readFile(path.join(legacy, "same.json"), "utf8"), "old");
+  assert.equal(await fs.readFile(path.join(current, "same.json"), "utf8"), "new");
+  assert.deepEqual(await f.readConfig(), baseConfig());
+  await fs.rename(path.join(legacy, "same.json"), path.join(legacy, "different.json"));
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  assert.deepEqual((await fs.readdir(current)).sort(), ["different.json", "same.json"]);
+  assert.equal(await missing(path.dirname(legacy)), true);
+});
+
+test("MA removes a disabled old package before extracting an upgrade: retain settings and Stop history", async t => {
+  const f = await marketFixture(t, artifact);
+  const sessions = path.join(path.dirname(f.statePath), "stop-sessions");
+  await fs.mkdir(sessions, { recursive: true });
+  await fs.writeFile(path.join(sessions, "history"), "previous review");
+  await f.plugin.activate(f.api, f.init); await f.writeMarker(true);
+  const config = await f.readConfig();
+  config.plugins.entries["runtime-corrector"].config.reviewerModel = "keep/on-upgrade";
+  await fs.writeFile(f.configPath, JSON.stringify(config));
+  await f.disable();
+  // Actual MA upgrade deletes the disabled marker intact, before downloading.
+  await fs.rm(f.pluginDir, { recursive: true });
+  await new Promise(resolve => setTimeout(resolve, 650));
+  const newDir = path.join(path.dirname(f.pluginDir), "runtime-corrector-9.9.9");
+  await fs.cp(artifact, newDir, { recursive: true });
+  const next = require(path.join(newDir, "index.js"));
+  assert.equal((await next.activate(f.api, { ...f.init, pluginDir: newDir })).status, "active");
+  assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].config.reviewerModel, "keep/on-upgrade");
+  assert.equal(await fs.readFile(path.join(sessions, "history"), "utf8"), "previous review");
+});
+
+test("a fresh install completes a confirmed removal missed while the disabled plugin was offline", async t => {
+  const f = await marketFixture(t, artifact);
+  await f.plugin.activate(f.api, f.init); await f.writeMarker(true); await f.disable();
+  const data = path.dirname(f.statePath), sessions = path.join(data, "stop-sessions");
+  await fs.mkdir(sessions);
+  await fs.writeFile(path.join(sessions, "old-review"), "prior install");
+  // Terminate the original observer, as when the MA process exits.
+  f.stopObservers();
+  await stripMarker(f);
+  await fs.rm(f.pluginDir, { recursive: true });
+  await fs.cp(artifact, f.pluginDir, { recursive: true }); await f.writeMarker(false);
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  assert.equal(await missing(sessions), true);
 });
 
 test("escaping extension entries are rejected before any host config is changed", async t => {

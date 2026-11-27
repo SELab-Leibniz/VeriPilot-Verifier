@@ -60,6 +60,6 @@ export default {
     catch { /* A directly installed package may already be undergoing removal. */ }
     if (!owner) api.registerService?.(directMarketUninstallService(api, directory, marker?.version));
     if (marker?.enabled !== true || marker.status === "error") return;
-    return plugin.register(api);
+    return plugin.register(api, { stopSessionSubdir: path.join(plugin.id, "stop-sessions") });
   },
 };
