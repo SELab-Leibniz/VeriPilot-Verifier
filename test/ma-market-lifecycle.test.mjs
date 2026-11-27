@@ -119,7 +119,11 @@ test("strict agent allow, explicit deny and existing RC parameters survive an en
   assert.deepEqual(config.agents.list[1], base.agents.list[1]);
   assert.deepEqual(config.plugins.entries["runtime-corrector"].config, base.plugins.entries["runtime-corrector"].config);
   assert(result.warnings.some(warning => warning.includes("阻止 RC")));
-  await f.disable(); assert.deepEqual(await f.readConfig(), base);
+  await f.disable();
+  const disabled = structuredClone(base);
+  delete disabled.plugins.entries["runtime-corrector"];
+  assert.deepEqual(await f.readConfig(), disabled);
+  assert.deepEqual((await f.readState()).savedEntry.config, base.plugins.entries["runtime-corrector"].config);
 });
 
 test("ordinary MA host unload/reload preserves enabled config and its installation marker", async t => {
@@ -400,7 +404,7 @@ test("a terminated MA worker's expired lock can be recovered without narrowing t
   await f.disable(); assert.deepEqual(await f.readConfig(), base);
 });
 
-test("RC parameter edits are retained when restoring a pre-existing disabled entry", async t => {
+test("disable removes even a pre-existing RC entry and re-enable restores the user's edited parameters", async t => {
   const base = baseConfig();
   base.plugins.entries["runtime-corrector"] = { enabled: false, config: { reviewerModel: "old/reviewer" } };
   const f = await marketFixture(t, artifact, base);
@@ -408,7 +412,68 @@ test("RC parameter edits are retained when restoring a pre-existing disabled ent
   const config = await f.readConfig(); config.plugins.entries["runtime-corrector"].config.reviewerModel = "new/reviewer";
   await fs.writeFile(f.configPath, JSON.stringify(config));
   await f.disable();
-  assert.deepEqual((await f.readConfig()).plugins.entries["runtime-corrector"], { enabled: false, config: { reviewerModel: "new/reviewer" } });
+  assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"], undefined);
+  assert.equal((await f.readState()).savedEntry.config.reviewerModel, "new/reviewer");
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].config.reviewerModel, "new/reviewer");
+});
+
+test("a delayed market uninstall with a stripped marker cleans RC registrations and preserves user policy", async t => {
+  const base = baseConfig();
+  base.plugins.entries["runtime-corrector"] = { enabled: false, config: { reviewerModel: "old/reviewer" } };
+  base.plugins.allow.push("runtime-corrector", "runtime-corrector-extra");
+  base.agents.list[0].tools = { alsoAllow: ["read", "runtime_corrector"] };
+  base.agents.list.push({ id: "other", tools: { allow: ["read", "runtime_corrector"], deny: ["runtime_corrector"] } });
+  base.agents.list.push({ id: "restricted", tools: { allow: ["runtime_corrector"] } });
+  base.tools.alsoAllow.push("runtime_corrector", "runtime_corrector_extra");
+  const f = await marketFixture(t, artifact, base);
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  await f.writeMarker(true);
+  assert.equal((await f.plugin.deactivate(f.api, f.init)).pending, true);
+  const active = await f.readConfig();
+  active.plugins.installs = { "runtime-corrector": { installPath: f.pluginDir }, existing: { installPath: "/other" } };
+  active.plugins.load = { paths: [f.pluginDir, "~/other-extension"] };
+  await fs.writeFile(f.configPath, JSON.stringify(active));
+  // MA may still be looking up the registry after the old 2.5-second deadline.
+  await new Promise(resolve => setTimeout(resolve, 2750));
+  assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].enabled, true);
+  await fs.writeFile(f.markerPath, JSON.stringify({ pluginId: f.init.pluginId, version: f.init.version }));
+  await waitFor(async () => !(await f.readState()).active);
+  const expected = structuredClone(base);
+  delete expected.plugins.entries["runtime-corrector"];
+  expected.plugins.installs = { existing: { installPath: "/other" } };
+  expected.plugins.load = { paths: ["~/other-extension"] };
+  expected.plugins.allow = ["existing", "runtime-corrector-extra"];
+  expected.tools.alsoAllow = ["browser", "runtime_corrector_extra"];
+  expected.agents.list[0].tools.alsoAllow = ["read"];
+  expected.agents.list[1].tools.allow = ["read"];
+  assert.deepEqual(await f.readConfig(), expected);
+});
+
+test("market removal after disable clears remaining references without a second deactivate hook", async t => {
+  const base = baseConfig();
+  base.tools.alsoAllow.push("runtime_corrector");
+  const f = await marketFixture(t, artifact, base);
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  await f.writeMarker(true);
+  await f.disable();
+  assert.deepEqual(await f.readConfig(), base);
+  await fs.rm(f.pluginDir, { recursive: true });
+  await waitFor(async () => !(await f.readConfig()).tools.alsoAllow.includes("runtime_corrector"));
+  assert.deepEqual(await f.readConfig(), baseConfig());
+});
+
+test("a replacement registration owns its configuration when an older market directory disappears", async t => {
+  const f = await marketFixture(t, artifact);
+  assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+  await f.writeMarker(true);
+  const config = await f.readConfig();
+  config.plugins.installs = { "runtime-corrector": { installPath: path.join(f.home, "independent", "runtime-corrector") } };
+  config.plugins.entries["runtime-corrector"] = { enabled: true, config: { reviewerModel: "other/reviewer" } };
+  await fs.writeFile(f.configPath, JSON.stringify(config));
+  await fs.writeFile(f.markerPath, JSON.stringify({ pluginId: f.init.pluginId, version: f.init.version }));
+  assert.equal((await f.plugin.deactivate(f.api, f.init)).changed, false);
+  assert.deepEqual(await f.readConfig(), config);
 });
 
 test("escaping extension entries are rejected before any host config is changed", async t => {

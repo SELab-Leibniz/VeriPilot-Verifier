@@ -1,4 +1,4 @@
-import { promises as fs } from "node:fs";
+import { promises as fs, watchFile, unwatchFile } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
@@ -177,9 +177,17 @@ function captureGrant(before, after, id) {
   const agent = after.agents.list.find(matches);
   const previous = before.agents?.list?.find(matches);
   const name = Array.isArray(agent.tools?.allow) && agent.tools.allow.length ? "allow" : "alsoAllow";
-  if (!agent.tools[name]?.includes(toolName) || previous?.tools?.[name]?.includes(toolName)) return null;
+  if (!agent.tools[name]?.includes(toolName)) return null;
+  const beforeTools = structuredClone(previous?.tools ?? null);
+  // /rc-setup may already have granted the main agent this tool. Re-enable
+  // grants it again. Preserve a strict allowlist if removing it would open access.
+  if (beforeTools?.[name]?.includes(toolName)) {
+    const remaining = beforeTools[name].filter(value => value !== toolName);
+    if (name === "allow" && !remaining.length) return null;
+    beforeTools[name] = remaining;
+  }
   return { agentId: agent.id, name, createdAgent: previous === undefined,
-    before: previous?.tools ?? null, after: structuredClone(agent.tools) };
+    before: beforeTools, after: structuredClone(agent.tools) };
 }
 
 function removeGrant(config, grant) {
@@ -191,6 +199,7 @@ function removeGrant(config, grant) {
     if (grant.before === null) delete agent.tools;
     else agent.tools = structuredClone(grant.before);
   } else if (Array.isArray(agent.tools[grant.name])) {
+    if (grant.name === "allow" && agent.tools.allow.length && agent.tools.allow.every(value => value === toolName)) return;
     agent.tools[grant.name] = agent.tools[grant.name].filter(value => value !== toolName);
     if (!agent.tools[grant.name].length && grant.before?.[grant.name] === undefined) delete agent.tools[grant.name];
     if (!Object.keys(agent.tools).length && grant.before === null) delete agent.tools;
@@ -329,25 +338,12 @@ export async function activate(api, init) {
 
 function restoreConfiguration(where, config, state) {
   const entry = config.plugins?.entries?.[pluginId];
-  const savedEntry = object(entry) ? structuredClone(entry) : state.savedEntry;
+  const savedEntry = object(entry) ? structuredClone(entry) : state.savedEntry ?? state.previousEntry;
   if (Array.isArray(config.plugins?.load?.paths)) config.plugins.load.paths = withoutPath(config.plugins.load.paths, state.payload, where.home);
-  if (object(config.plugins?.entries)) {
-    if (state.previousEntry === null) delete config.plugins.entries[pluginId];
-    else {
-      const restored = structuredClone(state.previousEntry);
-      // Preserve RC parameter edits made while the market package was active,
-      // without retaining the installer's default additions in the baseline.
-      const initial = state.configuredEntry?.config ?? {}, latest = savedEntry?.config ?? {};
-      for (const name of new Set([...Object.keys(initial), ...Object.keys(latest)])) {
-        if (equal(initial[name], latest[name])) continue;
-        restored.config ??= {};
-        if (Object.hasOwn(latest, name)) restored.config[name] = structuredClone(latest[name]);
-        else delete restored.config[name];
-      }
-      config.plugins.entries[pluginId] = restored;
-    }
-  }
-  if (state.allowAdded && Array.isArray(config.plugins?.allow)) config.plugins.allow = config.plugins.allow.filter(value => value !== pluginId);
+  // MA skips deactivate when uninstalling an already disabled package. Keep
+  // the user's RC parameters in savedEntry for re-enable, outside the live registry.
+  if (object(config.plugins?.entries)) delete config.plugins.entries[pluginId];
+  if (state.allowAdded) removePositive(config.plugins, "allow", [pluginId]);
   for (const grant of state.grants) removeGrant(config, grant);
   if (state.bypassAdded) {
     const settings = config.plugins?.entries?.["matrix-context-controller"]?.config;
@@ -361,17 +357,61 @@ function restoreConfiguration(where, config, state) {
   return { ...state, active: false, savedEntry, owner: null, payload: null, grants: [] };
 }
 
-async function removeConfiguration(where, expectedGeneration) {
-  return locked(where, async (config, state, commit) => {
-    if (!state?.active || key(state.owner) !== key(where.owner) || state.generation !== expectedGeneration) return { status: "inactive", changed: false };
-    const saved = await commit(restoreConfiguration(where, config, state));
-    return { status: "inactive", ...saved };
-  });
-}
-
 async function marker(where) {
   const raw = await readOptional(where.marker);
   return raw === undefined ? null : parse(raw);
+}
+
+function strippedMarketMarker(current, version) {
+  return current?.pluginId === pluginId && current.version === version
+    && !Object.hasOwn(current, "source") && !Object.hasOwn(current, "enabled");
+}
+
+async function hasReplacementRegistration(where, config, payload) {
+  const target = config.plugins?.installs?.[pluginId]?.installPath;
+  const belongs = value => [where.owner, payload].some(owned => owned && key(value) === key(owned));
+  if (typeof target === "string" && !belongs(expandHome(target, where.home))) return true;
+  for (const value of loadPaths(config)) {
+    const directory = expandHome(value, where.home);
+    if (!belongs(directory)) {
+      const raw = await readOptional(path.join(directory, "openclaw.plugin.json")).catch(error => {
+        if (error.code !== "ENOTDIR") throw error;
+      });
+      if (raw) {
+        try { if (parse(raw).id === pluginId) return true; }
+        catch (error) { if (!(error instanceof SyntaxError)) throw error; }
+      }
+    }
+  }
+  return false;
+}
+
+function removePositive(policy, field, names) {
+  const values = policy?.[field];
+  if (!Array.isArray(values) || !values.some(value => names.includes(value))) return;
+  const rest = values.filter(value => !names.includes(value));
+  // Removing the last member of a user-defined strict allowlist would open access.
+  if (rest.length || field === "alsoAllow") policy[field] = rest;
+}
+
+function removeUninstalledReferences(where, config, payload) {
+  const plugins = config.plugins;
+  if (plugins?.entries) delete plugins.entries[pluginId];
+  const record = plugins?.installs?.[pluginId];
+  const directRecord = key(path.dirname(where.owner)) === key(where.extensions)
+    && typeof record?.installPath === "string" && key(expandHome(record.installPath, where.home)) === key(where.owner);
+  if (directRecord || ownsInstallRecord(where, record)) {
+    delete plugins.installs[pluginId];
+    if (!Object.keys(plugins.installs).length) delete plugins.installs;
+  }
+  if (Array.isArray(plugins?.load?.paths)) {
+    plugins.load.paths = withoutPath(withoutPath(plugins.load.paths, where.owner, where.home), payload, where.home);
+  }
+  removePositive(plugins, "allow", [pluginId]);
+  for (const tools of [config.tools, ...(config.agents?.list ?? []).map(agent => agent.tools)]) {
+    removePositive(tools, "allow", [pluginId, toolName]);
+    removePositive(tools, "alsoAllow", [pluginId, toolName]);
+  }
 }
 
 async function marketUninstallRequested(where, owner) {
@@ -384,31 +424,33 @@ async function marketUninstallRequested(where, owner) {
     if (error instanceof SyntaxError) return false;
     throw error;
   }
-  return current?.pluginId === pluginId && current.version === owner.version
-    && !Object.hasOwn(current, "source") && !Object.hasOwn(current, "enabled");
+  return strippedMarketMarker(current, owner.version);
 }
 
-export async function reconcileNativeUninstall(owner, home = os.homedir()) {
+export async function reconcileNativeUninstall(owner, home = os.homedir(), installRoot) {
   if (!isMarketOwner(home, owner.owner)) return true;
   const where = await installLocations(owner.owner, home);
   if (!await marketUninstallRequested(where, owner)) return false;
   return locked(where, async (config, state, commit, original) => {
     if (!await marketUninstallRequested(where, owner)) return false;
     if (state?.active && (key(state.owner) !== key(where.owner) || key(state.payload) !== key(where.native))) return true;
+    if (await hasReplacementRegistration(where, config, where.native)) return true;
     const target = await installedDirectory(where.native);
     if (target) {
       if (!sameNativeOwner(owner, readNativeOwner(target))) return true;
-      await runNativeCommand(where, ["uninstall", pluginId, "--force"], original);
+      await runNativeCommand(where, ["uninstall", pluginId, "--force"], original, installRoot);
       if (await installedDirectory(where.native)) throw new Error("OpenClaw did not remove the RC native extension.");
     }
     if (!await marketUninstallRequested(where, owner)) return false;
-    const record = config.plugins?.installs?.[pluginId];
-    if (ownsInstallRecord(where, record)) {
-      delete config.plugins.installs[pluginId];
-      if (!Object.keys(config.plugins.installs).length) delete config.plugins.installs;
+    if (state) {
+      const next = state.active ? restoreConfiguration(where, config, state) : state;
+      removeUninstalledReferences(where, config, where.native);
+      pruneCreated(config, state.created);
+      await commit(next);
     }
-    if (state) await commit(state.active ? restoreConfiguration(where, config, state) : state);
-    await fs.rm(where.owner, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    if (await installedDirectory(where.owner) && await marketUninstallRequested(where, owner)) {
+      await fs.rm(where.owner, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    }
     return true;
   });
 }
@@ -418,32 +460,70 @@ export async function deactivate(api, init) {
   if (raw === undefined) return { status: "inactive", changed: false };
   const state = validateState(parse(raw), where);
   if (!state.active || key(state.owner) !== key(where.owner)) return { status: "inactive", changed: false };
-  const current = await marker(where);
-  if (!current || current.enabled === false) return removeConfiguration(where, state.generation);
-  // MA calls this same hook for ordinary host reloads. Explicit disable writes
-  // enabled:false only AFTER this promise resolves; uninstall then waits 3s.
-  // Keep reloads unchanged and observe the committed switch before teardown.
   const jobKey = `${where.config}\0${where.owner}`;
   const existing = jobs.get(jobKey);
-  if (existing?.generation === state.generation) {
-    existing.deadline = Date.now() + 2500; return { status: "deactivating", pending: true };
-  }
-  if (existing) clearTimeout(existing.timer);
-  const job = { generation: state.generation, deadline: Date.now() + 2500, timer: null };
-  const check = async () => {
-    if (jobs.get(jobKey) !== job) return;
-    try {
-      const observed = await marker(where);
-      if (!observed || observed.enabled === false) {
-        await removeConfiguration(where, state.generation);
-        if (jobs.get(jobKey) === job) jobs.delete(jobKey);
-        api?.logger?.info?.(`[${packageName}] removed this installation's config references`);
-        return;
-      }
-    } catch (error) { api?.logger?.warn?.(`[${packageName}] deferred teardown: ${error.message}`); }
-    if (Date.now() >= job.deadline) { if (jobs.get(jobKey) === job) jobs.delete(jobKey); return; }
-    job.timer = setTimeout(check, 40); job.timer.unref();
+  if (existing?.generation === state.generation && existing.check) return existing.check();
+  if (existing?.stop) existing.stop();
+  else clearTimeout(existing?.timer); // A previous MA package can share this process.
+
+  const version = init?.version || await validatePackage(where.owner);
+  const nativeOwner = isMarketOwner(where.home, where.owner) ? readNativeOwner(where.owner) : null;
+  let queue = Promise.resolve(), retry;
+  const pending = { status: "deactivating", pending: true };
+  const stop = () => {
+    unwatchFile(where.marker, notify);
+    clearTimeout(retry);
+    if (jobs.get(jobKey) === job) jobs.delete(jobKey);
   };
-  job.timer = setTimeout(check, 20); job.timer.unref(); jobs.set(jobKey, job);
-  return { status: "deactivating", pending: true };
+  const reconcile = async () => {
+    const current = await marker(where);
+    if (current?.enabled === true) return pending;
+    const uninstalled = strippedMarketMarker(current, version) || (!current && !await installedDirectory(where.owner));
+    if (!uninstalled && current && current.enabled !== false) return pending;
+    if (await readOptional(where.state) === undefined) { stop(); return { status: "inactive", changed: false }; }
+    if (uninstalled && nativeOwner) {
+      if (await reconcileNativeUninstall(nativeOwner, where.home, init?.clientInstallPath)) stop();
+      return { status: "inactive" };
+    }
+    return locked(where, async (config, latest, commit) => {
+      if (latest?.generation !== state.generation || (latest.active && key(latest.owner) !== key(where.owner))) {
+        stop(); return { status: "inactive", changed: false };
+      }
+      // An intervening enable or reinstall may have replaced the observed marker.
+      if (!equal(current, await marker(where))) return pending;
+      if (!latest.active && !uninstalled) return { status: "inactive", changed: false };
+      if (await hasReplacementRegistration(where, config, state.payload)) {
+        stop(); return { status: "inactive", changed: false };
+      }
+      const next = latest.active ? restoreConfiguration(where, config, latest) : latest;
+      if (uninstalled) {
+        removeUninstalledReferences(where, config, state.payload);
+        pruneCreated(config, latest.created);
+      }
+      const saved = await commit(next);
+      if (uninstalled) stop();
+      return { status: "inactive", ...saved };
+    });
+  };
+  const check = () => {
+    // Serialize notifications so removal during a disable commit is seen afterwards.
+    const operation = queue.then(() => jobs.get(jobKey) === job ? reconcile() : { status: "inactive", changed: false });
+    queue = operation.catch(error => {
+      api?.logger?.warn?.(`[${packageName}] deferred teardown: ${error.message}`);
+      if (jobs.get(jobKey) === job && !retry && (error instanceof SyntaxError ||
+        /another RC MA setup|lock changed|config changed during MA setup/iu.test(error.message) ||
+        ["EPERM", "EACCES", "EBUSY"].includes(error.code))) {
+        retry = setTimeout(() => { retry = undefined; notify(); }, 500);
+        retry.unref();
+      }
+    });
+    return operation;
+  };
+  const notify = () => { void check(); };
+  const job = { generation: state.generation, stop, check };
+  jobs.set(jobKey, job);
+  // Disable/uninstall commits its marker after the hook returns. Also observe
+  // removal after disable: MA skips the hook for an already disabled plugin.
+  watchFile(where.marker, { persistent: false, interval: 250 }, notify);
+  return check();
 }
