@@ -65,6 +65,7 @@ await fs.writeFile(path.join(evaluations, "stop-first.json"), JSON.stringify({
     { title: "Preserve export", judgement: "PASS" },
     { title: "Apply filter", judgement: "DEVIATION" },
     { title: "Retain stable ordering", judgement: "UNVERIFIED" },
+    { title: "Later verification", judgement: "NOT_YET_APPLICABLE" },
   ] },
 }));
 
@@ -128,14 +129,19 @@ try {
   await page.waitForFunction(() => document.querySelector("#repair-runs").textContent.includes("rc-stop-exact-alpha"));
   assert.match(await page.locator("#repair-runs").innerText(), /已结束 · 无偏差/u);
   assert.equal(await page.locator("#repair-runs pre").innerText(), sentInput);
-  assert.match(await page.locator("#review-details").innerText(), /阶段性判定.*无偏差 0 · 有偏差 0 · 未验证 1 · 未审 1/u);
+  const liveReview = await page.locator("#review-details").innerText();
+  assert.match(liveReview, /阶段性判定/u);
+  assert.match(liveReview, /审查汇总 未验证 · 已判定有无偏差 0\/2 项/u);
+  assert.match(liveReview, /无偏差 0\/2（0%） · 有偏差 0\/2（0%） · 未验证 1\/2（50%） · 未审 1\/2（50%）/u);
   await page.getByText(/本轮注入简报.*随工具结果/u).click();
   assert.equal(await page.locator("#brief-text").innerText(), briefText);
   const historyId = await page.locator("#round-select option").filter({ hasText: /历史轮.*有偏差/u }).getAttribute("value");
   await page.getByLabel("查看轮次").selectOption(historyId);
   await page.waitForFunction(() => document.querySelector("#outcome").textContent === "有偏差");
   assert.equal(await page.locator("#brief-text").innerText(), historicalBrief);
-  assert.match(await page.locator("#review-details").innerText(), /无偏差 1 · 有偏差 1 · 未验证 1 · 未审 0/u);
+  const historicalReview = await page.locator("#review-details").innerText();
+  assert.match(historicalReview, /审查汇总 有偏差 · 已判定有无偏差 2\/4 项/u);
+  assert.match(historicalReview, /无偏差 1\/4（25%） · 有偏差 1\/4（25%） · 未验证 1\/4（25%） · 未审 0\/4（0%） · 当前阶段不适用 1\/4（25%）/u);
   assert.match(await page.locator("#review-details").innerText(), /Preserve export/u);
   assert.match(await page.locator("#review-details").innerText(), /Apply filter/u);
   assert.match(await page.locator("#review-details").innerText(), /Retain stable ordering/u);

@@ -3,12 +3,26 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { readSessionRuntimeDetails, summarizeSessionRepairs } from "../lib/openclaw/session-runtime-details.mjs";
+import { readSessionRuntimeDetails, summarizeReviewView, summarizeSessionRepairs } from "../lib/openclaw/session-runtime-details.mjs";
 import { nativeStopReviewDirectory } from "../lib/openclaw/native-stop-review.mjs";
 import { recordNativeRun } from "../lib/openclaw/native-runs.mjs";
 import { ensureTask, taskDirectory, withTaskState } from "../lib/runtime-v2/task-store.mjs";
 import { boundHostFeedback } from "../lib/runtime-v2/feedback-delivery.mjs";
 import { sha256 } from "../lib/runtime-v2/utils.mjs";
+
+test("review view uses concluded items and preserves the denominator for every category", () => {
+  const summarize = (...categories) => summarizeReviewView({ scopeKnown: true, items: categories.map(category => ({ category })) });
+  assert.equal(summarize("NOT_REVIEWED", "NOT_REVIEWED").outcome, "NOT_REVIEWED");
+  assert.equal(summarize("UNVERIFIED", "UNVERIFIED").outcome, "UNVERIFIED");
+  assert.equal(summarize("UNVERIFIED", "NOT_REVIEWED", "NOT_APPLICABLE").outcome, "UNVERIFIED");
+  assert.equal(summarize("NO_DEVIATION_FOUND", "UNVERIFIED", "NOT_REVIEWED").outcome, "NO_DEVIATION_FOUND");
+  assert.equal(summarizeReviewView(), null);
+  assert.deepEqual(summarize().categories.map(row => row.percentage), [null, null, null, null, null]);
+  const mixed = summarize("NO_DEVIATION_FOUND", "DEVIATION", "UNVERIFIED", "NOT_REVIEWED", "NOT_APPLICABLE", null);
+  assert.equal(mixed.outcome, "DEVIATION");
+  assert.equal(mixed.total, 5);
+  assert.deepEqual(mixed.categories.map(({ count, percentage }) => [count, percentage]), Array(5).fill([1, 20]));
+});
 
 test("console binds stored review, brief and repair input to the selected host session and run", async t => {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-runtime-details-")));
@@ -56,6 +70,8 @@ test("console binds stored review, brief and repair input to the selected host s
     original: { originalRequest: hostRequest },
   } };
   const details = await readSessionRuntimeDetails(snapshot, async () => receipt, identity => summarizeSessionRepairs(identity, ledger));
+  assert.equal(details.round.outcome, "UNVERIFIED");
+  assert.equal(details.review.summary.outcome, "DEVIATION");
   assert.deepEqual(details.review.items.map(item => item.judgement), ["DEVIATION", "UNVERIFIED"]);
   assert.deepEqual(details.review.items[0].evidence, ["export.ts:3"]);
   assert.equal(details.brief, null);
@@ -116,10 +132,61 @@ test("console shows the selected Stop checklist while it is running and keeps mi
   assert.equal(round.outcome, null);
   assert.equal(review.provisional, true);
   assert.equal(review.coverage.selectedObjectCount, 5);
+  assert.deepEqual(review.summary.categories.map(row => row.count), [2, 1, 1, 1, 0]);
   assert.deepEqual(review.items.map(item => [item.label,item.judgement]), [
     ["Check ready","PASS"],["Check deviation","DEVIATION"],["Check unknown","UNVERIFIED"],["Check pending","NOT_REVIEWED"],["quality.md","PASS"],
   ]);
   assert.equal((await readSessionRuntimeDetails({ ...snapshot, controlRevision: 2 })).review, null);
+});
+
+test("the review summary reads existing receipts and counts each known checklist item once", async t => {
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "rc-review-summary-")));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const sessionId = "summary-session";
+  const { taskId } = await ensureTask({ projectRoot: root, sessionId });
+  const snapshot = { projectRoot: root, sessionId, taskId, runId: "summary-run", roundId: "summary-round", outcome: "UNVERIFIED" };
+  const evaluationId = "stop-summary";
+  await withTaskState({ projectRoot: root, taskId }, state => {
+    state.verification = { status: "UNVERIFIED", evaluationId, terminalRunId: snapshot.runId };
+  });
+  const directory = path.join(taskDirectory(root, taskId), "evaluations");
+  await fs.mkdir(directory, { recursive: true });
+  const evaluation = path.join(directory, evaluationId + ".json");
+  const report = {
+    evaluationId, outcome: { status: "UNVERIFIED", historicalDeviations: [{ objectId: "past", kind: "IRREVERSIBLE_ORDER" }] },
+    core: { summary: { items: [{ objectId: "missing-receipt", receiptId: null, result: { judgement: "UNVERIFIED" } }] } },
+    review: {
+      metricObjectJudgements: [
+        { objectId: "passed", judgement: "PASS" },
+        { objectId: "missing-receipt", judgement: "UNVERIFIED" },
+        { objectId: "later-stage", judgement: "NOT_YET_APPLICABLE" },
+      ],
+      scopeSelection: { metrics: { M16: { objects: ["passed", "missing-receipt", "missing-evidence", "unreached", "later-stage"]
+        .map(objectId => ({ objectId, selected: true })) } } },
+      unverifiedItems: [
+        { id: "path-witness", objectId: "missing-evidence", type: "OUTPUT_PATH" },
+        { id: "missing-evidence", objectId: "missing-evidence", type: "REQUIREMENT" },
+        { id: "unreached", objectId: "unreached", type: "REQUIREMENT", reviewState: "UNREVIEWED" },
+        { id: "original:requirements.md", type: "ORIGINAL_SOURCE", reviewState: "UNREVIEWED" },
+      ],
+    },
+  };
+  const bytes = JSON.stringify(report);
+  await fs.writeFile(evaluation, bytes);
+  const { round, review } = await readSessionRuntimeDetails(snapshot);
+  assert.equal(round.outcome, "UNVERIFIED");
+  assert.equal(review.summary.outcome, "NO_DEVIATION_FOUND");
+  assert.equal(review.summary.total, 6);
+  assert.deepEqual(review.summary.categories.map(row => row.count), [1, 0, 1, 3, 1]);
+  assert.equal(review.items.find(item => item.label === "missing-receipt").judgement, "UNVERIFIED");
+  assert.equal(review.items.filter(item => item.category === null).length, 1);
+  assert.equal(await fs.readFile(evaluation, "utf8"), bytes);
+  report.review.collection = { mode: "deviation-only", complete: true };
+  report.coverage = { scanCompleted: true };
+  report.review.metricObjectJudgements = [];
+  await fs.writeFile(evaluation, JSON.stringify(report));
+  const scan = (await readSessionRuntimeDetails(snapshot)).review.summary;
+  assert.deepEqual(scan.categories.map(row => row.count), [2, 0, 1, 3, 0]);
 });
 
 test("console displays the admitted feedback for a started native repair with an opaque request", async () => {
