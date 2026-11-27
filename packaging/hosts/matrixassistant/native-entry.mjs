@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import plugin from "./lib/openclaw/entry.mjs";
-import { reconcileNativeUninstall } from "./installer.mjs";
+import { directMarketUninstallService, reconcileNativeUninstall } from "./installer.mjs";
 import { isMarketOwner, pathKey, readNativeOwner, sameNativeOwner } from "./native-install.mjs";
 
 const directory = fileURLToPath(new URL(".", import.meta.url));
@@ -57,8 +57,9 @@ export default {
       marketDirectory = owner.owner;
     }
     try { marker = JSON.parse(readFileSync(path.join(marketDirectory, "install-complete.json"), "utf8").replace(/^\uFEFF/u, "")); }
-    catch { return; }
-    if (marker.enabled !== true || marker.status === "error") return;
+    catch { /* A directly installed package may already be undergoing removal. */ }
+    if (!owner) api.registerService?.(directMarketUninstallService(api, directory, marker?.version));
+    if (marker?.enabled !== true || marker.status === "error") return;
     return plugin.register(api);
   },
 };

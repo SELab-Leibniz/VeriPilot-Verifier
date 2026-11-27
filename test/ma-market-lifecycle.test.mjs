@@ -476,6 +476,38 @@ test("a replacement registration owns its configuration when an older market dir
   assert.deepEqual(await f.readConfig(), config);
 });
 
+test("direct market removal without an MA deactivate callback reconciles the live entry", async t => {
+  for (const scenario of ["while running", "during shutdown", "replacement installed"]) await t.test(scenario, async t => {
+    const base = baseConfig();
+    const f = await marketFixture(t, artifact, base);
+    assert.equal((await f.plugin.activate(f.api, f.init)).status, "active");
+    // MA skips deactivate when the marker says disabled, even if OpenClaw's entry is still active.
+    await f.writeMarker(false);
+    t.mock.method(os, "homedir", () => f.home);
+    const entry = (await import(pathToFileURL(path.join(f.payload, "ma-entry.mjs")))).default;
+    let service;
+    entry.register({ registerService(value) { service = value; }, logger: f.api.logger });
+    await service.start();
+    await service.stop();
+    assert.equal((await f.readConfig()).plugins.entries["runtime-corrector"].enabled, true);
+    await service.start();
+    try {
+      if (scenario === "replacement installed") {
+        const replacement = path.join(f.home, "independent", "runtime-corrector");
+        await fs.cp(artifact, replacement, { recursive: true });
+        base.plugins.installs = { "runtime-corrector": { installPath: replacement } };
+        base.plugins.entries["runtime-corrector"] = { enabled: true, config: { reviewerModel: "independent/reviewer" } };
+        await fs.writeFile(f.configPath, JSON.stringify(base));
+      }
+      await fs.rm(f.pluginDir, { recursive: true });
+      if (scenario === "while running") {
+        await waitFor(async () => !(await f.readConfig()).plugins.entries["runtime-corrector"]);
+      } else await service.stop();
+      assert.deepEqual(await f.readConfig(), base);
+    } finally { await service.stop(); }
+  });
+});
+
 test("escaping extension entries are rejected before any host config is changed", async t => {
   const f = await marketFixture(t, artifact), file = path.join(f.payload, "openclaw.plugin.json");
   const manifest = JSON.parse(await fs.readFile(file)); manifest.main = "../outside.mjs";

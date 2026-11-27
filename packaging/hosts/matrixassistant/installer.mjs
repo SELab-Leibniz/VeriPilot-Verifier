@@ -363,7 +363,7 @@ async function marker(where) {
 }
 
 function strippedMarketMarker(current, version) {
-  return current?.pluginId === pluginId && current.version === version
+  return typeof version === "string" && current?.pluginId === pluginId && current.version === version
     && !Object.hasOwn(current, "source") && !Object.hasOwn(current, "enabled");
 }
 
@@ -455,18 +455,19 @@ export async function reconcileNativeUninstall(owner, home = os.homedir(), insta
   });
 }
 
-export async function deactivate(api, init) {
-  const where = await locations(init), raw = await readOptional(where.state);
-  if (raw === undefined) return { status: "inactive", changed: false };
+async function observeMarketSwitch(api, where, init, uninstallOnly) {
+  const raw = await readOptional(where.state);
+  if (raw === undefined) return;
   const state = validateState(parse(raw), where);
-  if (!state.active || key(state.owner) !== key(where.owner)) return { status: "inactive", changed: false };
-  const jobKey = `${where.config}\0${where.owner}`;
+  if (!state.active || key(state.owner) !== key(where.owner)) return;
+  // Each Gateway service owns its watcher. An outgoing Gateway must not stop a new one's watcher.
+  const jobKey = uninstallOnly ? Symbol("market uninstall") : `${where.config}\0${where.owner}`;
   const existing = jobs.get(jobKey);
-  if (existing?.generation === state.generation && existing.check) return existing.check();
+  if (existing?.generation === state.generation && existing.check) return existing;
   if (existing?.stop) existing.stop();
   else clearTimeout(existing?.timer); // A previous MA package can share this process.
 
-  const version = init?.version || await validatePackage(where.owner);
+  const version = uninstallOnly ? init.version : init?.version || await validatePackage(where.owner);
   const nativeOwner = isMarketOwner(where.home, where.owner) ? readNativeOwner(where.owner) : null;
   let queue = Promise.resolve(), retry;
   const pending = { status: "deactivating", pending: true };
@@ -479,6 +480,7 @@ export async function deactivate(api, init) {
     const current = await marker(where);
     if (current?.enabled === true) return pending;
     const uninstalled = strippedMarketMarker(current, version) || (!current && !await installedDirectory(where.owner));
+    if (uninstallOnly && !uninstalled) return pending;
     if (!uninstalled && current && current.enabled !== false) return pending;
     if (await readOptional(where.state) === undefined) { stop(); return { status: "inactive", changed: false }; }
     if (uninstalled && nativeOwner) {
@@ -525,5 +527,29 @@ export async function deactivate(api, init) {
   // Disable/uninstall commits its marker after the hook returns. Also observe
   // removal after disable: MA skips the hook for an already disabled plugin.
   watchFile(where.marker, { persistent: false, interval: 250 }, notify);
-  return check();
+  return job;
+}
+
+export async function deactivate(api, init) {
+  const job = await observeMarketSwitch(api, await locations(init), init, false);
+  return job ? job.check() : { status: "inactive", changed: false };
+}
+
+export function directMarketUninstallService(api, directory, version) {
+  let observer;
+  return {
+    apiVersion: 2, id: "runtime-corrector-market",
+    async start() {
+      if (observer) return;
+      const where = await installLocations(path.resolve(directory), os.homedir());
+      if (key(path.dirname(where.owner)) !== key(where.extensions)) return;
+      observer = await observeMarketSwitch(api, where, { version }, true);
+      await observer?.check();
+    },
+    async stop() {
+      // MA can delete the package and immediately restart the Gateway, before the next watch tick.
+      try { await observer?.check(); }
+      finally { observer?.stop(); observer = undefined; }
+    },
+  };
 }
